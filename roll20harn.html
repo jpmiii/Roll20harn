@@ -1194,7 +1194,6 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
     on("change:repeating_ritualskill:ritualskill_ml sheet:opened", function() {
         
         getSectionIDs("repeating_ritualskill", function(IDArray) {
-            var str1 = "";
             var ritualskills = {};
             var f = [];
             for (var i=0; i < IDArray.length; i++) {
@@ -1205,8 +1204,6 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
             	for (var i=0; i < IDArray.length; i++) {
                     ritualskills[values["repeating_ritualskill_" + IDArray[i] + "_RITUALSKILL_NAME"]] = 
                         parseInt(values["repeating_ritualskill_" + IDArray[i] + "_RITUALSKILL_ML"])||0;
-                    str1 += values["repeating_ritualskill_" + IDArray[i] + "_RITUALSKILL_NAME"] +": "+ritualskills[values["repeating_ritualskill_" + IDArray[i] + "_RITUALSKILL_NAME"]]+"\n";
-
             	}
             	var f2 = [];
             	getSectionIDs("repeating_rituals", function(IDArray2) {

@@ -1096,19 +1096,14 @@ on("chat:message", function(msg) {
 		}
 		if(msg.content.indexOf("!attack ") !== -1) {
 
-			args = msg.content.split(" ")
 
-			if(args.length>4) {
 				attack(msg);
-			}
+
 
 		}
 		if(msg.content.indexOf("!defend ") !== -1) {
 
-			args = msg.content.split(" ")
-			if(args.length>3) {
 				defend(msg);
-			}
 
 		}
 		if(msg.content.indexOf("!invin") !== -1) {
