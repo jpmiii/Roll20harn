@@ -154,11 +154,14 @@ function attack(msg) {
 		    app = app - Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5);
 		    appstr = appstr + " +" + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5) + "[NM]";
 		}
-		if((atkmov > 5) || (myGet('IS_MOUNTED', charid, 0))) {
+		if (atkmov > 5)  {
 		    app = app + 10;
 		    appstr = appstr + " -10[Mov]";
 		}
-
+		if (myGet('IS_MOUNTED', charid, 0) == 'on' ) {
+		    app = app + 10;
+		    appstr = appstr + " -10[Mnt]";
+		}
 	}
 
 	var wep = filterObjs(function(obj) {
