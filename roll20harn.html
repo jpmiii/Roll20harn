@@ -1282,9 +1282,9 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
             var statTotal = parseInt(values["STR"])||0;
             statTotal += parseInt(values["STA"])||0;
             statTotal += parseInt(values["WIL"])||0;
-            statTotal += parseInt(values["CONDITION_ML"])||0;
 
-            var endurance = Math.round(statTotal / 7)||0;
+
+            var endurance = Math.round(statTotal / 3)||0;
             setAttrs({
                 "COMBAT_ENDURANCE": endurance
         });
