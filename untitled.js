@@ -93,6 +93,10 @@ function attack(msg) {
 		  _pageid: Campaign().get("playerpageid"),
           _type: "graphic",                          
         });
+        if (tokelist == null || tokelist.length < 1) {
+            sendChat(msg.who, "Move the player banner to this page.");
+            return;
+        }
         atk[1] = tokelist[0].id;
 
     } else {
