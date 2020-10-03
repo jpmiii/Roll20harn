@@ -1,4 +1,3 @@
-
 on("ready", function() {
     if( ! state.MainGameNS ) {
         state.MainGameNS = { index: 0, dis: 0 };
@@ -146,41 +145,11 @@ function attack(msg) {
 	
 	
 	if (atk[4] == "missile") {
-		var missi = getrange(wepname, dist[0])
-		app = app + missi[0]
-		if (missi[0] < 0) {
-		    appstr = appstr + " +" + missi[0]*-1 +"[Rng]";
-		} else {
-		    appstr = appstr + " -" + missi[0] +"[Rng]";;
-		}
-		if(atkmov < 5) {
-		    app = app - Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5);
-		    appstr = appstr + " +" + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5) + "[NM]";
-		}
-		if (atkmov > 5)  {
-		    app = app + 10;
-		    appstr = appstr + " -10[Mov]";
-		}
-		if (myGet('IS_MOUNTED', charid, 0) == 'on' ) {
-		    app = app + 10;
-		    appstr = appstr + " -10[Mnt]";
-		}
+		var missi;
+		({ missi, app, appstr } = missileAttack(dist, app, appstr, atkmov, charid));
 	}
 
-	var wep = filterObjs(function(obj) {
-		obn = obj.get('name');
-		if (obn) {
-			if ((obn.indexOf("WEAPON_NAME")) !== -1
-					&& (obj.get("_characterid") == charid)
-					&& (obj.get("current") == wepname)) {
-				return true;
-			} else {
-				return false;
-			}
-		} else {
-			return false;
-		}
-	});
+	var wep = findWeapon(charid);
 	
 	if (!wep[0]) {
 	    sendChat(msg.who, "Weapon " + wepname + " not found");
@@ -190,10 +159,7 @@ function attack(msg) {
 
 	var ojn = wep[0].get('name');
 
-	var atkml = parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0))
-			+ parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0))
-			+ parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0))
-			+ parseInt(atk[5]) - (app);
+	var atkml = computeAttackML(ojn, charid, app);
 	//log("HM: " + parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0)))
     if (atkml >97) {atkml=97;}
 	aroll = randomInteger(100);
@@ -230,22 +196,7 @@ function attack(msg) {
 	    
 	}
 
-	if ((aroll <= atkml) && (aroll % 5 == 0)) {
-		var asuc = "CS";
-		var ais = 3;
-	}
-	if ((aroll <= atkml) && (aroll % 5 !== 0)) {
-		var asuc = "MS";
-		var ais = 2;
-	}
-	if ((aroll > atkml) && (aroll % 5 !== 0)) {
-		var asuc = "MF";
-		var ais = 1;
-	}
-	if ((aroll > atkml) && (aroll % 5 == 0)) {
-		var asuc = "CF";
-		var ais = 0;
-	}
+	var { asuc, ais } = determineSuccess(atkml);
 	state.MainGameNS["aroll"] = aroll
 	state.MainGameNS["asuc"] = asuc
 	state.MainGameNS["ais"] = ais
@@ -341,6 +292,69 @@ function attack(msg) {
 
 	sendChat(msg.who, atkstr);
 
+}
+
+function determineSuccess(atkml) {
+	if (aroll <= atkml) {
+		if (aroll % 5 == 0) {
+			return { asuc:"CS", ais:3 };
+		} else {
+			return { asuc:"MS", ais:2 };
+		}
+	} else {
+		if (aroll % 5 !== 0) {
+			return { asuc:"MF", ais:1 };
+		} else {
+			return { asuc:"CF", ais:0 };
+		}
+	}
+}
+
+function computeAttackML(ojn, charid, app) {
+	return parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0))
+		+ parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0))
+		+ parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0))
+		+ parseInt(atk[5]) - (app);
+}
+
+function findWeapon(charid) {
+	return filterObjs(function (obj) {
+		obn = obj.get('name');
+		if (obn) {
+			if ((obn.indexOf("WEAPON_NAME")) !== -1
+				&& (obj.get("_characterid") == charid)
+				&& (obj.get("current") == wepname)) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	});
+}
+
+function missileAttack(dist, app, appstr, atkmov, charid) {
+	var missi = getrange(wepname, dist[0]);
+	app = app + missi[0];
+	if (missi[0] < 0) {
+		appstr = appstr + " +" + missi[0] * -1 + "[Rng]";
+	} else {
+		appstr = appstr + " -" + missi[0] + "[Rng]";;
+	}
+	if (atkmov < 5) {
+		app = app - Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5);
+		appstr = appstr + " +" + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5) + "[NM]";
+	}
+	if (atkmov > 5) {
+		app = app + 10;
+		appstr = appstr + " -10[Mov]";
+	}
+	if (myGet('IS_MOUNTED', charid, 0) == 'on') {
+		app = app + 10;
+		appstr = appstr + " -10[Mnt]";
+	}
+	return { missi, app, appstr };
 }
 
 function defend(msg) {
