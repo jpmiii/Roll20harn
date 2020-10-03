@@ -76,6 +76,7 @@ var skilllist = {"Acrobatics": {"type":"PHYSICAL","sba":["STR","AGL","AGL"],"ssm
 "Metalcraft": {"type":"LORE","sba":["STR","DEX","WIL"],"ssm":{"Fen":"3","Ahn":"1","Ang":"1"},"oml":"1","notes":"Different metal types (Tinsmith, Coppersmith, etc.)."},
 "Milling": {"type":"LORE","sba":["STR","DEX","SML"],"ssm":{"Ula":"1"},"oml":"2","notes":"Baking, Milling."},
 "Mining": {"type":"LORE","sba":["STR","EYE","INT"],"ssm":{"Ula":"2","Ara":"2","Fen":"1"},"oml":"1","notes":"Different mineral/metal types."},
+"Needlework": {"type":"LORE","sba":["DEX","EYE","WIL"],"ssm":{"Ula":"0"},"oml":"1","notes":""},
 "Packing": {"type":"LORE","sba":["DEX","EYE","INT"],"ssm":{"Fen":"1","Ula":"2","Ara":"2"},"oml":"1","notes":"Pack to maximize available space and knot tying."},
 "Perfumery": {"type":"LORE","sba":["SML","SML","INT"],"ssm":{"Hir":"1","Sko":"1","Tar":"1"},"oml":"1","notes":"Incense, Scented Oils, Soap, etc."},
 "Physician": {"type":"LORE","sba":["DEX","EYE","INT"],"ssm":{"Mas":"2","Sko":"1","Tai":"1"},"oml":"1","notes":"Homeopathy, Surgery, etc."},

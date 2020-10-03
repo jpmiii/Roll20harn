@@ -146,6 +146,8 @@ function attack(msg) {
 
 	app = app + hit_loc_penalty[atk[2]]["penalty"]
 	appstr = appstr + " -" + hit_loc_penalty[atk[2]]["penalty"] +"[Loc]";
+	
+	
 	if (atk[4] == "missile") {
 		var missi = getrange(wepname, dist[0])
 		app = app + missi[0]
@@ -207,24 +209,16 @@ function attack(msg) {
 		return;
 	}
 	if (ctype !== 0) {
-	    if (ctype < 0) {
-    	    for (i=0;i<(ctype*-1);i++) {
-    	        var broll = randomInteger(300);
-    	        log("cheat: " + aroll + " " +broll);
-    	        if (broll < aroll) {
-    	            aroll=broll
-    	        }
-    	    }	        
-	    } else {
-    	    for (i=0;i<ctype;i++) {
-    	        var broll = randomInteger(300);
-    	        log("cheat: " + aroll + " " +broll);
-    	        if (broll < aroll) {
-    	            aroll=broll
-    	        }
-    	    }
-    	    aroll = 101 - aroll;
+	    for (i=0;i<(ctype*-1);i++) {
+	        var broll = randomInteger(300);
+	        log("cheat: " + aroll + " " +broll);
+	        if (broll < aroll) {
+	            aroll=broll;
+	        }
 	    }
+	    if (ctype > 0) {
+	    	aroll = 101 - aroll;
+	    } 
 	    log("Cheat Roll: " + aroll);
 
 	}
@@ -503,24 +497,16 @@ function defend(msg) {
 
 	log("Def roll: " + droll);
 	if (ctype !== 0) {
-	    if (ctype < 0) {
-    	    for (i=0;i<(ctype*-1);i++) {
-    	        var broll = randomInteger(300);
-    	        log("cheat: " + aroll + " " +broll);
-    	        if (broll < droll) {
-    	            droll=broll
-    	        }
-    	    }	        
-	    } else {
-    	    for (i=0;i<ctype;i++) {
-    	        var broll = randomInteger(300);
-    	        log("cheat: " + aroll + " " +broll);
-    	        if (broll < droll) {
-    	            droll=broll
-    	        }
-    	    }
-    	    droll = 101 - droll;
+	    for (i=0;i<(ctype*-1);i++) {
+	        var broll = randomInteger(300);
+	        log("cheat: " + aroll + " " +broll);
+	        if (broll < droll) {
+	            droll=broll
+	        }
 	    }
+	    if (ctype > 0) {
+	        droll = 101 - droll;
+	    } 
 	    log("Cheat Def roll: " + droll);
 
 	}
