@@ -99,10 +99,7 @@ function attack(msg) {
         }
         atk[1] = tokelist[0].id;
 
-    } else {
-        
     }
-	//log(msg)
 	var atoke = getObj("graphic", atk[1]);
 	var charid = atoke.get("represents")
 	var toke = getObj("graphic", atk[6]);
@@ -2453,5 +2450,4 @@ function process_table(msg) {
         }
         });
 }
-
 
