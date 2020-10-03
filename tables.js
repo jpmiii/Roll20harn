@@ -80,6 +80,7 @@ var skilllist = {"Acrobatics": {"type":"PHYSICAL","sba":["STR","AGL","AGL"],"ssm
 "Packing": {"type":"LORE","sba":["DEX","EYE","INT"],"ssm":{"Fen":"1","Ula":"2","Ara":"2"},"oml":"1","notes":"Pack to maximize available space and knot tying."},
 "Perfumery": {"type":"LORE","sba":["SML","SML","INT"],"ssm":{"Hir":"1","Sko":"1","Tar":"1"},"oml":"1","notes":"Incense, Scented Oils, Soap, etc."},
 "Physician": {"type":"LORE","sba":["DEX","EYE","INT"],"ssm":{"Mas":"2","Sko":"1","Tai":"1"},"oml":"1","notes":"Homeopathy, Surgery, etc."},
+"PHYSICIAN": {"type":"LORE","sba":["DEX","EYE","INT"],"ssm":{"Mas":"2","Sko":"1","Tai":"1"},"oml":"1","notes":"Homeopathy, Surgery, etc."},
 "Piloting": {"type":"LORE","sba":["DEX","EYE","INT"],"ssm":{"Lad":"3","Mas":"1"},"oml":"1","notes":"Navigation, Sailing, Specific Waterways, etc."},
 "Runecraft": {"type":"LORE","sba":["INT","AUR","AUR"],"ssm":{"Tai":"2","Sko":"1"},"oml":"1","notes":"Regional styles may be specialties."},
 "Seamanship": {"type":"LORE","sba":["STR","DEX","AGL"],"ssm":{"Lad":"3","Mas":"1","Sko":"1"},"oml":"2","notes":"Rowing, Sailing (small boats), Sculling."},
@@ -105,8 +106,8 @@ var skilllist = {"Acrobatics": {"type":"PHYSICAL","sba":["STR","AGL","AGL"],"ssm
 
 
 
-var autoskills = {"CLIMBING":"ML","CONDITION":"ML","DODGE":"ML","JUMPING":"ML","STEALTH":"ML","INITIATIVE":"ML","UNARMED":"ML","THROWING":"ML","RIDING":"ML","AWARENESS":"ML","INTRIGUE":"ML","ORATORY":"ML","RHETORIC":"ML","SINGING":"ML"}
-var autoskillsnames = ["Initiative","Unarmed","Dodge","Riding","Climbing","Condition","Jumping","Stealth","Throwing","Awareness","Intrigue","Oratory","Rhetoric","Singing"]
+var autoskills = {"CLIMBING":"ML","CONDITION":"ML","DODGE":"ML","JUMPING":"ML","STEALTH":"ML","INITIATIVE":"ML","UNARMED":"ML","THROWING":"ML","RIDING":"ML","AWARENESS":"ML","INTRIGUE":"ML","ORATORY":"ML","RHETORIC":"ML","SINGING":"ML","PHYSICIAN":"ML"}
+var autoskillsnames = ["Initiative","Unarmed","Dodge","Riding","Climbing","Condition","Jumping","Stealth","Throwing","Awareness","Intrigue","Oratory","Rhetoric","Singing","Physician"]
 //
 //
 //
