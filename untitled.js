@@ -1318,10 +1318,8 @@ function getrange(weapname, dist){
 	if (!(weapname in missile_range)) { weapname = "Melee";}
 	for (var i = 4; i >= 0; i--) {
 		if((missile_range[weapname][i][0]*5)>dist) {
-		    //log(weapname)
-		    //log(missile_range[weapname][i])
 			if(i==0) {
-				var penalty =-15;
+				var penalty = missle_close_range_mod;
 			} else {
 				var penalty = (i-1)*20;
 			}
