@@ -800,14 +800,18 @@
         <div class="sheet-skill-header sheet-skill-value sheet-center">WGT</div>
         <div class="sheet-skill-header sheet-skill-value sheet-center">Worn</div>
         <fieldset class="repeating_inventoryitems">
-            <input type="text" name="attr_INVENTORY_NAME" class="sheet-skill-label">
-            <input type="text" name="attr_INVENTORY_TYPE" class="sheet-skill-label">
-            <textarea name="attr_INVENTORY_NOTES" class="sheet-skill-area"></textarea>
-            <input type="text" name="attr_INVENTORY_PRICE" class="sheet-skill-value" value="0">
-            <input type="text" name="attr_INVENTORY_QUANTITY" class="sheet-skill-value" value="1">
-            <input type="text" name="attr_INVENTORY_Q" class="sheet-skill-value" value="0">
-            <input type="text" name="attr_INVENTORY_WGT" class="sheet-skill-value" value="0">
-            <input type="checkbox" name="attr_INVENTORY_WORN">
+            <span style="vertical-align: top;">
+                <input type="text" name="attr_INVENTORY_NAME" class="sheet-skill-label">
+                <input type="text" name="attr_INVENTORY_TYPE" class="sheet-skill-label">
+            </span>
+            <textarea name="attr_INVENTORY_NOTES" class="sheet-skill-area" height=18></textarea>
+            <span style="vertical-align: top;">
+                <input type="text" name="attr_INVENTORY_PRICE" class="sheet-skill-value" value="0">
+                <input type="text" name="attr_INVENTORY_QUANTITY" class="sheet-skill-value" value="1">
+                <input type="text" name="attr_INVENTORY_Q" class="sheet-skill-value" value="0">
+                <input type="text" name="attr_INVENTORY_WGT" class="sheet-skill-value" value="0">
+                <input type="checkbox" name="attr_INVENTORY_WORN">
+            </span>
         </fieldset>
     </div>
     <div class="sheet-row">Add Item<button type='roll' value='!addItem @{character_id} #ItemList'></button>
@@ -832,12 +836,14 @@
         </div>
         <fieldset class="repeating_spells">
             <div>
-                <input type="text" name="attr_SPELL_NAME" class="sheet-skill-label">
-                <input type="text" name="attr_SPELL_CONVOCATION" class="sheet-skill-label">
-                <input type="text" name="attr_SPELL_LEVEL" class="sheet-skill-value" value="0">
-                <input type="hidden" name="attr_SPELL_ML" class="sheet-skill-value" value="0">
-                <input type="text" name="attr_SPELL_EML" class="sheet-skill-value" value="0">
-                <div class="sheet-skill-value"><button type="roll" value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=casts @{SPELL_NAME}(@{SPELL_CONVOCATION})}} {{rolltarget=[[{[[{[[@{SPELL_EML} - [[(@{SPELL_LEVEL})*5]] - [[(@{UNIVERSAL_PENALTY})*5]] + ?{Target Modifier?|0}]],5}kh1]],95}kl1]]}} {{penalty=[[(@{UNIVERSAL_PENALTY})*5]] - [[(@{SPELL_LEVEL})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{SPELL_EML}}} {{note=@{SPELL_NOTE}}}" name="roll_SpellCastCheck"></button></div>
+                <span style="vertical-align: top;">
+                    <input type="text" name="attr_SPELL_NAME" class="sheet-skill-label">
+                    <input type="text" name="attr_SPELL_CONVOCATION" class="sheet-skill-label">
+                    <input type="text" name="attr_SPELL_LEVEL" class="sheet-skill-value" value="0">
+                    <input type="hidden" name="attr_SPELL_ML" class="sheet-skill-value" value="0">
+                    <input type="text" name="attr_SPELL_EML" class="sheet-skill-value" value="0">
+                    <div class="sheet-skill-value"><button type="roll" value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=casts @{SPELL_NAME}(@{SPELL_CONVOCATION})}} {{rolltarget=[[{[[{[[@{SPELL_EML} - [[(@{SPELL_LEVEL})*5]] - [[(@{UNIVERSAL_PENALTY})*5]] + ?{Target Modifier?|0}]],5}kh1]],95}kl1]]}} {{penalty=[[(@{UNIVERSAL_PENALTY})*5]] - [[(@{SPELL_LEVEL})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{SPELL_EML}}} {{note=@{SPELL_NOTE}}}" name="roll_SpellCastCheck"></button></div>
+                </span>
                 <textarea name="attr_SPELL_NOTE" class="sheet-skill-area"></textarea>
             </div>
         </fieldset>
@@ -855,12 +861,14 @@
         </div>
         <fieldset class="repeating_rituals">
             <div>
-                <input type="text" name="attr_RITUAL_NAME" class="sheet-skill-label">
-                <input type="text" name="attr_RITUAL_RELIGION" class="sheet-skill-label">
-                <input type="text" name="attr_RITUAL_LEVEL" class="sheet-skill-value" value="0">
-                <input type="text" name="attr_RITUAL_EML" class="sheet-skill-value" value="0">
-                <input type="hidden" name="attr_RITUAL_ML" class="sheet-skill-value" value="0">
-                <div class="sheet-skill-value"><button type="roll" value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=performs @{RITUAL_NAME}(@{RITUAL_RELIGION})}} {{rolltarget=[[{[[{[[@{RITUAL_EML} - [[(@{RITUAL_LEVEL})*5]]- [[(@{UNIVERSAL_PENALTY})*5]] + ?{Target Modifier?|0}]],5}kh1]],95}kl1]]}} {{penalty=[[(@{UNIVERSAL_PENALTY})*5]] - [[(@{RITUAL_LEVEL})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{RITUAL_EML}}} {{note=@{RITUAL_NOTE}}}" name="roll_RitualCheck"></button></div>
+                <span style="vertical-align: top;">
+                    <input type="text" name="attr_RITUAL_NAME" class="sheet-skill-label">
+                    <input type="text" name="attr_RITUAL_RELIGION" class="sheet-skill-label">
+                    <input type="text" name="attr_RITUAL_LEVEL" class="sheet-skill-value" value="0">
+                    <input type="text" name="attr_RITUAL_EML" class="sheet-skill-value" value="0">
+                    <input type="hidden" name="attr_RITUAL_ML" class="sheet-skill-value" value="0">
+                    <div class="sheet-skill-value"><button type="roll" value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=performs @{RITUAL_NAME}(@{RITUAL_RELIGION})}} {{rolltarget=[[{[[{[[@{RITUAL_EML} - [[(@{RITUAL_LEVEL})*5]]- [[(@{UNIVERSAL_PENALTY})*5]] + ?{Target Modifier?|0}]],5}kh1]],95}kl1]]}} {{penalty=[[(@{UNIVERSAL_PENALTY})*5]] - [[(@{RITUAL_LEVEL})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{RITUAL_EML}}} {{note=@{RITUAL_NOTE}}}" name="roll_RitualCheck"></button></div>
+                </span>
                 <textarea name="attr_RITUAL_NOTE" class="sheet-skill-area"></textarea>
             </div>
         </fieldset>
@@ -877,11 +885,13 @@
         </div>
         <fieldset class="repeating_psionics">
             <div>
-                <input type="text" name="attr_TALENT_NAME" class="sheet-skill-label">
-                <input type="text" name="attr_TALENT_FATIGUE" class="sheet-stat-value" value="0">
-                <input type="text" name="attr_TALENT_TIME" class="sheet-stat-value" value="">
-                <input type="text" name="attr_TALENT_EML" class="sheet-skill-value" value="0">
-                <div class="sheet-skill-value"><button type="roll" value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=invokes @{TALENT_NAME}}} {{rolltarget=[[{[[{[[@{TALENT_EML} - [[(@{UNIVERSAL_PENALTY})*5]] + ?{Target Modifier?|0}]],5}kh1]],95}kl1]]}} {{penalty=[[(@{UNIVERSAL_PENALTY})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{TALENT_EML}}} {{note=(@{TALENT_TIME}); @{TALENT_NOTE}}}" name="roll_TalentCheck"></button></div>
+                <span style="vertical-align: top;">
+                    <input type="text" name="attr_TALENT_NAME" class="sheet-skill-label">
+                    <input type="text" name="attr_TALENT_FATIGUE" class="sheet-stat-value" value="0">
+                    <input type="text" name="attr_TALENT_TIME" class="sheet-stat-value" value="">
+                    <input type="text" name="attr_TALENT_EML" class="sheet-skill-value" value="0">
+                    <div class="sheet-skill-value"><button type="roll" value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=invokes @{TALENT_NAME}}} {{rolltarget=[[{[[{[[@{TALENT_EML} - [[(@{UNIVERSAL_PENALTY})*5]] + ?{Target Modifier?|0}]],5}kh1]],95}kl1]]}} {{penalty=[[(@{UNIVERSAL_PENALTY})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{TALENT_EML}}} {{note=(@{TALENT_TIME}); @{TALENT_NOTE}}}" name="roll_TalentCheck"></button></div>
+                </span>
                 <textarea name="attr_TALENT_NOTE" class="sheet-skill-area"></textarea>
             </div>
         </fieldset>
