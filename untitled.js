@@ -1,3 +1,4 @@
+var trace = true;
 
 on("ready", function() {
     if( ! state.MainGameNS ) {
@@ -7,7 +8,8 @@ on("ready", function() {
     }
 
     log(getHarnTimeStr(state.MainGameNS.GameTime));
-    log("loaded");
+	log("loaded. trace: "+ trace);
+	initializeTables(0);
 
 });
 
@@ -146,41 +148,11 @@ function attack(msg) {
 	
 	
 	if (atk[4] == "missile") {
-		var missi = getrange(wepname, dist[0])
-		app = app + missi[0]
-		if (missi[0] < 0) {
-		    appstr = appstr + " +" + missi[0]*-1 +"[Rng]";
-		} else {
-		    appstr = appstr + " -" + missi[0] +"[Rng]";;
-		}
-		if(atkmov < 5) {
-		    app = app - Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5);
-		    appstr = appstr + " +" + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5) + "[NM]";
-		}
-		if (atkmov > 5)  {
-		    app = app + 10;
-		    appstr = appstr + " -10[Mov]";
-		}
-		if (myGet('IS_MOUNTED', charid, 0) == 'on' ) {
-		    app = app + 10;
-		    appstr = appstr + " -10[Mnt]";
-		}
+		var missi;
+		({ missi, app, appstr } = missileAttack(dist, app, appstr, atkmov, charid));
 	}
 
-	var wep = filterObjs(function(obj) {
-		obn = obj.get('name');
-		if (obn) {
-			if ((obn.indexOf("WEAPON_NAME")) !== -1
-					&& (obj.get("_characterid") == charid)
-					&& (obj.get("current") == wepname)) {
-				return true;
-			} else {
-				return false;
-			}
-		} else {
-			return false;
-		}
-	});
+	var wep = findWeapon(charid);
 	
 	if (!wep[0]) {
 	    sendChat(msg.who, "Weapon " + wepname + " not found");
@@ -190,10 +162,7 @@ function attack(msg) {
 
 	var ojn = wep[0].get('name');
 
-	var atkml = parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0))
-			+ parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0))
-			+ parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0))
-			+ parseInt(atk[5]) - (app);
+	var atkml = computeAttackML(ojn, charid, app);
 	//log("HM: " + parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0)))
     if (atkml >97) {atkml=97;}
 	aroll = randomInteger(100);
@@ -230,22 +199,7 @@ function attack(msg) {
 	    
 	}
 
-	if ((aroll <= atkml) && (aroll % 5 == 0)) {
-		var asuc = "CS";
-		var ais = 3;
-	}
-	if ((aroll <= atkml) && (aroll % 5 !== 0)) {
-		var asuc = "MS";
-		var ais = 2;
-	}
-	if ((aroll > atkml) && (aroll % 5 !== 0)) {
-		var asuc = "MF";
-		var ais = 1;
-	}
-	if ((aroll > atkml) && (aroll % 5 == 0)) {
-		var asuc = "CF";
-		var ais = 0;
-	}
+	var { asuc, ais } = determineSuccess(atkml);
 	state.MainGameNS["aroll"] = aroll
 	state.MainGameNS["asuc"] = asuc
 	state.MainGameNS["ais"] = ais
@@ -341,6 +295,69 @@ function attack(msg) {
 
 	sendChat(msg.who, atkstr);
 
+}
+
+function determineSuccess(atkml) {
+	if (aroll <= atkml) {
+		if (aroll % 5 == 0) {
+			return { asuc:"CS", ais:3 };
+		} else {
+			return { asuc:"MS", ais:2 };
+		}
+	} else {
+		if (aroll % 5 !== 0) {
+			return { asuc:"MF", ais:1 };
+		} else {
+			return { asuc:"CF", ais:0 };
+		}
+	}
+}
+
+function computeAttackML(ojn, charid, app) {
+	return parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0))
+		+ parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0))
+		+ parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0))
+		+ parseInt(atk[5]) - (app);
+}
+
+function findWeapon(charid) {
+	return filterObjs(function (obj) {
+		obn = obj.get('name');
+		if (obn) {
+			if ((obn.indexOf("WEAPON_NAME")) !== -1
+				&& (obj.get("_characterid") == charid)
+				&& (obj.get("current") == wepname)) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	});
+}
+
+function missileAttack(dist, app, appstr, atkmov, charid) {
+	var missi = getrange(wepname, dist[0]);
+	app = app + missi[0];
+	if (missi[0] < 0) {
+		appstr = appstr + " +" + missi[0] * -1 + "[Rng]";
+	} else {
+		appstr = appstr + " -" + missi[0] + "[Rng]";;
+	}
+	if (atkmov < 5) {
+		app = app - Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5);
+		appstr = appstr + " +" + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5) + "[NM]";
+	}
+	if (atkmov > 5) {
+		app = app + 10;
+		appstr = appstr + " -10[Mov]";
+	}
+	if (myGet('IS_MOUNTED', charid, 0) == 'on') {
+		app = app + 10;
+		appstr = appstr + " -10[Mnt]";
+	}
+	return { missi, app, appstr };
 }
 
 function defend(msg) {
@@ -902,6 +919,7 @@ on("chat:message", function(msg) {
     
 
  if(msg.type == "api") {
+	 if (trace) {log("chat:message("+msg.playerid +":"+msg.content+")");}
 		if(msg.content.indexOf("!calcsb") !== -1) {
 		    //log(msg.content);
 			args = msg.content.split(" ")
@@ -976,70 +994,7 @@ on("chat:message", function(msg) {
 
 		}
 		if(msg.content.indexOf("!itemlist") !== -1) {
-		    var out = "";
-		    var outarmor = "";
-		    var outweap = "";
-			 Object.keys(prices).forEach(function(k){
-                if (k in weapons_table) {
-                    outweap += "|" +k;
-                } else if (k.substr(0,k.lastIndexOf(",")) in armor_coverage) {
-                    outarmor += "|" +k;
-                } else {
-                    out += "|" +k;
-                }
-		    });
-		    //log(out+"\n\n");
-		    out = out.replace(/,/g,"&#44;")
-		    out = "?{Item" + out + "}";
-		    var mac = findObjs({
-        		type: 'macro',
-        		playerid:  msg.playerid,
-        		name: 'ItemList'
-        	})[0]
-        	if (mac) {
-        	    mac.set('action',out);
-        	} else {
-                createObj('macro', {
-					name: 'ItemList',
-					visibleto: "all",
-                    action: out,
-                    playerid: msg.playerid
-                });
-        	}
-		    outweap = outweap.replace(/,/g,"&#44;")
-		    outweap = "?{Item" + outweap + "}";
-		    var mac = findObjs({
-        		type: 'macro',
-        		playerid:  msg.playerid,
-        		name: 'WeaponList'
-        	})[0]
-        	if (mac) {
-        	    mac.set('action',outweap);
-        	} else {
-                createObj('macro', {
-					name: 'WeaponList',
-					visibleto: "all",
-                    action: outweap,
-                    playerid: msg.playerid
-                });
-        	}
-		    outarmor = outarmor.replace(/,/g,"&#44;")
-		    outarmor = "?{Item" + outarmor + "}";
-		    var mac = findObjs({
-        		type: 'macro',
-        		playerid:  msg.playerid,
-        		name: 'ArmorList'
-        	})[0]
-        	if (mac) {
-        	    mac.set('action',outarmor);
-        	} else {
-                createObj('macro', {
-					name: 'ArmorList',
-					visibleto: "all",
-                    action: outarmor,
-                    playerid: msg.playerid
-                });
-        	}
+			initializeTables(msg.playerid);
 		}
 		if(msg.content.indexOf("!occupation") !== -1) {
 
@@ -1252,6 +1207,91 @@ on("chat:message", function(msg) {
 
 
 
+function initializeTables(playerid) {
+	if (trace) {log(">initializeTables("+playerid+")")}
+	var gms = findObjs({type:'player'}).filter((p)=>playerIsGM(p.id));
+	var gmId;
+	if (gms.length>0) {
+		gmId = gms[0].id;
+	} else {
+		log("error - no gm found")
+		if (playerId != 0) {
+			gmId = playerid
+		} else {
+			return;
+		}
+	}
+	
+	var out = "";
+	var outarmor = "";
+	var outweap = "";
+	Object.keys(prices).sort().forEach(function (k) {
+		if (k in weapons_table) {
+			outweap += "|" + k;
+		} else if (k.substr(0, k.lastIndexOf(",")) in armor_coverage) {
+			outarmor += "|" + k;
+		} else {
+			out += "|" + k;
+		}
+	});
+	//log(out+"\n\n");
+	out = out.replace(/,/g, "&#44;");
+	out = "?{Item" + out + "}";
+	var mac = findObjs({
+		type: 'macro',
+		playerid: gmId,
+		name: 'ItemList'
+	})[0];
+	if (mac) {
+		mac.set('action', out);
+	} else {
+		createObj('macro', {
+			name: 'ItemList',
+			visibleto: "all",
+			action: out,
+			playerid: gmId
+		});
+	}
+	outweap = outweap.replace(/,/g, "&#44;");
+	outweap = "?{Item" + outweap + "}";
+	var mac = findObjs({
+		type: 'macro',
+		playerid: gmId,
+		name: 'WeaponList'
+	})[0];
+	if (mac) {
+		log("registering #WeaponList");
+		mac.set('action', outweap);
+	} else {
+		log("creating #WeaponList");
+		createObj('macro', {
+			name: 'WeaponList',
+			visibleto: "all",
+			action: outweap,
+			playerid: gmId
+		});
+	}
+	outarmor = outarmor.replace(/,/g, "&#44;");
+	outarmor = "?{Item" + outarmor + "}";
+	var mac = findObjs({
+		type: 'macro',
+		playerid: gmId,
+		name: 'ArmorList'
+	})[0];
+	if (mac) {
+		mac.set('action', outarmor);
+	} else {
+		createObj('macro', {
+			name: 'ArmorList',
+			visibleto: "all",
+			action: outarmor,
+			playerid: gmId
+		});
+	}
+	if (trace) {log("<initializeTables()")}
+	return;
+}
+
 function addinjury(loc, injstr, charid) {
 	if((injstr.indexOf("Fum") == 0) || (injstr.indexOf("Stu") == 0)) {
 		var sev = injstr.slice(3,4);
@@ -1355,6 +1395,7 @@ function turnPush(obj) {
 }
 
 function addWeapon(charid,weapon_name) {
+	if (trace) {log("addWeapon("+charid+", "+item+")")}
 	if (weapon_name in weapons_table) {
 
 		var mid = makeid();
@@ -1410,6 +1451,7 @@ function addWeapon(charid,weapon_name) {
 }
 
 function addItem(charid, item) {
+	if (trace) {log("addItem("+charid+", "+item+")")}
     if (item in weapons_table) {
         addWeapon(charid, item);
     } else {
@@ -1439,6 +1481,7 @@ function addItem(charid, item) {
 }     
 
 function addArmor(charid, item) {
+	if (trace) {log("addIArmor("+charid+", "+item+")")}
 	var mid = makeid();
 	mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_NAME",charid,item);
 	mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_TYPE",charid,"Armor");
