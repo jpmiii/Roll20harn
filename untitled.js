@@ -1,3 +1,5 @@
+var trace = true;
+
 on("ready", function() {
     if( ! state.MainGameNS ) {
         state.MainGameNS = { index: 0, dis: 0 };
@@ -6,7 +8,8 @@ on("ready", function() {
     }
 
     log(getHarnTimeStr(state.MainGameNS.GameTime));
-    log("loaded");
+	log("loaded. trace: "+ trace);
+	initializeTables(0);
 
 });
 
@@ -916,6 +919,7 @@ on("chat:message", function(msg) {
     
 
  if(msg.type == "api") {
+	 if (trace) {log("chat:message("+msg.playerid +":"+msg.content+")");}
 		if(msg.content.indexOf("!calcsb") !== -1) {
 		    //log(msg.content);
 			args = msg.content.split(" ")
@@ -990,70 +994,7 @@ on("chat:message", function(msg) {
 
 		}
 		if(msg.content.indexOf("!itemlist") !== -1) {
-		    var out = "";
-		    var outarmor = "";
-		    var outweap = "";
-			 Object.keys(prices).forEach(function(k){
-                if (k in weapons_table) {
-                    outweap += "|" +k;
-                } else if (k.substr(0,k.lastIndexOf(",")) in armor_coverage) {
-                    outarmor += "|" +k;
-                } else {
-                    out += "|" +k;
-                }
-		    });
-		    //log(out+"\n\n");
-		    out = out.replace(/,/g,"&#44;")
-		    out = "?{Item" + out + "}";
-		    var mac = findObjs({
-        		type: 'macro',
-        		playerid:  msg.playerid,
-        		name: 'ItemList'
-        	})[0]
-        	if (mac) {
-        	    mac.set('action',out);
-        	} else {
-                createObj('macro', {
-					name: 'ItemList',
-					visibleto: "all",
-                    action: out,
-                    playerid: msg.playerid
-                });
-        	}
-		    outweap = outweap.replace(/,/g,"&#44;")
-		    outweap = "?{Item" + outweap + "}";
-		    var mac = findObjs({
-        		type: 'macro',
-        		playerid:  msg.playerid,
-        		name: 'WeaponList'
-        	})[0]
-        	if (mac) {
-        	    mac.set('action',outweap);
-        	} else {
-                createObj('macro', {
-					name: 'WeaponList',
-					visibleto: "all",
-                    action: outweap,
-                    playerid: msg.playerid
-                });
-        	}
-		    outarmor = outarmor.replace(/,/g,"&#44;")
-		    outarmor = "?{Item" + outarmor + "}";
-		    var mac = findObjs({
-        		type: 'macro',
-        		playerid:  msg.playerid,
-        		name: 'ArmorList'
-        	})[0]
-        	if (mac) {
-        	    mac.set('action',outarmor);
-        	} else {
-                createObj('macro', {
-					name: 'ArmorList',
-					visibleto: "all",
-                    action: outarmor,
-                    playerid: msg.playerid
-                });
-        	}
+			initializeTables(msg.playerid);
 		}
 		if(msg.content.indexOf("!occupation") !== -1) {
 
@@ -1266,6 +1207,91 @@ on("chat:message", function(msg) {
 
 
 
+function initializeTables(playerid) {
+	if (trace) {log(">initializeTables("+playerid+")")}
+	var gms = findObjs({type:'player'}).filter((p)=>playerIsGM(p.id));
+	var gmId;
+	if (gms.length>0) {
+		gmId = gms[0].id;
+	} else {
+		log("error - no gm found")
+		if (playerId != 0) {
+			gmId = playerid
+		} else {
+			return;
+		}
+	}
+	
+	var out = "";
+	var outarmor = "";
+	var outweap = "";
+	Object.keys(prices).sort().forEach(function (k) {
+		if (k in weapons_table) {
+			outweap += "|" + k;
+		} else if (k.substr(0, k.lastIndexOf(",")) in armor_coverage) {
+			outarmor += "|" + k;
+		} else {
+			out += "|" + k;
+		}
+	});
+	//log(out+"\n\n");
+	out = out.replace(/,/g, "&#44;");
+	out = "?{Item" + out + "}";
+	var mac = findObjs({
+		type: 'macro',
+		playerid: gmId,
+		name: 'ItemList'
+	})[0];
+	if (mac) {
+		mac.set('action', out);
+	} else {
+		createObj('macro', {
+			name: 'ItemList',
+			visibleto: "all",
+			action: out,
+			playerid: gmId
+		});
+	}
+	outweap = outweap.replace(/,/g, "&#44;");
+	outweap = "?{Item" + outweap + "}";
+	var mac = findObjs({
+		type: 'macro',
+		playerid: gmId,
+		name: 'WeaponList'
+	})[0];
+	if (mac) {
+		log("registering #WeaponList");
+		mac.set('action', outweap);
+	} else {
+		log("creating #WeaponList");
+		createObj('macro', {
+			name: 'WeaponList',
+			visibleto: "all",
+			action: outweap,
+			playerid: gmId
+		});
+	}
+	outarmor = outarmor.replace(/,/g, "&#44;");
+	outarmor = "?{Item" + outarmor + "}";
+	var mac = findObjs({
+		type: 'macro',
+		playerid: gmId,
+		name: 'ArmorList'
+	})[0];
+	if (mac) {
+		mac.set('action', outarmor);
+	} else {
+		createObj('macro', {
+			name: 'ArmorList',
+			visibleto: "all",
+			action: outarmor,
+			playerid: gmId
+		});
+	}
+	if (trace) {log("<initializeTables()")}
+	return;
+}
+
 function addinjury(loc, injstr, charid) {
 	if((injstr.indexOf("Fum") == 0) || (injstr.indexOf("Stu") == 0)) {
 		var sev = injstr.slice(3,4);
@@ -1369,6 +1395,7 @@ function turnPush(obj) {
 }
 
 function addWeapon(charid,weapon_name) {
+	if (trace) {log("addWeapon("+charid+", "+item+")")}
 	if (weapon_name in weapons_table) {
 
 		var mid = makeid();
@@ -1424,6 +1451,7 @@ function addWeapon(charid,weapon_name) {
 }
 
 function addItem(charid, item) {
+	if (trace) {log("addItem("+charid+", "+item+")")}
     if (item in weapons_table) {
         addWeapon(charid, item);
     } else {
@@ -1453,6 +1481,7 @@ function addItem(charid, item) {
 }     
 
 function addArmor(charid, item) {
+	if (trace) {log("addIArmor("+charid+", "+item+")")}
 	var mid = makeid();
 	mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_NAME",charid,item);
 	mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_TYPE",charid,"Armor");
