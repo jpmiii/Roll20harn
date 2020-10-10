@@ -1,3 +1,32 @@
+//
+//
+// CONFIGURATION
+//
+//
+
+
+// house rule close range mod (0 is cannon)
+var missle_close_range_mod = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+//
+//
+// TABLES
+//
+//
+
+
+
 var skilllist = {"Acrobatics": {"type":"PHYSICAL","sba":["STR","AGL","AGL"],"ssm":{"Nad":"2","Hir":"1"},"oml":"2","notes":"Trapeze, Tumbling, Vaulting, etc."},
 "CLIMBING": {"type":"PHYSICAL","sba":["STR","DEX","AGL"],"ssm":{"Ula":"2","Ara":"2"},"oml":"4","notes":"None."},
 "CONDITION": {"type":"PHYSICAL","sba":["STR","STA","WIL"],"ssm":{"Ula":"1","Lad":"1"},"oml":"5","notes":"None."},

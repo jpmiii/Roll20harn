@@ -458,7 +458,7 @@ function defend(msg) {
 
 	if (def[1] == "dodge") {
 	    var defml = 0;
-	    if (atk[4] == "missile") {
+	    if ((atk[4] == "missile") && (wepname.indexOf("Bow") !== -1)) {
 		    defml = Math.round(parseInt(myGet("DODGE_ML", defcharid, 0))/2) + parseInt(def[2])- (pp);
 	    } else {
 	        defml = parseInt(myGet("DODGE_ML", defcharid, 0)) + parseInt(def[2])- (pp);
@@ -784,8 +784,8 @@ function defend(msg) {
 
 	if (def[1] == "dodge") {
 
-        if (atk[4] == "missile") {
-            var drolltarg = parseInt(parseInt(myGet("DODGE_ML", defcharid, 0))/2) + "[ML] -" + (pp) + "[PP] +" +parseInt(def[2]) + "[Sit]";
+	    if ((atk[4] == "missile") && (wepname.indexOf("Bow") !== -1)) {
+            var drolltarg = parseInt(parseInt(myGet("DODGE_ML", defcharid, 0))/2) + "[1/2ML] -" + (pp) + "[PP] +" +parseInt(def[2]) + "[Sit]";
         } else {
             var drolltarg = parseInt(myGet("DODGE_ML", defcharid, 0)) + "[ML] -" + (pp) + "[PP] +" +parseInt(def[2]) + "[Sit]";
         }
@@ -1318,10 +1318,8 @@ function getrange(weapname, dist){
 	if (!(weapname in missile_range)) { weapname = "Melee";}
 	for (var i = 4; i >= 0; i--) {
 		if((missile_range[weapname][i][0]*5)>dist) {
-		    //log(weapname)
-		    //log(missile_range[weapname][i])
 			if(i==0) {
-				var penalty =-15;
+				var penalty = missle_close_range_mod;
 			} else {
 				var penalty = (i-1)*20;
 			}
