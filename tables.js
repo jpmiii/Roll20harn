@@ -5,11 +5,15 @@
 //
 
 
-// house rule close range mod (0 is cannon)
+// house rule close range mod (0 is canon)
 var missle_close_range_mod = 0;
 
 
-
+// house rule randomize init
+function initRoll() {
+	return 0; // canon
+	// return randomInteger(6) + randomInteger(6) + randomInteger(6);
+}
 
 
 

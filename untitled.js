@@ -1409,10 +1409,10 @@ function turnPush(obj) {
 	} else {
 	    //log("mounted: " + myGet("IS_MOUNTED",  obj.get("represents"),0))
 	    if (myGet("IS_MOUNTED",  obj.get("represents"),0) == "on") {
-	        var initml = Math.round(((parseInt(myGet("RIDING_ML",  obj.get("represents"),0)) + parseInt(myGet("STEED_INIT",  obj.get("represents"),0)))/2) - pp  + randomInteger(6) + randomInteger(6) + randomInteger(6));
+	        var initml = Math.round(((parseInt(myGet("RIDING_ML",  obj.get("represents"),0)) + parseInt(myGet("STEED_INIT",  obj.get("represents"),0)))/2) - pp  + initRoll());
 	        //log("mounted: " + ((parseInt(myGet("RIDING_ML",  obj.get("represents"),0)) + parseInt(myGet("STEED_INIT",  obj.get("represents"),0)))/2)+" " + initml +" "+ pp);
 	    } else {
-	        var initml = parseInt(myGet("INITIATIVE_ML",  obj.get("represents"),0)) - pp  + randomInteger(6) + randomInteger(6) + randomInteger(6);
+	        var initml = parseInt(myGet("INITIATIVE_ML",  obj.get("represents"),0)) - pp  + initRoll();
 	        //log("foot: " + initml +" "+ pp);
 	    }
 	}
