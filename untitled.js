@@ -1,4 +1,4 @@
-var trace = true;
+
 log("loading javascript");
 
 on("ready", function() {
@@ -71,6 +71,17 @@ const sendGMPing = (left, top, pageid, playerid=null, moveAll=false) => {
 /**
  * 
  */
+
+
+function initRoll() {
+	if (randomize_init_roll) {
+		randomInteger(6) + randomInteger(6) + randomInteger(6);
+	} else {
+		return 0; // canon
+	}
+
+}
+
 
 
 
