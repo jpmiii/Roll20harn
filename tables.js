@@ -1,17 +1,3 @@
-//
-//
-// CONFIGURATION
-//
-//
-
-
-// house rule close range mod (0 is cannon)
-var missle_close_range_mod = 0;
-
-
-
-
-
 
 
 

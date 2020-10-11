@@ -1,4 +1,4 @@
-var trace = true;
+
 log("loading javascript");
 
 on("ready", function() {
@@ -14,7 +14,7 @@ on("ready", function() {
 on("change:attribute:current", function(obj, prev) {
     
     if((obj.get('name') == "INITIATIVE_ML") || (obj.get('name') == "UNIVERSAL_PENALTY") || (obj.get('name') == "ENCUMBRANCE") || (obj.get('name') == "RIDER")){
-        //log(obj.get('name'));
+
         charid = obj.get("_characterid");
 
     	var rideratt = findObjs({                              
@@ -73,6 +73,17 @@ const sendGMPing = (left, top, pageid, playerid=null, moveAll=false) => {
  */
 
 
+function initRoll() {
+	if (randomize_init_roll) {
+		randomInteger(6) + randomInteger(6) + randomInteger(6);
+	} else {
+		return 0; // canon
+	}
+
+}
+
+
+
 
 function handle_attack(args, msg) {
 
@@ -105,7 +116,7 @@ function handle_attack(args, msg) {
 	var res = "";
 	var atkmov = 0;
 	var defmov = 0;
-	// log(defchar.get('name'))
+
 	if (atoke && toke) {
 	    atkmov = tokemove(atoke);
 	    defmov = tokemove(toke);
@@ -123,7 +134,7 @@ function handle_attack(args, msg) {
 	var atkstr = "";
 	var appstr = "";
 
-	// log(myGet('ENCUMBRANCE',charid,0))
+
 	if (atoke.get('bar3_value')) {
 		var app = (parseInt(atoke.get('bar3_value')) + parseInt(myGet(
 				'ENCUMBRANCE', charid, 0))) * 5;
@@ -133,8 +144,7 @@ function handle_attack(args, msg) {
 				'ENCUMBRANCE', charid, 0))) * 5;
 		appstr = appstr + " -" + (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0))*5) + "[UP] -" + (parseInt(myGet('ENCUMBRANCE', charid, 0))*5) + "[EP]";
 	}
-	//
-	//                hit locations
+
 
 	app = app + hit_loc_penalty[atk[2]]["penalty"]
 	appstr = appstr + " -" + hit_loc_penalty[atk[2]]["penalty"] +"[Loc]";
@@ -156,11 +166,11 @@ function handle_attack(args, msg) {
 	var ojn = wep[0].get('name');
 
 	var atkml = computeAttackML(ojn, charid, app);
-	//log("HM: " + parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0)))
+
     if (atkml >97) {atkml=97;}
 	aroll = randomInteger(100);
 	var ctype = parseInt(myGet('CType', charid, 0))
-	//log(ctype);
+
 	log("Roll: " + aroll);
 	log("AtkML:" + atkml);
 	if (!atkml) {
@@ -270,7 +280,7 @@ function handle_attack(args, msg) {
 	}
 	atkstr = atkstr + "}}"
 
-	//tkstr = atkstr + "}}\" name=\"roll_WeaponAMLSkillCheck\n";
+
 	state.MainGameNS["appstr"] = myGet(ojn.slice(0, -4) + "ML", charid, 0) +  "[ML] +" + myGet(ojn.slice(0, -4) + "ATK", charid, 0) + "[Atk] +" + myGet(ojn.slice(0, -4) 	+ "HM", charid, 0) + "[HM]" + appstr + " +" + atk[5] + "[Sit]";
 
 	state.MainGameNS["atkstrout"] =   "<br/>Penalty: "
@@ -281,8 +291,7 @@ function handle_attack(args, msg) {
 			+ myGet(ojn.slice(0, -4) + "ML", charid, 0)
 			+ "<br/>Attack Mod: "
 			+ myGet(ojn.slice(0, -4) + "ATK", charid, 0)
-			//+ "<br/>roll success: "
-			//+ ais
+
 
 
 
@@ -367,11 +376,11 @@ function handle_defend(args, msg) {
     }
 	var wepname = state.MainGameNS.wepname;
 	var atoke = getObj("graphic", atk[1]);
-	//log(msg)
+
 	var toke = getObj("graphic", atk[6]);
 	if (!toke.get("represents")) {sendChat(msg.who, "No defender"); return;}
 	if (!toke.get("represents").startsWith("-M")) {sendChat(msg.who, "No defender sheet"); return;}
-	//log(toke.get("represents"));
+
 	var charid = atoke.get("represents")
 	var defcharid = toke.get("represents")
 	var defchar = getObj("character", defcharid);
@@ -402,7 +411,7 @@ function handle_defend(args, msg) {
 	if (!wep) {
 		return;
 	}
-	// log(wep)
+
 	var aojn = wep[0].get('name');
 
 	if (atk[3] == "H") {
@@ -438,7 +447,7 @@ function handle_defend(args, msg) {
 	        aspect = Math.round(aspect * parseFloat(state.MainGameNS.missi[1]))
 	    }
 	}
-	// log(myGet('ENCUMBRANCE', defcharid, 0))
+
 	if (toke.get('bar3_value')) {
 
 		var pp = (parseInt(toke.get('bar3_value')) + parseInt(myGet(
@@ -460,12 +469,12 @@ function handle_defend(args, msg) {
 		var defstr = "";// "+" +  parseInt(myGet("DODGE_ML", defcharid, 0)) + "+" + parseInt(def[2])+ "-" + (pp);
 
 	}
-	// log(ojn)
+
 	if ((def[1] == "block") || (def[1] == "counterstrike")) {
 		defwepname = msg.content.slice((msg.content.indexOf("WeaponName:") + 11));
 
 		if (defwepname.length > 3) {
-            // log(defwepname)
+
 			var defwep = filterObjs(function(obj) {
 				obn = obj.get('name');
 				if (obn) {
@@ -554,7 +563,7 @@ function handle_defend(args, msg) {
 	}
 
 	if (atk[4] == "missile") {
-	    //log(dis)
+
 		var r = attack_missile[def[1]][state.MainGameNS.ais][dis];
 
 	} else {
@@ -657,15 +666,13 @@ function handle_defend(args, msg) {
 				toke.set('bar3_value', unipenalty);
 			}
 
-			//
 			res = res + rollshock(defcharid, toke, unipenalty)
 
 		}
 
 	}
-	// log(res)
-	if ((r.indexOf("D*") == 0) || (r.indexOf("B*") == 0)) {
 
+	if ((r.indexOf("D*") == 0) || (r.indexOf("B*") == 0)) {
 
 		var baspect = myGet(ojn.slice(0, -4) + "B", defcharid, 0)
 		var easpect = myGet(ojn.slice(0, -4) + "E", defcharid, 0)
@@ -782,7 +789,7 @@ function handle_defend(args, msg) {
         } else {
             var drolltarg = parseInt(myGet("DODGE_ML", defcharid, 0)) + "[ML] -" + (pp) + "[PP] +" +parseInt(def[2]) + "[Sit]";
         }
-        //var drolltarg = parseInt(myGet("DODGE_ML", defcharid, 0)) + "-" + pp + "+" +parseInt(def[2]);
+
 		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " attempts dodge}} {{rollresult=[[" 
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{drollresult=[[" +  droll + "]]}} {{drolltarget=[["
 		        + drolltarg+ "]]}}{{drollsuccess=[["	+ dis + "]]}} {{result=" + res + "}}";
@@ -811,7 +818,6 @@ function handle_defend(args, msg) {
 		        + drolltarg+ "]]}}{{drollsuccess=[["	+ dis + "]]}} {{result=" + res + "}}";
 
 	}
-	// log(defstr){{rolldesc=" toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} "
 
 	sendChat(msg.who, defstr);
 
@@ -886,12 +892,12 @@ function gethiteff(loc, effImp) {
 		}
 
 	});
-	// log(lr);
+
 	return lr;
 }
 
 function gethitloc(roll, aim) {
-	var lr
+	var lr;
 	_.each(hit_location_table, function(row) {
 		if (row[aim] !== "-") {
 			if (parseInt(row[aim].slice(0, 2)) <= roll) {
@@ -900,7 +906,7 @@ function gethitloc(roll, aim) {
 		}
 
 	});
-	// log(lr);
+
 	return lr;
 }
 
@@ -1380,16 +1386,12 @@ function handle_newturn(args, msg) {
         	        if (obj.id == msg.selected[i]["_id"]) {
         	            turnPush(obj);
         	        }
-        	        
         	    }
-        	    
         	} else {
         	    turnPush(obj);
         	}
 		}
-        //log(obj)
 	});
-	//log(turnorder)
 	Campaign().set("turnorder", JSON.stringify(turnorder));
 
 	state.MainGameNS.GameTime += 10;
@@ -1407,13 +1409,10 @@ function turnPush(obj) {
 	if (obj.get('status_sleepy')) {
 	    var initml = 0;
 	} else {
-	    //log("mounted: " + myGet("IS_MOUNTED",  obj.get("represents"),0))
 	    if (myGet("IS_MOUNTED",  obj.get("represents"),0) == "on") {
-	        var initml = Math.round(((parseInt(myGet("RIDING_ML",  obj.get("represents"),0)) + parseInt(myGet("STEED_INIT",  obj.get("represents"),0)))/2) - pp  + randomInteger(6) + randomInteger(6) + randomInteger(6));
-	        //log("mounted: " + ((parseInt(myGet("RIDING_ML",  obj.get("represents"),0)) + parseInt(myGet("STEED_INIT",  obj.get("represents"),0)))/2)+" " + initml +" "+ pp);
+	        var initml = Math.round(((parseInt(myGet("RIDING_ML",  obj.get("represents"),0)) + parseInt(myGet("STEED_INIT",  obj.get("represents"),0)))/2) - pp  + initRoll());
 	    } else {
-	        var initml = parseInt(myGet("INITIATIVE_ML",  obj.get("represents"),0)) - pp  + randomInteger(6) + randomInteger(6) + randomInteger(6);
-	        //log("foot: " + initml +" "+ pp);
+	        var initml = parseInt(myGet("INITIATIVE_ML",  obj.get("represents"),0)) - pp  + initRoll();
 	    }
 	}
 
@@ -1453,7 +1452,6 @@ function addWeapon(charid,weapon_name) {
     		});
     
     		if (wepskill[0]) {
-    			//log(wepskill[0].get('name').slice(0,-4)+"_ML");
     			mySet("repeating_weapon_"+ mid +"_WEAPON_ML",charid,myGet(wepskill[0].get('name').slice(0,-4)+"ML",charid,0));
     		} 
 		}
@@ -1528,7 +1526,6 @@ function addArmor(charid, item) {
 		mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_WGT",charid,0);
 		mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_PRICE",charid,0)
 	}
-	//log(charid)
 }  
 
 function calcArmor(charid) {
@@ -1565,8 +1562,7 @@ function calcArmor(charid) {
         		if(ojv.slice(ojv.lastIndexOf(",")+2) in armor_prot) {
         
         			var art = armor_prot[ojv.slice(ojv.lastIndexOf(",")+2)];
-        			//log(art);
-        			//log(ojv.slice(0,ojv.lastIndexOf(",")));
+
         			if(ojv.slice(0,ojv.lastIndexOf(",")) in armor_coverage) {
             			var arl = armor_coverage[ojv.slice(0,ojv.lastIndexOf(","))]["coverage"];
             			for (var i = 0; i < arl.length; i++) {
@@ -1752,11 +1748,9 @@ function tokendistance(token1,token2) {
 	var gridSize = 70;
 	var lDist = Math.abs(token1.get("left")-token2.get("left"))/gridSize;
 	var tDist = Math.abs(token1.get("top")-token2.get("top"))/gridSize;
-	var dist = 0;
-	dist = Math.sqrt(lDist * lDist + tDist * tDist);
+	var dist = Math.sqrt(lDist * lDist + tDist * tDist);
 	var distSQ = dist;
-    //log(curScale);
-    //log(dist);
+
 	dist = dist * curScale;
 	dist = Math.round(dist * 10) / 10;
 	return [dist, curUnit];
@@ -1776,22 +1770,18 @@ function skillList(char) {
 	
 	_.each(atts,  function(ob1) {    
 		
-
 		ojn = ob1.get('name')
 		ojv = ob1.get('current')
-		//log(ojn)
 
 		if ((ojv) && (ojn.indexOf("SKILL_NAME") !== -1)) {
 			_.each(_.keys(skilllist), function(obj) {
 				if (ojv.indexOf(obj) !== -1)  {
 					slist.push(ojv);
-					//log(nameout);
 				}
 			});
 		}
 	});
 	return slist;
-
 }
 
 
@@ -1813,13 +1803,11 @@ function findSkill(char,skillname) {
     
             ojn = ob1.get('name')
             ojv = ob1.get('current')
-            //log(ojn)
-    
+
             if (ojn.indexOf("SKILL_NAME") !== -1) {
                 _.each(_.keys(skilllist), function(obj) {
                     if ((ojv.indexOf(obj) !== -1) && (skillname.indexOf(obj) !== -1)) {
                         nameout = ojn;
-                        //log(nameout);
                     }
                 });
             }
@@ -1872,7 +1860,7 @@ function findSkill(char,skillname) {
 
 
 function calcSB(char,msg) {
-    //log(msg.content);
+
     
     var rolls = ["STR","STA","DEX","AGL","INT","AUR","WIL","EYE","HRG","SML","VOI","CML","FRAME"]
     _.each(rolls, function(attname) {
@@ -1881,8 +1869,7 @@ function calcSB(char,msg) {
     });
 
     _.each(_.keys(autoskills), function(skillname) {
-        //log(skillname+"_SB");
-        //log(myGet(skillname+"_SB",char.id,1));
+
         myGet(skillname+"_SB",char.id,1);
     });
 
@@ -1894,8 +1881,6 @@ function calcSB(char,msg) {
     });
     var sss = myGet('SUNSIGN', char.id,"Ulandus").split('-');
 
-    //var sss = myGet('SUNSIGN', char.id,"Ulandus").slice(0,3)
-    //log(sss)    
     _.each(atts,  function(ob1) {    
         
 
@@ -1910,7 +1895,7 @@ function calcSB(char,msg) {
                     var sb1 = 0;
                     var sb2 = 0;
                     if (sss.length == 2) {
-                        //log(sss[1])
+
                         if (sss[0].slice(0,3) in skilllist[obj]["ssm"]) {
                         sb1 = Number(skilllist[obj]["ssm"][sss[0].slice(0,3)])
                         }
@@ -1948,10 +1933,7 @@ function calcSB(char,msg) {
                         }
                     }
                 }
-
             });
-            
-            //log()
         }
         if (ojn.indexOf("_SB") !== -1){
             
@@ -1965,7 +1947,6 @@ function calcSB(char,msg) {
                         if (sss[0].slice(0,3) in skilllist[obj]["ssm"]) {
                         sb1 = Number(skilllist[obj]["ssm"][sss[0].slice(0,3)])
                         }
-                        //log(sss[1]);
                         if (sss[1].slice(0,3) in skilllist[obj]["ssm"]) {
                         sb2 = Number(skilllist[obj]["ssm"][sss[1].slice(0,3)])
                         }
@@ -1979,7 +1960,6 @@ function calcSB(char,msg) {
                         sb = sb + Number(skilllist[obj]["ssm"][sss[0].slice(0,3)])
                         } 
                     }                  
-                    //log(obj + " - " + Math.round(sb));
                     if ( msg.content.indexOf("?") !== -1) {
                         myGet(ojn,char.id, sb);
                     }
@@ -2080,20 +2060,11 @@ function invin(charid) {
                 lns[xi] = lns[xi].slice(11);
                 while(lns[xi].slice(0,6) !== "Notes:") {
                     if(lns[xi].length >2) {addItem(charid, lns[xi]);}
-        
                     xi++;
-            
-                     
                 }
-        
             }
-
         }
-        
     }
-    
-    // _.each(lns, function(ob1) {log(ob1);});
-    
 }
 function xin(charid) {
     var char = getObj("character", charid);
@@ -2160,7 +2131,7 @@ function xin(charid) {
             mySet("PARENT",charid,lns[15].slice(11));
             mySet("ESTRANGEMENT",charid,lns[16].slice(13));
             mySet("CLANHEAD",charid,lns[17].slice(10));
-            // mySet("MENTAL",charid,lns[26].slice(11));
+
 
             
         
@@ -2400,23 +2371,18 @@ function xin(charid) {
         
             }
 
-            if(lns[xi].slice(0,10) == "Equipment:"){
-                lns[xi] = lns[xi].slice(11);
-                while(lns[xi].slice(0,6) !== "Notes:") {
-                    addItem(charid, lns[xi]);
-        
-                    xi++;
-            
-                     
-                }
-        
+	            if(lns[xi].slice(0,10) == "Equipment:"){
+	                lns[xi] = lns[xi].slice(11);
+	                while(lns[xi].slice(0,6) !== "Notes:") {
+	                    addItem(charid, lns[xi]);
+	        
+	                    xi++;
+	            
+	                     
+	                }
+	            }
             }
-
-            }
-            
         }
-    
-    // _.each(lns, function(ob1) {log(ob1);});
     }
 }
 
@@ -2446,7 +2412,7 @@ function handle_table(args, msg) {
             _type: "handout",
         })[0];
         scdata.get("notes", function(scda) {
-            //log(scda); //do something with the character bio here.
+
             var tt1 = scda.substring(22,scda.indexOf('</td></tr></tbody></table>'));
             var tt2 = tt1.split('</td></tr><tr><td>');
             var tt3 =[];
@@ -2471,11 +2437,8 @@ function handle_table(args, msg) {
             }
         }
         var description = tt3[i1][i2].split(';');
-        //var out = tt3[1][i2] + ' : ' + tt3[i1][i2]  + '<br> Row Roll: ' + r1.toString() + '<br> Column Roll: ' + r2.toString();
         var out = '&{template:default} {{name=' + args[1] + '}} {{Rolls=' +  r1.toString() + ' ' + r2.toString() + '}} {{' + tt3[1][i2] + '= ' + description[0] + '}}';
         sendChat(msg.who, out);
-        //charName = msg.content.substr((args[1].length+22));
-        //log(charName);
         if (args[4] && description[1]) {
             log(args[4]);
             for (var i=1; i<description.length; i++) {
@@ -2505,7 +2468,6 @@ function handle_table(args, msg) {
                         out = out + ' ' + commandLine[j];
                     }
                     
-                    //log(out);
                     sendChat(args[1], out);
                 }
             }
