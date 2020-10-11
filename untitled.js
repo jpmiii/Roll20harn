@@ -81,7 +81,7 @@ const sendGMPing = (left, top, pageid, playerid=null, moveAll=false) => {
 
 
 
-function attack(msg) {
+function handle_attack(args, msg) {
 
 
 	atk = msg.content.split(" ");
@@ -360,7 +360,7 @@ function missileAttack(dist, app, appstr, atkmov, charid) {
 	return { missi, app, appstr };
 }
 
-function defend(msg) {
+function handle_defend(args, msg) {
 
 	var def = msg.content.split(" ");
 	var atk = state.MainGameNS.attacker.content.split(" ");
@@ -849,7 +849,7 @@ function rollshock(charid, token, unipenalty) {
 
 }
 
-function rollatts(char) {
+function handle_rollatts(args, char) {
 
 	var rolls = [ "STR", "STA", "DEX", "AGL", "INT", "AUR", "WIL", "EYE",
 			"HRG", "SML", "VOI", "CML", "FRAME" ]
@@ -912,300 +912,320 @@ function gethitloc(roll, aim) {
 }
 
 
-
-
-
 on("chat:message", function(msg) {
-    
-
  if(msg.type == "api") {
-	 if (trace) {log("chat:message("+msg.playerid +":"+msg.content+")");}
-		if(msg.content.indexOf("!calcsb") !== -1) {
-		    //log(msg.content);
-			args = msg.content.split(" ")
-			var char = getObj("character", args[1]);
-			if (char) {
-				calcSB(char,msg);
-			}
-
-		} //state.MainGameNS["defcheat"]
-		if(msg.content.indexOf("!skilllist") !== -1) {
-		    //log(msg.content);
-			args = msg.content.split(" ")
-			var char = getObj("character", args[1]);
-			if (char) {
-				var out = "";
-				var sl=skillList(char);
-
-				for (i=0;i<sl.length;i++) {
-					out += "|" +sl[i];
-				}
-
-				//log(out+"\n\n");
-				out = out.replace(/,/g,"&#44;")
-				out = "?{Skills" + out + "}";
-				var mac = findObjs({
-					type: 'macro',
-					playerid:  msg.playerid,
-					name: 'SkillList'
-				})[0]
-				if (mac) {
-					mac.set('action',out);
-				} else {
-					createObj('macro', {
-						name: 'SkillList',
-						action: out,
-						playerid: msg.playerid
-					});
-				}
-			}
-
+	if (trace) {log("chat:message("+msg.playerid +":"+msg.content+")");}
+	var args = msg.content.split(" ");
+	var command = dispatch_table[args[0]];
+	if (command != null) {
+		try {
+			command(args, msg)
+		} catch (err) {
+			log(err.stack);
+			sendChat("API Error", err.message);
 		}
-		if(msg.content.indexOf("!cheat") !== -1) {
-		    if (playerIsGM(msg.playerid)) {
-		        state.MainGameNS["cheat"] = parseInt(msg.content.slice(6));
-		        log("cheat: " + msg.content.slice(6));
-		    }
-		}
-		if(msg.content.indexOf("!mapsend") !== -1) {
-		    args = msg.content.substr(9).split(",")
-		    var player = findObjs({
-        		type: 'player',
-        		_displayname: args[0]
-        	})[0]
-
-        	var page = findObjs({
-        		type: 'page',
-        		
-        		name: args[1]
-        	})[0]
-
-        	var playerspecificpages =  new Object();
-        	var pl =  new Object();
-        	if (Campaign().get("playerspecificpages")) {
-        	    playerspecificpages = Campaign().get("playerspecificpages");
-        	    Campaign().set("playerspecificpages", false);
-        	}
-
-        	pl[player.id] =  page.id;
-        	playerspecificpages = Object.assign(playerspecificpages,pl);
-        	log(playerspecificpages);
-        	Campaign().set("playerspecificpages", playerspecificpages);
-
-		}
-		if(msg.content.indexOf("!itemlist") !== -1) {
-			initializeTables(msg.playerid);
-		}
-		if(msg.content.indexOf("!occupation") !== -1) {
-
-			args = msg.content.split(" ")
-			var char = getObj("character", args[1]);
-			if (char) {
-			    log(msg.content.slice(33));
-			    var occ = myGet('OCCUPATION', char.id,"Farmer")
-			    if (occ in occupational_skills) {
-			        _.each(occupational_skills[occ], function(skl) {
-			            sk = skl.split("/");
-			            skn = findSkill(char,sk[0]).slice(0,-4);
-			            log(skn);
-			            mySet(skn+"ML",char.id,sk[1]);
-			            
-			        });
-			    }
-			}
-
-			
-		}
-		if(msg.content.indexOf("!table") == 0) {
-		    process_table(msg);
-		}
-		if(msg.content.indexOf("!rollatts") !== -1) {
-			rollatts(msg);   
-		}
-		if(msg.content.indexOf("!newturn") !== -1) {
-			addturns(msg);   
-		}
-		if(msg.content.indexOf("!tokendis") !== -1) {
-		    args = msg.content.split(" ")
-			dis = tokendistance(getObj("graphic", args[1]),getObj("graphic", args[2]));
-			sendChat("Token Distance", dis[0] + " "+dis[1]+"<br/>")
-		}
-		if(msg.content.indexOf("!sheetattack ") !== -1) {
-
-			args = msg.content.split(" ")
-
-			if(args.length>4) {
-				attack(msg);
-			}
-
-		}
-		if(msg.content.indexOf("!attack ") !== -1) {
-
-
-				attack(msg);
-
-
-		}
-		if(msg.content.indexOf("!defend ") !== -1) {
-
-				defend(msg);
-
-		}
-		if(msg.content.indexOf("!invin") !== -1) {
-
-			args = msg.content.split(" ")
-
-			if(args.length>1) {
-				//log(args[1]);
-				invin(args[1]);
-			}
-			else if (msg.selected) {
-				var g = getObj(msg.selected[0]['_type'],msg.selected[0]['_id']);
-
-				if (g.get("represents")) {
-					invin(g.get("represents"));
-				}
-
-			} else {
-				log("Please select character");
-			}
-		}
-		if(msg.content.indexOf("!move") !== -1) {
-    		if (msg.selected) {
-    		    var g = getObj(msg.selected[0]['_type'],msg.selected[0]['_id']);
-    		    //log(tokemove(g))
-			} else {
-				log("Please select token");
-			}
-		}
-		if(msg.content.indexOf("!xin") !== -1) {
-
-			args = msg.content.split(" ")
-
-			if(args.length>1) {
-				log(args[1]);
-				xin(args[1]);
-			}
-			else if (msg.selected) {
-				var g = getObj(msg.selected[0]['_type'],msg.selected[0]['_id']);
-
-				if (g.get("represents")) {
-					xin(g.get("represents"));
-				}
-
-			} else {
-				log("Please select character");
-			}
-		}
-		if(msg.content.indexOf("!ca") == 0) {
-			args =msg.content.split(" ")
-
-			if(args.length>1) {
-				calcArmor(args[1]);
-			}
-			else if (msg.selected) {
-				var g = getObj(msg.selected[0]['_type'],msg.selected[0]['_id']);
-
-				if (g.get("represents")) {
-					calcArmor(g.get("represents"));
-				}
-
-			} else {
-				log("Please select character");
-			}
-
-		}
-
-		if(msg.content.indexOf("!addItem ") !== -1) {
-			args =msg.content.split(" ")
-
-			if(args.length>2) {
-				log(msg.content.slice(30))
-
-				addItem(args[1], msg.content.slice(30));
-				
-				
-			} else {
-				log("Please select character");
-			}
-		}
-
-		if(msg.content.indexOf("!clearmove ") !== -1) {
-			args =msg.content.split(" ")
-
-			if(args.length==2) {
-			    var obj = getObj("graphic", args[1]);
-				obj.set('lastmove',obj.get('left')+','+obj.get('top'));
-			} else {
-				log("Please select character");
-			}
-		}
-		if(msg.content.indexOf("!tokemove ") !== -1) {
-			args =msg.content.split(" ")
-
-			if(args.length==2) {
-			    var obj = getObj("graphic", args[1]);
-				sendChat(msg.who, "Move = " + tokemove(obj));
-			} else {
-				log("Please select character");
-			}
-		}
-		if(msg.content.indexOf("!out") !== -1) {
-			var g = getObj(msg.selected[0]['_type'],msg.selected[0]['_id']);
-			out(g.get("represents"));   
-		}
-		if(msg.content.indexOf("!attack_melee_table") !== -1) {
-			var args = msg.content.split(" ");
-			sendChat(msg.who, "Melee Attack Result<br/>" + attack_melee[args[1]][args[2]][args[3]]+"<br/>")
-		}
-		if(msg.content.indexOf("!loc") !== -1) {
-			var args = msg.content.split(" ");
-			gethitloc(args[1],args[2],args[3]);   
-		}
-		if(msg.content.indexOf("!time") !== -1) {
-			// var args = msg.content.split(" ");
-			log(getHarnTimeStr(state.MainGameNS.GameTime));   
-			sendChat("Timekeeper", getHarnTimeStr(state.MainGameNS.GameTime));
-		}
-		if(msg.content.indexOf("!settime") !== -1) {
-		    log(msg.content)
-			setHarnTime(msg.content);
-			log(getHarnTimeStr(state.MainGameNS.GameTime));
-		}
-		if(msg.content.indexOf("!addtime") !== -1) {
-
-			state.MainGameNS.GameTime += parseInt(msg.content.split(" ")[1]);
-			sendChat("Timekeeper", getHarnTimeStr(state.MainGameNS.GameTime));
-			//log(getHarnTimeStr(state.MainGameNS.GameTime));
-		}
-        
-		if(msg.content.indexOf("!rand") == 0) {
-		    if (!msg.selected) {return;}
-		    //log(msg.selected);
-
-			var objid = msg.selected[randomInteger(msg.selected.length)-1];
-			//log(objid['_id']);
-			var obj = getObj("graphic",objid['_id'])
-			sendPing(obj.get('left'), obj.get('top'), obj.get('pageid'), "", true);
-			sendChat("Random Character", obj.get('name'));
-        }
-		if(msg.content.indexOf("!gmrand") == 0) {
-		    if (!msg.selected) {return;}
-		    //log(msg.selected);
-
-			var objid = msg.selected[randomInteger(msg.selected.length)-1];
-			//log(objid['_id']);
-			var obj = getObj("graphic",objid['_id'])
-			sendGMPing(obj.get('left'), obj.get('top'), obj.get('pageid'), "", true);
-			sendChat("Random Character", "/w gm " +  obj.get('name'));
-        }
-        
+	} else {
+		sendChat("API Error", "Unknown command " + arg[0])
+	}
  }
-
 });
 
+/**
+ * Update the skill bonues of the active sheet.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_calcsb(args, msg) {
+	if (trace) {log("handle_calcsb("+msg.content+")")}
+	var char = getObj("character", args[1]);
+	if (char) {
+		calcSB(char, msg);
+	}
+}
 
+/**
+ * Build a skill list table - probable candicate for initializing on startup.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_skilllist(args, msg) {
+	if (trace) {log("handle_skilllist("+msg.content+")")}
+	var char = getObj("character", args[1]);
+	if (char) {
+		var out = "";
+		var sl = skillList(char);
 
+		for (i = 0; i < sl.length; i++) {
+			out += "|" + sl[i];
+		}
+
+		//log(out+"\n\n");
+		out = out.replace(/,/g, "&#44;");
+		out = "?{Skills" + out + "}";
+		var mac = findObjs({
+			type: 'macro',
+			playerid: msg.playerid,
+			name: 'SkillList'
+		})[0];
+		if (mac) {
+			mac.set('action', out);
+		} else {
+			createObj('macro', {
+				name: 'SkillList',
+				action: out,
+				playerid: msg.playerid
+			});
+		}
+	}
+	return { char, out, args };
+}
+
+/**
+ * Allow the hand of god to tip the scales. 
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_cheat(args, msg) {
+	if (playerIsGM(msg.playerid)) {
+		state.MainGameNS["cheat"] = parseInt(msg.content.slice(6));
+		log("cheat: " + msg.content.slice(6));
+	}
+}
+
+/**
+ * I do not know
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_mapsend(args, msg) {
+	args = msg.content.substr(9).split(",");
+	var player = findObjs({
+		type: 'player',
+		_displayname: args[0]
+	})[0];
+
+	var page = findObjs({
+		type: 'page',
+
+		name: args[1]
+	})[0];
+
+	var playerspecificpages = new Object();
+	var pl = new Object();
+	if (Campaign().get("playerspecificpages")) {
+		playerspecificpages = Campaign().get("playerspecificpages");
+		Campaign().set("playerspecificpages", false);
+	}
+
+	pl[player.id] = page.id;
+	playerspecificpages = Object.assign(playerspecificpages, pl);
+	log(playerspecificpages);
+	Campaign().set("playerspecificpages", playerspecificpages);
+	return args;
+}
+
+/**
+ * This command is obsolete now that we initialize item lists on startup.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_itemlist(args, msg) {
+	initializeTables(msg.playerid);
+}
+
+/**
+ * Populates the character skills with occupation appropriate skills (and starting ML?)
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_occupation(args, msg) {
+	var char = getObj("character", args[1]);
+	if (char) {
+		log(msg.content.slice(33));
+		var occ = myGet('OCCUPATION', char.id, "Farmer");
+		if (occ in occupational_skills) {
+			_.each(occupational_skills[occ], function (skl) {
+				sk = skl.split("/");
+				skn = findSkill(char, sk[0]).slice(0, -4);
+				log(skn);
+				mySet(skn + "ML", char.id, sk[1]);
+
+			});
+		}
+	}
+}
+function handle_gmrand(args, msg) {
+	if (!msg.selected) {return;}
+	//log(msg.selected);
+	var objid = msg.selected[randomInteger(msg.selected.length) - 1];
+	//log(objid['_id']);
+	var obj = getObj("graphic", objid['_id']);
+	sendGMPing(obj.get('left'), obj.get('top'), obj.get('pageid'), "", true);
+	sendChat("Random Character", "/w gm " + obj.get('name'));
+}
+
+function handle_rand(args, msg) {
+	if (!msg.selected) {return;}
+	//log(msg.selected);
+	var objid = msg.selected[randomInteger(msg.selected.length) - 1];
+	//log(objid['_id']);
+	var obj = getObj("graphic", objid['_id']);
+	sendPing(obj.get('left'), obj.get('top'), obj.get('pageid'), "", true);
+	sendChat("Random Character", obj.get('name'));
+	return { objid, obj };
+}
+
+function handle_addtime(args, msg) {
+	state.MainGameNS.GameTime += parseInt(args[1]);
+	sendChat("Timekeeper", getHarnTimeStr(state.MainGameNS.GameTime));
+	//log(getHarnTimeStr(state.MainGameNS.GameTime));
+}
+
+function handle_settime(args, msg) {
+	log(msg.content);
+	setHarnTime(args);
+	log(getHarnTimeStr(state.MainGameNS.GameTime));
+}
+
+function handle_time(args, msg) {
+	log(getHarnTimeStr(state.MainGameNS.GameTime));
+	sendChat("Timekeeper", getHarnTimeStr(state.MainGameNS.GameTime));
+}
+
+function handle_loc(msg, args) {
+	gethitloc(args[1], args[2], args[3]);
+}
+
+function handle_attack_melee_table(args, msg) {
+	sendChat(msg.who, "Melee Attack Result<br/>" + attack_melee[args[1]][args[2]][args[3]] + "<br/>");
+}
+
+function handle_out(args, msg) {
+	var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
+	out(g.get("represents"));
+}
+
+/**
+ * handle the tokemove command (no clue)
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_tokemove(args, msg) {
+	if (args.length == 2) {
+		var obj = getObj("graphic", args[1]);
+		sendChat(msg.who, "Move = " + tokemove(obj));
+	} else {
+		log("Please select character");
+	}
+}
+
+/**
+ * handle the clearmove command (no clue)
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_clearmove(args, msg) {
+	if (args.length == 2) {
+		var obj = getObj("graphic", args[1]);
+		obj.set('lastmove', obj.get('left') + ',' + obj.get('top'));
+	} else {
+		log("Please select character");
+	}
+}
+
+/**
+ * Adds item to inventory.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_addItem(args, msg) {
+	if (args.length > 2) {
+		log(msg.content.slice(30));
+		addItem(args[1], msg.content.slice(30));
+	} else {
+		log("Please select character");
+	}
+}
+
+/**
+ * Calculate armor values (protection at locations).
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_ca(args, msg) {
+	if (args.length > 1) {
+		calcArmor(args[1]);
+	}
+	else if (msg.selected) {
+		var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
+
+		if (g.get("represents")) {
+			calcArmor(g.get("represents"));
+		}
+	} else {
+		log("Please select character");
+	}
+}
+
+/**
+ * Import a character generated with HârnMaster Character Utility from https://www.lythia.com/game_aides/harnchar/
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_xin(args, msg) {
+	if (args.length > 1) {
+		log(args[1]);
+		xin(args[1]);
+	} else if (msg.selected) {
+		var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
+
+		if (g.get("represents")) {
+			xin(g.get("represents"));
+		}
+
+	} else {
+		log("Please select character");
+	}
+}
+
+/**
+ * This command appears obsolete.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_move(args, msg) {
+	if (msg.selected) {
+		var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
+		//log(tokemove(g))
+	} else {
+		log("Please select token");
+	}
+}
+
+/**
+ * ?
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_invin(args, msg) {
+	if (args.length > 1) {
+		//log(args[1]);
+		invin(args[1]);
+	} else if (msg.selected) {
+		var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
+		if (g.get("represents")) {
+			invin(g.get("represents"));
+		}
+	} else {
+		log("Please select character");
+	}
+}
+
+/**
+ * The main command used for attacking
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_sheetattack(args, msg) {
+	if (args.length > 4) {
+		handle_attack(args, msg);
+	}
+}
+
+/**
+ * Calculate distance between two tokens?.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_tokendis(args, msg) {
+	dis = tokendistance(getObj("graphic", args[1]), getObj("graphic", args[2]));
+	sendChat("Token Distance", dis[0] + " " + dis[1] + "<br/>");
+}
 
 function initializeTables(playerid) {
 	if (trace) {log(">initializeTables("+playerid+")")}
@@ -1331,7 +1351,7 @@ function getrange(weapname, dist){
 
 
 
-function addturns(msg) {
+function handle_newturn(args, msg) {
 	turnorder = [];
 
 	var currentPageGraphics = findObjs({                              
@@ -1393,7 +1413,7 @@ function turnPush(obj) {
 }
 
 function addWeapon(charid,weapon_name) {
-	if (trace) {log("addWeapon("+charid+", "+item+")")}
+	if (trace) {log("addWeapon("+charid+", "+weapon_name+")")}
 	if (weapon_name in weapons_table) {
 
 		var mid = makeid();
@@ -1579,10 +1599,7 @@ function getHarnTimeStr(timef) {
 	return (year+720).toString() + '-' + month.toString() + '('+ months[(month-1)] +')-' + mday.toString() +' ' + opad(hour.toString()) + ':' + opad(minute.toString()) +':' + opad(sec.toString() ) ;
 
 }
-function setHarnTime(timestr) {
-
-
-	args =timestr.split(' ');
+function setHarnTime(args) {
 	var seconds = (parseFloat(args[1]) -720) * 31104000;
 	if (args[2]) {
 		seconds = seconds + (parseFloat(args[2])-1) * 2592000;
@@ -1605,9 +1622,6 @@ function setHarnTime(timestr) {
 	}
 	state.MainGameNS.GameTime = seconds;
 	log(seconds);
-
-
-
 }
 
 function makeid() {
@@ -2414,15 +2428,10 @@ function replaceArg(acom, msg) {
 }
 
 
-function process_table(msg) {
-    
-        var args = msg.content.split(" ");
-
-        
-        
-        var scdata = findObjs({                              
-            name: args[1],                              
-            _type: "handout",                          
+function handle_table(args, msg) {
+        var scdata = findObjs({
+            name: args[1],
+            _type: "handout",
         })[0];
         scdata.get("notes", function(scda) {
             //log(scda); //do something with the character bio here.
