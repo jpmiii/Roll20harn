@@ -1326,6 +1326,73 @@ function initializeTables(playerid) {
 			playerid: gmId
 		});
 	}
+
+	var chars = findObjs({ _type: "character",});
+	
+	chars.forEach( function(c) {
+
+		var out = "";
+		var sl = skillList(c);
+
+		for (i = 0; i < sl.length; i++) {
+			out += "|" + sl[i];
+		}
+
+		//log(out+"\n\n");
+		out = out.replace(/,/g, "&#44;");
+		out = "?{Skills" + out + "}";
+		var mac = findObjs({
+			type: 'ability',
+			_characterid: c.id,
+			name: 'SkillList'
+		})[0];
+		if (mac) {
+			mac.set('action', out);
+		} else {
+			createObj('ability', {
+				name: 'SkillList',
+				action: out,
+				_characterid: c.id
+			});
+		}
+		
+		
+    	var wep = filterObjs(function(obj) {
+    		obn = obj.get('name');
+    		if (obn) {
+    			if ((obn.indexOf("WEAPON_NAME")) !== -1
+    					&& (obj.get("_characterid") == c.id)) {
+    				return true;
+    			} else {
+    				return false;
+    			}
+    		} else {
+    			return false;
+    		}
+    	});
+    	var out2 = "";
+		wep.forEach( function(w) {
+		    out2 += "|" + myGet(w.get('name'),c.id,"");
+		})
+		out2 = out2.replace(/,/g, "&#44;");
+		out2 = "?{Weapon" + out2 + "}";
+		var mac = findObjs({
+			type: 'ability',
+			_characterid: c.id,
+			name: 'Weapons'
+		})[0];
+		if (mac) {
+			mac.set('action', out2);
+		} else {
+			createObj('ability', {
+				name: 'Weapons',
+				action: out2,
+				_characterid: c.id
+			});
+		}
+		
+		
+	});
 	if (trace) {log("<initializeTables()")}
 	return;
 }
