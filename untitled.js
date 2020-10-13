@@ -135,7 +135,7 @@ const sendGMPing = (left, top, pageid, playerid=null, moveAll=false) => {
 
 function initRoll() {
 	if (randomize_init_roll) {
-		randomInteger(6) + randomInteger(6) + randomInteger(6);
+		return randomInteger(6) + randomInteger(6) + randomInteger(6);
 	} else {
 		return 0; // canon
 	}
@@ -1956,7 +1956,7 @@ function findSkill(char,skillname) {
                     mySet("repeating_physicalskill_"+ mid +"_PHYSICALSKILL_NAME",char.id,obj);
                     mySet("repeating_physicalskill_"+ mid +"_PHYSICALSKILL_SB",char.id,0);
                     mySet("repeating_physicalskill_"+ mid +"_PHYSICALSKILL_ML",char.id,0);
-                    nameout = "repeating_physicalskill_"+ mid +"_PHYSICALSKILL_ML";
+                    nameout = "repeating_physicalskill_"+ mid +"_PHYSICALSKILL_NAME";
                 } else if (skilllist[obj]["type"] == "LORE") {
                     mySet("repeating_loreskill_"+ mid +"_LORESKILL_NAME",char.id,obj);
                     mySet("repeating_loreskill_"+ mid +"_LORESKILL_SB",char.id,0);
