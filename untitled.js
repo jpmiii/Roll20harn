@@ -52,7 +52,6 @@ on("change:attribute:current", function(obj, prev) {
 
 /*
 
-
 // THIS STUFF WON'T WORK
 
 on("add:attribute", function(obj) {
@@ -1005,9 +1004,68 @@ on("chat:message", function(msg) {
 	} else {
 		sendChat("API Error", "Unknown command " + arg[0])
 	}
+ } else {
+
+	// check for and log crits
+	if (msg.content.startsWith(" {{character_name=")) {
+		var d = new Date();
+		var n = d.toLocaleString();
+		if (msg.content.includes("rolldesc=rolls ")) {
+			if (msg.inlinerolls[3].results.total % 5 == 0) {
+				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name")+15),msg.content.indexOf("}} ")));
+				var logout = myGet("TEXTAREA_LOG",char.id,"");
+				if (msg.inlinerolls[1].results.total >= msg.inlinerolls[3].results.total) {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CS " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))) + "\n")
+				} else {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CF " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))) + "\n")
+				}
+			}
+		} else 	if (msg.content.includes("rolldesc=performs ")) {
+			if (msg.inlinerolls[7].results.total % 5 == 0) {
+				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name")+15),msg.content.indexOf("}} ")));
+				var logout = myGet("TEXTAREA_LOG",char.id,"");
+				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CS " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ")+18,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))) + "\n")
+				} else {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CF " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ")+18,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))) + "\n")
+				}
+			}
+		} else 	if (msg.content.includes("rolldesc=casts ")) {
+			log(msg.inlinerolls[4].results.total);
+			log(msg.inlinerolls[7].results.total);
+			if (msg.inlinerolls[7].results.total % 5 == 0) {
+				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name")+15),msg.content.indexOf("}} ")));
+				var logout = myGet("TEXTAREA_LOG",char.id,"");
+				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CS " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))) + "\n")
+				} else {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CF " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))) + "\n")
+				}
+			}
+		}
+	}
  }
 });
-
+function getCharByNameAtt(charname) {
+	var attr = findObjs({
+        		current: charname,
+				name: "NAME",
+        		_type: "attribute",
+        	})[0];
+	return getObj("character",attr.get('_characterid'));
+}
 /**
  * Update the skill bonues of the active sheet.
  * @param {Message} msg the message representing the command, with arguments separated by spaces
