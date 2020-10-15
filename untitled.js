@@ -272,7 +272,7 @@ function handle_attack(args, msg) {
 
 
 	var ampnum = "&#";
-	var wep = getWep(defcharid);
+	var wep = getWep(defchar);
 	if (app<0) {
 	    var appsign = " + [[" + parseInt(app)*-1
 	} else {
@@ -283,7 +283,7 @@ function handle_attack(args, msg) {
 			+ wepname 
 			+ "}} {{info="
 			+ res
-			+ "}} {{def=[Dodge](!defend dodge ?{Mod|0} WeaponName:Dagger)[Ignore](!defend ignore ?{Mod|0} WeaponName:)";
+			+ "}} {{def=[Dodge](!defend dodge ?{Mod|0} WeaponName:Dodge)[Ignore](!defend ignore ?{Mod|0} WeaponName:)";
 	if (wep.length >0) {
 	    atkstr = atkstr + "["
 			+ myGet(wep[0].get('name'),defcharid,"")
@@ -515,11 +515,12 @@ function handle_defend(args, msg) {
 	    };
 
 		var defstr = "";// "+" +  parseInt(myGet("DODGE_ML", defcharid, 0)) + "+" + parseInt(def[2])+ "-" + (pp);
+		var defwepname = "Dodge";
 
 	}
 
 	if ((def[1] == "block") || (def[1] == "counterstrike")) {
-		defwepname = msg.content.slice((msg.content.indexOf("WeaponName:") + 11));
+		var defwepname = msg.content.slice((msg.content.indexOf("WeaponName:") + 11));
 
 		if (defwepname.length > 3) {
 
@@ -607,7 +608,7 @@ function handle_defend(args, msg) {
 	}
 
 	if (def[1] == "ignore") {
-		dis = 0;
+		dis = -1;
 	}
 
 	if (atk[4] == "missile") {
@@ -863,9 +864,23 @@ function handle_defend(args, msg) {
 
 		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} {{rollresult=[[" 
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{drollresult=[[" +  droll + "]]}} {{drolltarget=[["
-		        + drolltarg+ "]]}}{{drollsuccess=[["	+ dis + "]]}} {{result=" + res + "}}";
+		        + drolltarg+ "]]}}{{drollsuccess=[["+ dis + "]]}} {{result=" + res + "}}";
 
 	}
+	//log crits
+	if (state.MainGameNS.ais == 3) {
+		logout = myGet("TEXTAREA_LOG",charid,"");
+		mySet("TEXTAREA_LOG",charid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Attack CS " + wepname + "\n")
+	} else if (state.MainGameNS.ais == 0) {
+		logout = myGet("TEXTAREA_LOG",charid,"");
+		mySet("TEXTAREA_LOG",charid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Attack CF " + wepname + "\n")
+	} else if (dis == 3) {
+		logout = myGet("TEXTAREA_LOG",defcharid,"");
+		mySet("TEXTAREA_LOG",defcharid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Defend CS " + defwepname + "\n")
+	} else if (dis == 0) {
+		logout = myGet("TEXTAREA_LOG",defcharid,"");
+		mySet("TEXTAREA_LOG",defcharid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Defend CF " + defwepname + "\n")
+	} 
 
 	sendChat(msg.who, defstr);
 
@@ -990,8 +1005,6 @@ on("chat:message", function(msg) {
 	} else {
 		sendChat("API Error", "Unknown command " + arg[0])
 	}
- } else {
-     log(msg.content);
  }
 });
 
