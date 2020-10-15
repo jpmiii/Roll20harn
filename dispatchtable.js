@@ -82,5 +82,8 @@ var dispatch_table = {
     },
     "!gmrand": (args, msg) => {
         handle_gmrand(args, msg);
+    },
+    "!improveskill": (args, msg) => {
+        handle_improveskill(args, msg);
     }
 }

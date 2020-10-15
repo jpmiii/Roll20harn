@@ -872,6 +872,22 @@ function handle_defend(args, msg) {
 }
 
 
+function handle_improveskill(args, msg) {
+	char = getObj("character", args[1]);
+	skill_att_name = findSkill(char, args[2]);
+	var ml = parseInt(myGet(skill_att_name.slice(0,-4)+"ML",char.id,0));
+	roll = randomInteger(100) + parseInt(myGet(skill_att_name.slice(0,-4)+"SB",char.id,0));
+	if (roll >= ml) {
+		mySet(skill_att_name.slice(0,-4)+"ML",char.id,(ml+1));
+		sendChat("Skill Improvement Roll", myGet("NAME",char.id,"") + "<br>" + myGet(skill_att_name,char.id,"") 
+			+ "<br>" + " rolled " +roll +": SUCCESS<br>ML = " + (ml+1));
+	} else {
+		sendChat("Skill Improvement Roll", myGet("NAME",char.id,"") + "<br>" + myGet(skill_att_name,char.id,"") 
+			+ "<br>" + " rolled " +roll +": FAIL<br>ML = " + ml);
+	}
+}
+
+
 function rollshock(charid, token, unipenalty) {
 	var shockstr = "";
 	var shockroll = 0;
