@@ -831,18 +831,22 @@ function handle_defend(args, msg) {
 
 	}
 	//log crits
+	
+	var d = new Date();
+	var n = d.toLocaleString();
 	if (state.MainGameNS.asuc == "CS") {
 		logout = myGet("TEXTAREA_LOG",charid,"");
-		mySet("TEXTAREA_LOG",charid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Attack CS " + wepname + "\n")
+		mySet("TEXTAREA_LOG",charid, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": Attack CS " + wepname + "\n")
 	} else if (state.MainGameNS.asuc == "CF") {
 		logout = myGet("TEXTAREA_LOG",charid,"");
-		mySet("TEXTAREA_LOG",charid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Attack CF " + wepname + "\n")
-	} else if (dsuc == "CS") {
+		mySet("TEXTAREA_LOG",charid, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": Attack CF " + wepname + "\n")
+	} 
+	if (dsuc == "CS") {
 		logout = myGet("TEXTAREA_LOG",defcharid,"");
-		mySet("TEXTAREA_LOG",defcharid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Defend CS " + defwepname + "\n")
+		mySet("TEXTAREA_LOG",defcharid, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": Defend CS " + defwepname + "\n")
 	} else if (dsuc == "CF") {
 		logout = myGet("TEXTAREA_LOG",defcharid,"");
-		mySet("TEXTAREA_LOG",defcharid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Defend CF " + defwepname + "\n")
+		mySet("TEXTAREA_LOG",defcharid, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": Defend CF " + defwepname + "\n")
 	} 
 
 	sendChat(msg.who, defstr);
