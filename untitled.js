@@ -140,17 +140,17 @@ function initRoll() {
 	}
 
 }
-
-
-
-
-function handle_attack(args, msg) {
-
-
-	atk = msg.content.split(" ");
-	if (atk.length < 8) { 
-	    sendChat(msg.who, "Not enough arguments.");
-	    return;}
+/**
+ * Process an attack message
+ */
+function handle_attack(atk, msg) {
+	if (trace) {log(`handle_attack(${atk},${msg.content})`)}
+	var re_syntax = /^(!sheetattack|!attack) [-a-zA-Z0-9]+ (mid|low|high) (H|B|E|P|F) (melee|missile) [-a-zA-Z0-9]+ .+$/
+	var hr_syntax="!sheetattack attacker_id (high|low|mid) (H|B|E|P) (missile|melee) modifier defender_id weapon"
+	if (!re_syntax.test(msg.content)) {
+	    sendChat(msg.who, "Invalid syntax<br/>"+hr_syntax);
+		return;
+	}
 
     if(atk[0] == "!sheetattack")  {
         var tokelist = findObjs({                              
@@ -182,8 +182,12 @@ function handle_attack(args, msg) {
 		dist = tokendistance(atoke, toke);
 		res = res + "Distance: " + dist[0] + "<br/>Attacker Move: " + atkmov + "<br/>Defender Move: " + defmov + "<br/>";
 	}
-	wepname = msg.content
-			.slice((msg.content.indexOf(atk[6]) + atk[6].length + 1))
+	// Use regular expression to get the string which starts after the 7th space delimited word
+	weapNameArray = msg.content.match(/^([^ ]+ ){7}(.*)$/);
+	wepname=weapNameArray[weapNameArray.length-1];
+	log(`selected weapon: ${wepname}`);
+	// wepname = msg.content
+	// 		.slice((msg.content.indexOf(atk[6]) + atk[6].length + 1))
 
 	if (wepname == "") {
 		log(msg.content);
@@ -224,7 +228,7 @@ function handle_attack(args, msg) {
 
 	var ojn = wep[0].get('name');
 
-	var atkml = computeAttackML(ojn, charid, app);
+	var atkml = computeAttackML(ojn, charid, app, atk);
 
     if (atkml >97) {atkml=97;}
 	aroll = randomInteger(100);
@@ -322,7 +326,7 @@ function determineSuccess(atkml) {
 	}
 }
 
-function computeAttackML(ojn, charid, app) {
+function computeAttackML(ojn, charid, app, atk) {
 	return parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0))
 		+ parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0))
 		+ parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0))
@@ -962,19 +966,39 @@ function gethitloc(roll, aim) {
 
 on("chat:message", function(msg) {
  if(msg.type == "api") {
-	if (trace) {log("chat:message("+msg.playerid +":"+msg.content+")");}
+	if (trace) {log(`>chat:message(${msg.content})`);}
 	var args = msg.content.split(" ");
-	var command = dispatch_table[args[0]];
-	if (command != null) {
+	if (dispatch_table.hasOwnProperty(args[0])) {
+		var commandMap = dispatch_table[args[0]];
 		try {
-			command(args, msg)
+			// First, test the syntax regular expression if it has one
+			if (commandMap.hasOwnProperty("re_syntax")) {
+				log(`comparing syntax to ${commandMap.re_syntax}`)
+				if (!commandMap.re_syntax.test(msg.content)) {
+					var errorMessage = `&{template:default} {{name=Syntax error}} {{Received=${msg.content}}}`;
+					if (commandMap.hasOwnProperty("hr_syntax")) {
+						errorMessage += `{{Expected=${commandMap.hr_syntax}}}`;
+					}
+					sendChat("API", errorMessage);
+					return;
+				}
+			}
+			// syntax check passed or doesn't exist. Execute the action if it exists.
+			if (commandMap.hasOwnProperty("action")) {
+				commandMap.action(args, msg)
+			} else {
+				sendChat("API Error", `No action defined for ${args[0]}`)
+			}
 		} catch (err) {
+			// Something went wrong. Log it, alert in chat and prevent the sandbox from bailing.
 			log(err.stack);
 			sendChat("API Error", err.message);
 		}
 	} else {
-		sendChat("API Error", "Unknown command " + arg[0])
+		log(`No such command ${msg.content}`);
+		sendChat("API Error", `&{template:default} {{name=Unknown command}} {{Received=${msg.content}}}`)
 	}
+//<<<<<<< HEAD
  } else {
 
 	// check for and log crits
@@ -1027,6 +1051,9 @@ on("chat:message", function(msg) {
 			}
 		}
 	}
+//=======
+	if (trace) {log("<chat:message")}
+//>>>>>>> branch 'issue_12' of https://github.com/jpmiii/Roll20harn.git
  }
 });
 function getCharByNameAtt(charname) {
@@ -1338,6 +1365,8 @@ function handle_invin(args, msg) {
  * @param {Message} msg the message representing the command, with arguments separated by spaces
  */
 function handle_sheetattack(args, msg) {
+	if (trace) {log(`handle_sheetattack(${args},${msg.content})`)}
+	if (!/[^ ]{4+}/.test(msg.content)) {sendChat("API","Syntax error")}
 	if (args.length > 4) {
 		handle_attack(args, msg);
 	}
