@@ -19,16 +19,16 @@ on("change:attribute:current", function(obj, prev) {
 
         charid = obj.get("_characterid");
 
-    	var rideratt = findObjs({                              
-    		name: 'RIDER',                              
+    	var rideratt = findObjs({
+    		name: 'RIDER',
     		_type: "attribute",
     		_characterid: charid,
     	})[0];
         if (rideratt) {
     
-        	var rider = findObjs({                              
-        		name: rideratt.get('current'),                              
-        		_type: "character",                          
+        	var rider = findObjs({
+        		name: rideratt.get('current'),
+        		_type: "character",
         	})[0];
         	if (rider) {
             	mySet('STEED_INIT',rider.id,(parseInt(myGet('INITIATIVE_ML', charid, 0)) - (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0)) * 5)- (parseInt(myGet('ENCUMBRANCE', charid, 0)) * 5)));
@@ -270,60 +270,20 @@ function handle_attack(args, msg) {
 	state.MainGameNS["missi"] = missi
 
 
-	var ampnum = "&#";
+
 	var wep = getWep(defchar);
-	if (app<0) {
-	    var appsign = " + [[" + parseInt(app)*-1
-	} else {
-	    var appsign = " - [[" + parseInt(app)
-	}
+
 	atkstr = "&{template:harnroll} {{rolldesc=" + atoke.get('name')+" "+atk[4]+" attacks "+ toke.get('name')
 			+ " with a "
 			+ wepname 
 			+ "}} {{info="
 			+ res
 			+ "}} {{def=[Dodge](!defend dodge ?{Mod|0} WeaponName:Dodge)[Ignore](!defend ignore ?{Mod|0} WeaponName:)";
-	if (wep.length >0) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[0].get('name'),defcharid,"")
+	for (var i=0;i<wep.length;i++) {
+	    atkstr += "["
+			+ myGet(wep[i].get('name'),defcharid,"")
 			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[0].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >1) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[1].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[1].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >2) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[2].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[2].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >3) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[3].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[3].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >4) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[4].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[4].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >5) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[5].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[5].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >6) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[6].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[6].get('name'),defcharid,"").replace(')','&#41;') +")";
+			+ myGet(wep[i].get('name'),defcharid,"").replace(')','&#41;') +")";
 	}
 	atkstr = atkstr + "}}"
 
