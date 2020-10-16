@@ -85,5 +85,8 @@ var dispatch_table = {
     },
     "!improveskill": (args, msg) => {
         handle_improveskill(args, msg);
+    },
+    "!pickskill": (args, msg) => {
+        handle_pickskill(args, msg);
     }
 }

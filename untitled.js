@@ -884,20 +884,31 @@ function handle_defend(args, msg) {
 	sendChat(msg.who, defstr);
 
 }
+function handle_pickskill(args, msg) {
+	sendChat("Skill Improvement Roll",  msg.content.slice(msg.content.indexOf(args[1])+21) + "<br>[Pick Skill](!improveskill " + args[1] 
+		+ " %{" + msg.content.slice(msg.content.indexOf(args[1])+21) + "|SkillList})")
+}
 
 
 function handle_improveskill(args, msg) {
 	char = getObj("character", args[1]);
 	skill_att_name = findSkill(char, args[2]);
+	var d = new Date();
+	var n = d.toLocaleString();
 	var ml = parseInt(myGet(skill_att_name.slice(0,-4)+"ML",char.id,0));
+	var logout = myGet("TEXTAREA_LOG",char.id,"");
 	roll = randomInteger(100) + parseInt(myGet(skill_att_name.slice(0,-4)+"SB",char.id,0));
 	if (roll >= ml) {
 		mySet(skill_att_name.slice(0,-4)+"ML",char.id,(ml+1));
-		sendChat("Skill Improvement Roll", myGet("NAME",char.id,"") + "<br>" + myGet(skill_att_name,char.id,"") 
-			+ "<br>" + " rolled " +roll +": SUCCESS<br>ML = " + (ml+1));
+		sendChat("Skill Improvement " + myGet("NAME",char.id,""), "<br>" + args[2]
+			+ "<br>" + " roll " +roll +": SUCCESS<br>ML = " + (ml+1));
+		mySet("TEXTAREA_LOG",char.id,logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) 
+			+ ": Skill Improvement Roll: " + args[2] + " " + roll +": SUCCESS: ML = " + (ml+1) + "\n");
 	} else {
-		sendChat("Skill Improvement Roll", myGet("NAME",char.id,"") + "<br>" + myGet(skill_att_name,char.id,"") 
-			+ "<br>" + " rolled " +roll +": FAIL<br>ML = " + ml);
+		sendChat("Skill Improvement " + myGet("NAME",char.id,""), "<br>" + args[2]
+			+ "<br>" + " roll " +roll +": FAIL<br>ML = " + ml);
+		mySet("TEXTAREA_LOG",char.id,logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) 
+			+ ": Skill Improvement Roll: " + args[2] + " " + roll +": FAIL: ML = " + ml + "\n");
 	}
 }
 
@@ -1531,7 +1542,7 @@ function setSkillList(char) {
 	}
 
 	//log(out+"\n\n");
-	out = out.replace(/,/g, "&#44;");
+	out = out.replace(/,/g, "&#44;").replace(/\)/g,'&#41;');
 	out = "?{Skills" + out + "}";
 	var mac = findObjs({
 		type: 'ability',
