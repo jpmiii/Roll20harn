@@ -535,7 +535,7 @@ function handle_defend(args, msg) {
 
 	}
 	
-	log("defml="+defml)
+	log("defml: "+defml)
 	
 	if (state.MainGameNS["cheat"] > 0) {
 	    if (state.MainGameNS["cheat"] >100) {
@@ -547,7 +547,7 @@ function handle_defend(args, msg) {
 	    
 	}
 
-	if (defml >97) {defml=97;}
+	if (defml >95) {defml=95;}
 
 	if ((droll <= defml) && (droll % 5 == 0)) {
 		var dsuc = "CS";
@@ -567,7 +567,7 @@ function handle_defend(args, msg) {
 	}
 
 	if (def[1] == "ignore") {
-		dis = -1;
+		dis = 0;
 	}
 
 	if (atk[4] == "missile") {
@@ -827,16 +827,16 @@ function handle_defend(args, msg) {
 
 	}
 	//log crits
-	if (state.MainGameNS.ais == 3) {
+	if (state.MainGameNS.asuc == "CS") {
 		logout = myGet("TEXTAREA_LOG",charid,"");
 		mySet("TEXTAREA_LOG",charid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Attack CS " + wepname + "\n")
-	} else if (state.MainGameNS.ais == 0) {
+	} else if (state.MainGameNS.asuc == "CF") {
 		logout = myGet("TEXTAREA_LOG",charid,"");
 		mySet("TEXTAREA_LOG",charid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Attack CF " + wepname + "\n")
-	} else if (dis == 3) {
+	} else if (dsuc == "CS") {
 		logout = myGet("TEXTAREA_LOG",defcharid,"");
 		mySet("TEXTAREA_LOG",defcharid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Defend CS " + defwepname + "\n")
-	} else if (dis == 0) {
+	} else if (dsuc == "CF") {
 		logout = myGet("TEXTAREA_LOG",defcharid,"");
 		mySet("TEXTAREA_LOG",defcharid, logout + getHarnTimeStr(state.MainGameNS.GameTime) + ": Defend CF " + defwepname + "\n")
 	} 
