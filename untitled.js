@@ -1467,12 +1467,52 @@ function initializeTables(playerid) {
 			playerid: gmId
 		});
 	}
+	var physout = "?{EML modifier|Minor cut,30|Serious cut,20|Grevious cut,10|Minor stab,25|Serious stab,15|Grevious stab,5|Minor bruise,30|Serious blunt - fracture,20|Grevious blunt - crush,10|Bleeding wound,50}";
+	var mac = findObjs({
+		type: 'macro',
+		playerid: gmId,
+		name: 'Physician-roll'
+	})[0];
+	if (!mac) {
+		createObj('macro', {
+			name: 'Physician-roll',
+			visibleto: "all",
+			action: physout,
+			playerid: gmId
+		});
+	}
 
 	var chars = findObjs({ _type: "character",});
 	
 	chars.forEach( function(c) {
+		var mac = findObjs({
+		type: 'ability',
+		_characterid: c.id,
+		name: 'Atk'
+		})[0];
+		if (!mac) {
+			var out = "!attack @{selected|token_id} ?{aim zone|mid|low|high|arms|legs|torso|head|neck} ?{Aspect|H|B|E|P} ?{Attack Type|melee|missle} ?{Mod|0} @{target|token_id} %{@{character_name}|Weapons}";
 
-	    setSkillList(c);
+			createObj('ability', {
+				name: 'Atk',
+				action: out,
+				_characterid: c.id
+			});
+		}
+		var mac = findObjs({
+		type: 'ability',
+		_characterid: c.id,
+		name: 'ImproveSkill'
+		})[0];
+		if (!mac) {
+			var out = "!improveskill @{character_id} %{@{character_name}|SkillList}"
+			createObj('ability', {
+				name: 'ImproveSkill',
+				action: out,
+				_characterid: c.id
+			});
+		}
+		setSkillList(c);
 	    
 	    setWeaponsList(c);
 	});
