@@ -965,8 +965,8 @@ function gethitloc(roll, aim) {
 
 
 on("chat:message", function(msg) {
+if (trace) {log(`>chat:message(${msg.content})`);}
  if(msg.type == "api") {
-	if (trace) {log(`>chat:message(${msg.content})`);}
 	var args = msg.content.split(" ");
 	if (dispatch_table.hasOwnProperty(args[0])) {
 		var commandMap = dispatch_table[args[0]];
@@ -1052,9 +1052,8 @@ on("chat:message", function(msg) {
 			}
 		}
 	}
-	if (trace) {log("<chat:message")}
-
  }
+ if (trace) {log("<chat:message")}
 });
 function getCharByNameAtt(charname) {
 	var attr = findObjs({
