@@ -423,9 +423,11 @@
 
     </div>
 </div>
-        <div class="sheet-skill-header sheet-skill-label">Calculate SB</div>
-        <div class="sheet-skill-header sheet-skill-value sheet-center"><button type='roll' value='!calcsb @{character_id}' name='roll_calcSB'></button></div>
 <hr class="sheet-hr">
+        
+        <button type='roll' value='!calcsb @{character_id}' name='roll_calcSB'>Calculate SB</button>
+
+        <button type='roll' value='!pickskill @{character_id} @{character_name}' name='pickskill'>Skill Improvement Roll</button>
 
 </div><div class="sheet-tab3">
 
@@ -901,8 +903,8 @@
 </div><div class="sheet-tab7">
 
 <textarea name="attr_TEXTAREA_NOTE"></textarea>
-<br/> Output<br/>
-<textarea name="attr_TEXTAREA_OUTPUT"></textarea>
+<br/>Log<br/>
+<textarea name="attr_TEXTAREA_LOG"></textarea>
 </div>
 </div></div>
 <!-- ROLL TEMPLATES/-->

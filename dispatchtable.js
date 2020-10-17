@@ -79,6 +79,7 @@ var dispatch_table = {
         "action": (args, msg) => { handle_invin(args, msg); },
         "re_syntax": /^!invin [-_a-zA-Z0-9]{20}$/,
         "hr_syntax": "!invin character_id<br/>Outputs character in HârnMaster Character Utility text format in character note."
+
     },
     "!move": {
         "action": (args, msg) => { handle_move(args, msg); },
@@ -89,6 +90,7 @@ var dispatch_table = {
         "action": (args, msg) => { handle_xin(args, msg); },
         "re_syntax": /^!xin( [-_a-zA-Z0-9]{20})?$/,
         "hr_syntax": "!xin [character_id]<br/>Imports a character in HârnMaster Character Utility text format from the character note."
+
     },
     "!ca": {
         "action": (args, msg) => { handle_ca(args, msg); },
@@ -149,5 +151,17 @@ var dispatch_table = {
         "action": (args, msg) => { handle_gmrand(args, msg); },
         "re_syntax": /^!gmrand.*$/,
         "hr_syntax": "!gmrand selected characters<br/>Randomly choses one of all selected tokens."
+
+    },
+    "!improveskill": {
+        "action": (args, msg) => { handle_improveskill(args, msg); },
+        "re_syntax": /^!improveskill.*$/,
+        "hr_syntax": "Does something"
+    },
+    "!pickskill": {
+	    "action": (args, msg) => { handle_pickskill(args, msg); },
+        "re_syntax": /^!pickskill.*$/,
+        "hr_syntax": "Does something"
+
     }
 }

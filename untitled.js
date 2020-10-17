@@ -1,5 +1,6 @@
-
 log("loading javascript");
+
+var started = false;
 
 on("ready", function() {
     if( ! state.MainGameNS ) {
@@ -8,6 +9,7 @@ on("ready", function() {
     log(getHarnTimeStr(state.MainGameNS.GameTime));
 	log("loaded. trace: "+ trace);
 	initializeTables(0);
+	started = true;
 });
 
 
@@ -23,7 +25,6 @@ on("change:attribute:current", function(obj, prev) {
     		_characterid: charid,
     	})[0];
         if (rideratt) {
-
         	var rider = findObjs({
         		name: rideratt.get('current'),
         		_type: "character",
@@ -33,13 +34,71 @@ on("change:attribute:current", function(obj, prev) {
 
         	}
         }
+    } else if (obj.get('name').includes("WEAPON_NAME")) {
+        var char = findObjs({                              
+        		id: obj.get("_characterid"),                              
+        		_type: "character",                          
+        })[0];
+        setWeaponsList(char);
+    } else if (obj.get('name').includes("SKILL_NAME")) {
+        var char = findObjs({                              
+        		id: obj.get("_characterid"),                              
+        		_type: "character",                          
+        })[0];
+        setSkillList(char);
+    }
+});
+
+/*
+
+// THIS STUFF WON'T WORK
+
+on("add:attribute", function(obj) {
+    if (started) {
+        if (obj.get('name').includes("WEAPON_NAME")) {
+            log(obj);
+            var char = findObjs({                              
+            		id: obj.get("_characterid"),                              
+            		_type: "character",                          
+            })[0];
+            setWeaponsList(char);
+        } else if (obj.get('name').includes("SKILL_NAME")) {
+            var char = findObjs({                              
+            		id: obj.get("_characterid"),                              
+            		_type: "character",                          
+            })[0];
+            setSkillList(char);
+        }
     }
 });
 
 
 
 
+on("destroy:attribute", function(obj) {
+
+    if (obj.get('name').includes("WEAPON_NAME")) {
+        log("destroy");
+        log(obj)
+        var char = findObjs({                              
+        		id: obj.get("_characterid"),                              
+        		_type: "character",                          
+        })[0];
+        setWeaponsList(char);
+    } else if (obj.get('name').includes("SKILL_NAME")) {
+        var char = findObjs({                              
+        		id: obj.get("_characterid"),                              
+        		_type: "character",                          
+        })[0];
+        setSkillList(char);
+    }
+
+});
+
+*/
+
 on("change:campaign:turnorder", function(obj, prev) {
+
     if(Campaign().get("turnorder") !== "") {
         if(prev["turnorder"] !== "") {
             var turnorder = JSON.parse(Campaign().get("turnorder"));
@@ -54,6 +113,8 @@ on("change:campaign:turnorder", function(obj, prev) {
     }
 
 });
+
+
 
 const getGMPlayers = (pageid) => findObjs({type:'player'})
     .filter((p)=>playerIsGM(p.id))
@@ -81,6 +142,14 @@ function initRoll() {
  */
 function handle_attack(atk, msg) {
 	if (trace) {log(`handle_attack(${atk},${msg.content})`)}
+
+	var re_syntax = /^(!sheetattack|!attack) [-a-zA-Z0-9]+ (mid|low|high) (H|B|E|P|F) (melee|missile) [-a-zA-Z0-9]+ .+$/
+	var hr_syntax="!sheetattack attacker_id (high|low|mid) (H|B|E|P) (missile|melee) modifier defender_id weapon"
+	if (!re_syntax.test(msg.content)) {
+	    sendChat(msg.who, "Invalid syntax<br/>"+hr_syntax);
+		return;
+	}
+
 
     if(atk[0] == "!sheetattack")  {
         var tokelist = findObjs({
@@ -158,7 +227,9 @@ function handle_attack(atk, msg) {
 
 	var ojn = wep[0].get('name');
 
+
 	var atkml = computeAttackML(ojn, charid, app, atk[5]);
+
 
     if (atkml >97) {atkml=97;}
 	aroll = randomInteger(100);
@@ -204,72 +275,20 @@ function handle_attack(atk, msg) {
 	state.MainGameNS["missi"] = missi
 
 
-	var ampnum = "&#";
-	var wep = filterObjs(function(obj) {
-		obn = obj.get('name');
-		if (obn) {
-			if ((obn.indexOf("WEAPON_NAME")) !== -1
-					&& (obj.get("_characterid") == defcharid)) {
-				return true;
-			} else {
-				return false;
-			}
-		} else {
-			return false;
-		}
-	});
-	if (app<0) {
-	    var appsign = " + [[" + parseInt(app)*-1
-	} else {
-	    var appsign = " - [[" + parseInt(app)
-	}
+
+	var wep = getWep(defchar);
+
 	atkstr = "&{template:harnroll} {{rolldesc=" + atoke.get('name')+" "+atk[4]+" attacks "+ toke.get('name')
 			+ " with a "
 			+ wepname
 			+ "}} {{info="
 			+ res
-			+ "}} {{def=[Dodge](!defend dodge ?{Mod|0} WeaponName:Dagger)[Ignore](!defend ignore ?{Mod|0} WeaponName:)";
-	if (wep.length >0) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[0].get('name'),defcharid,"")
+			+ "}} {{def=[Dodge](!defend dodge ?{Mod|0} WeaponName:Dodge)[Ignore](!defend ignore ?{Mod|0} WeaponName:)";
+	for (var i=0;i<wep.length;i++) {
+	    atkstr += "["
+			+ myGet(wep[i].get('name'),defcharid,"")
 			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[0].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >1) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[1].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[1].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >2) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[2].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[2].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >3) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[3].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[3].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >4) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[4].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[4].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >5) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[5].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[5].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	if (wep.length >6) {
-	    atkstr = atkstr + "["
-			+ myGet(wep[6].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[6].get('name'),defcharid,"").replace(')','&#41;') +")";
+			+ myGet(wep[i].get('name'),defcharid,"").replace(')','&#41;') +")";
 	}
 	atkstr = atkstr + "}}"
 
@@ -308,7 +327,9 @@ function determineSuccess(atkml) {
 	}
 }
 
+
 function computeAttackML(ojn, charid, app, mod) {
+
 	return parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0))
 		+ parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0))
 		+ parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0))
@@ -459,11 +480,12 @@ function handle_defend(def, msg) {
 	    };
 
 		var defstr = "";// "+" +  parseInt(myGet("DODGE_ML", defcharid, 0)) + "+" + parseInt(def[2])+ "-" + (pp);
+		var defwepname = "Dodge";
 
 	}
 
 	if ((def[1] == "block") || (def[1] == "counterstrike")) {
-		defwepname = msg.content.slice((msg.content.indexOf("WeaponName:") + 11));
+		var defwepname = msg.content.slice((msg.content.indexOf("WeaponName:") + 11));
 
 		if (defwepname.length > 3) {
 
@@ -519,7 +541,9 @@ function handle_defend(def, msg) {
 
 	}
 
-	log("defml="+defml)
+	
+	log("defml: "+defml)
+	
 
 	if (state.MainGameNS["cheat"] > 0) {
 	    if (state.MainGameNS["cheat"] >100) {
@@ -531,7 +555,7 @@ function handle_defend(def, msg) {
 
 	}
 
-	if (defml >97) {defml=97;}
+	if (defml >95) {defml=95;}
 
 	if ((droll <= defml) && (droll % 5 == 0)) {
 		var dsuc = "CS";
@@ -807,12 +831,57 @@ function handle_defend(def, msg) {
 
 		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} {{rollresult=[["
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{drollresult=[[" +  droll + "]]}} {{drolltarget=[["
-		        + drolltarg+ "]]}}{{drollsuccess=[["	+ dis + "]]}} {{result=" + res + "}}";
+		        + drolltarg+ "]]}}{{drollsuccess=[["+ dis + "]]}} {{result=" + res + "}}";
 
 	}
+	//log crits
+	
+	var d = new Date();
+	var n = d.toLocaleString();
+	if (state.MainGameNS.asuc == "CS") {
+		logout = myGet("TEXTAREA_LOG",charid,"");
+		mySet("TEXTAREA_LOG",charid, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": Attack CS " + wepname + "\n")
+	} else if (state.MainGameNS.asuc == "CF") {
+		logout = myGet("TEXTAREA_LOG",charid,"");
+		mySet("TEXTAREA_LOG",charid, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": Attack CF " + wepname + "\n")
+	} 
+	if (dsuc == "CS") {
+		logout = myGet("TEXTAREA_LOG",defcharid,"");
+		mySet("TEXTAREA_LOG",defcharid, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": Defend CS " + defwepname + "\n")
+	} else if (dsuc == "CF") {
+		logout = myGet("TEXTAREA_LOG",defcharid,"");
+		mySet("TEXTAREA_LOG",defcharid, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": Defend CF " + defwepname + "\n")
+	} 
 
 	sendChat(msg.who, defstr);
 
+}
+function handle_pickskill(args, msg) {
+	sendChat("Skill Improvement Roll",  msg.content.slice(msg.content.indexOf(args[1])+21) + "<br>[Pick Skill](!improveskill " + args[1] 
+		+ " %{" + msg.content.slice(msg.content.indexOf(args[1])+21) + "|SkillList})")
+}
+
+
+function handle_improveskill(args, msg) {
+	char = getObj("character", args[1]);
+	skill_att_name = findSkill(char, args[2]);
+	var d = new Date();
+	var n = d.toLocaleString();
+	var ml = parseInt(myGet(skill_att_name.slice(0,-4)+"ML",char.id,0));
+	var logout = myGet("TEXTAREA_LOG",char.id,"");
+	roll = randomInteger(100) + parseInt(myGet(skill_att_name.slice(0,-4)+"SB",char.id,0));
+	if (roll >= ml) {
+		mySet(skill_att_name.slice(0,-4)+"ML",char.id,(ml+1));
+		sendChat("Skill Improvement " + myGet("NAME",char.id,""), "<br>" 
+			+ "<br>" + " roll " +roll +": SUCCESS<br>" + args[2] + " ML increases to " + (ml+1));
+		mySet("TEXTAREA_LOG",char.id,logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) 
+			+ ": Skill Improvement Roll: " + args[2] + " " + roll +": SUCCESS: ML = " + (ml+1) + "\n");
+	} else {
+		sendChat("Skill Improvement " + myGet("NAME",char.id,""), "<br>" + args[2]
+			+ "<br>" + " roll " +roll +": FAIL<br> "+ args[2] + " ML stays at " + ml);
+		mySet("TEXTAREA_LOG",char.id,logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) 
+			+ ": Skill Improvement Roll: " + args[2] + " " + roll +": FAIL: ML = " + ml + "\n");
+	}
 }
 
 
@@ -937,11 +1006,73 @@ on("chat:message", function(msg) {
 	} else {
 		log(`No such command ${msg.content}`);
 		sendChat("API Error", `&{template:default} {{name=Unknown command}} {{Received=${msg.content}}}`)
+
+	}
+
+ } else {
+
+	// check for and log crits
+	if (msg.content.startsWith(" {{character_name=")) {
+		var d = new Date();
+		var n = d.toLocaleString();
+		if (msg.content.includes("rolldesc=rolls ")) {
+			if (msg.inlinerolls[3].results.total % 5 == 0) {
+				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name")+15),msg.content.indexOf("}} ")));
+				var logout = myGet("TEXTAREA_LOG",char.id,"");
+				if (msg.inlinerolls[1].results.total >= msg.inlinerolls[3].results.total) {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CS " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))) + "\n")
+				} else {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CF " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))) + "\n")
+				}
+			}
+		} else 	if (msg.content.includes("rolldesc=performs ")) {
+			if (msg.inlinerolls[7].results.total % 5 == 0) {
+				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name")+15),msg.content.indexOf("}} ")));
+				var logout = myGet("TEXTAREA_LOG",char.id,"");
+				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CS " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ")+18,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))) + "\n")
+				} else {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CF " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ")+18,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))) + "\n")
+				}
+			}
+		} else 	if (msg.content.includes("rolldesc=casts ")) {
+			log(msg.inlinerolls[4].results.total);
+			log(msg.inlinerolls[7].results.total);
+			if (msg.inlinerolls[7].results.total % 5 == 0) {
+				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name")+15),msg.content.indexOf("}} ")));
+				var logout = myGet("TEXTAREA_LOG",char.id,"");
+				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CS " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))) + "\n")
+				} else {
+					mySet("TEXTAREA_LOG",char.id, logout + n + ":  " + getHarnTimeStr(state.MainGameNS.GameTime) + ": CF " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))) + "\n")
+				}
+			}
+		}
 	}
 	if (trace) {log("<chat:message")}
+
  }
 });
-
+function getCharByNameAtt(charname) {
+	var attr = findObjs({
+        		current: charname,
+				name: "NAME",
+        		_type: "attribute",
+        	})[0];
+	return getObj("character",attr.get('_characterid'));
+}
 /**
  * Update the skill bonues of the active sheet.
  * @param {Message} msg the message representing the command, with arguments separated by spaces
@@ -974,7 +1105,7 @@ function handle_skilllist(args, msg) {
 		out = "?{Skills" + out + "}";
 		var mac = findObjs({
 			type: 'macro',
-			playerid: msg.playerid,
+			_characterid: msg.playerid,
 			name: 'SkillList'
 		})[0];
 		if (mac) {
@@ -1244,6 +1375,9 @@ function handle_invin(args, msg) {
  */
 function handle_sheetattack(args, msg) {
 	if (trace) {log(`handle_sheetattack(${args},${msg.content})`)}
+
+	if (!/[^ ]{4+}/.test(msg.content)) {sendChat("API","Syntax error")}
+
 	if (args.length > 4) {
 		handle_attack(args, msg);
 	}
@@ -1340,9 +1474,132 @@ function initializeTables(playerid) {
 			playerid: gmId
 		});
 	}
+	var physout = "?{EML modifier|Minor cut,30|Serious cut,20|Grevious cut,10|Minor stab,25|Serious stab,15|Grevious stab,5|Minor bruise,30|Serious blunt - fracture,20|Grevious blunt - crush,10|Bleeding wound,50}";
+	var mac = findObjs({
+		type: 'macro',
+		playerid: gmId,
+		name: 'Physician-roll'
+	})[0];
+	if (!mac) {
+		createObj('macro', {
+			name: 'Physician-roll',
+			visibleto: "all",
+			action: physout,
+			playerid: gmId
+		});
+	}
+
+	var chars = findObjs({ _type: "character",});
+	
+	chars.forEach( function(c) {
+		var mac = findObjs({
+		type: 'ability',
+		_characterid: c.id,
+		name: 'Atk'
+		})[0];
+		if (!mac) {
+			var out = "!attack @{selected|token_id} ?{aim zone|mid|low|high|arms|legs|torso|head|neck} ?{Aspect|H|B|E|P} ?{Attack Type|melee|missle} ?{Mod|0} @{target|token_id} %{@{character_name}|Weapons}";
+
+			createObj('ability', {
+				name: 'Atk',
+				action: out,
+				_characterid: c.id
+			});
+		}
+		var mac = findObjs({
+		type: 'ability',
+		_characterid: c.id,
+		name: 'ImproveSkill'
+		})[0];
+		if (!mac) {
+			var out = "!improveskill @{character_id} %{@{character_name}|SkillList}"
+			createObj('ability', {
+				name: 'ImproveSkill',
+				action: out,
+				_characterid: c.id
+			});
+		}
+		setSkillList(c);
+	    
+	    setWeaponsList(c);
+	});
+	
+	
 	if (trace) {log("<initializeTables()")}
 	return;
 }
+
+function getWep(char) {
+    return filterObjs(function(obj) {
+		obn = obj.get('name');
+		if (obn) {
+			if (obn.includes("WEAPON_NAME")
+					&& (obj.get("_characterid") == char.id)) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	});
+}
+
+function setWeaponsList(char) {
+
+	var out2 = "";
+	getWep(char).forEach( function(w) {
+	    out2 += "|" + myGet(w.get('name'),char.id,"");
+	})
+	out2 = out2.replace(/,/g, "&#44;");
+	out2 = "?{Weapon" + out2 + "}";
+	var mac = findObjs({
+		type: 'ability',
+		_characterid: char.id,
+		name: 'Weapons'
+	})[0];
+
+	if (mac) {
+		mac.set('action', out2);
+	} else {
+		createObj('ability', {
+			name: 'Weapons',
+			action: out2,
+			_characterid: char.id
+		});
+	}
+	
+	
+
+}
+
+function setSkillList(char) {
+	var out = "";
+	var sl = skillList(char);
+
+	for (i = 0; i < sl.length; i++) {
+		out += "|" + sl[i];
+	}
+
+	//log(out+"\n\n");
+	out = out.replace(/,/g, "&#44;").replace(/\)/g,'&#41;');
+	out = "?{Skills" + out + "}";
+	var mac = findObjs({
+		type: 'ability',
+		_characterid: char.id,
+		name: 'SkillList'
+	})[0];
+	if (mac) {
+		mac.set('action', out);
+	} else {
+		createObj('ability', {
+			name: 'SkillList',
+			action: out,
+			_characterid: char.id
+		});
+	}
+}
+
 
 function addinjury(loc, injstr, charid) {
 	if((injstr.indexOf("Fum") == 0) || (injstr.indexOf("Stu") == 0)) {
@@ -1837,7 +2094,7 @@ function findSkill(char,skillname) {
                     mySet("repeating_physicalskill_"+ mid +"_PHYSICALSKILL_NAME",char.id,obj);
                     mySet("repeating_physicalskill_"+ mid +"_PHYSICALSKILL_SB",char.id,0);
                     mySet("repeating_physicalskill_"+ mid +"_PHYSICALSKILL_ML",char.id,0);
-                    nameout = "repeating_physicalskill_"+ mid +"_PHYSICALSKILL_ML";
+                    nameout = "repeating_physicalskill_"+ mid +"_PHYSICALSKILL_NAME";
                 } else if (skilllist[obj]["type"] == "LORE") {
                     mySet("repeating_loreskill_"+ mid +"_LORESKILL_NAME",char.id,obj);
                     mySet("repeating_loreskill_"+ mid +"_LORESKILL_SB",char.id,0);
