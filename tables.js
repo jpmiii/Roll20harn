@@ -5,7 +5,7 @@
 //
 //
 
-var default_macros = {"Physician-roll":"?{Damage Type modifier|Minor cut,30|Serious cut,20|Grevious cut,10|Minor stab,25|Serious stab,15|Grevious stab,5|Minor bruise,30|Serious blunt - fracture,20|Grevious blunt - crush,10|Bleeding wound,50}",
+var default_macros = {"Physician-roll":"?{Treatment Bonus|Minor cut - Clean & Dress,30|Serious cut - Surgery,20|Grevious cut - Surgery,10|Minor stab - Clean & Dress,25|Serious stab - Clean & Dress,15|Grevious stab - Surgery,5|Minor bruise - Compress,30|Serious blunt fracture - Splint,20|Grevious blunt crush -Surgery/Splint,10|Bleeding wound - Tourniquet,50|No Bonus,0}",
 			"Random-Char":"!rand"};
 var default_abilities = {"Atk":"!attack @{selected|token_id} ?{aim zone|mid|low|high|arms|legs|torso|head|neck} ?{Aspect|H|B|E|P} ?{Attack Type|melee|missle} ?{Mod|0} @{target|token_id} %{@{character_name}|Weapons}",
 			"ImproveSkill":"!improveskill @{character_id} %{@{character_name}|SkillList}"};
