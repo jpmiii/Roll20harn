@@ -5,7 +5,10 @@
 //
 //
 
-
+var default_macros = {"Physician-roll":"?{Damage Type modifier|Minor cut,30|Serious cut,20|Grevious cut,10|Minor stab,25|Serious stab,15|Grevious stab,5|Minor bruise,30|Serious blunt - fracture,20|Grevious blunt - crush,10|Bleeding wound,50}",
+			"Random-Char":"!rand"};
+var default_abilities = {"Atk":"!attack @{selected|token_id} ?{aim zone|mid|low|high|arms|legs|torso|head|neck} ?{Aspect|H|B|E|P} ?{Attack Type|melee|missle} ?{Mod|0} @{target|token_id} %{@{character_name}|Weapons}",
+			"ImproveSkill":"!improveskill @{character_id} %{@{character_name}|SkillList}"};
 
 var skilllist = {"Acrobatics": {"type":"PHYSICAL","sba":["STR","AGL","AGL"],"ssm":{"Nad":"2","Hir":"1"},"oml":"2","notes":"Trapeze, Tumbling, Vaulting, etc."},
 "CLIMBING": {"type":"PHYSICAL","sba":["STR","DEX","AGL"],"ssm":{"Ula":"2","Ara":"2"},"oml":"4","notes":"None."},

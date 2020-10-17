@@ -371,7 +371,7 @@
             <input type="text" name="attr_PHYSICIAN_SB" class="sheet-skill-value" value="0">
             <input type="text" name="attr_PHYSICIAN_ML" class="sheet-skill-value" value="0">
             <button type="roll"
-                    value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=rolls @{PHYSICIAN_NAME}}} {{rolltarget=[[@{PHYSICIAN_ML} - [[(@{UNIVERSAL_PENALTY})*5]] + ?{Target Modifier?|0}]]}} {{penalty=[[(@{UNIVERSAL_PENALTY})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{PHYSICIAN_ML}}}"
+                    value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=rolls @{PHYSICIAN_NAME}}} {{rolltarget=[[@{PHYSICIAN_ML} - [[(@{UNIVERSAL_PENALTY})*5]] + #Physician-roll + ?{Target Modifier?|0}]]}} {{penalty=[[(@{UNIVERSAL_PENALTY})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{PHYSICIAN_ML}}}"
                     name="roll_AwarenessSkillCheck"></button>
         </div>
         <fieldset class="repeating_loreskill">
