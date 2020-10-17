@@ -155,13 +155,13 @@ var dispatch_table = {
     },
     "!improveskill": {
         "action": (args, msg) => { handle_improveskill(args, msg); },
-        "re_syntax": /^!improveskill.*$/,
-        "hr_syntax": "Does something"
+        "re_syntax": /^!improveskill [-_a-zA-Z0-9]{20} .*$/,
+        "hr_syntax": "!improveskill character_id skill name<br/>Performs a skill improvement roll for the given character and skill."
     },
     "!pickskill": {
 	    "action": (args, msg) => { handle_pickskill(args, msg); },
-        "re_syntax": /^!pickskill.*$/,
-        "hr_syntax": "Does something"
+        "re_syntax": /^!pickskill [-_a-zA-Z0-9]{20}$/,
+        "hr_syntax": "!pickskill character_id<br/>Prompts the user to pick a valid skill to improve"
 
     }
 }
