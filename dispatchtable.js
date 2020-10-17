@@ -124,8 +124,8 @@ var dispatch_table = {
     },
     "!loc": {
         "action": (args, msg) => { handle_loc(args, msg); },
-        "re_syntax": /^!loc [0-9]+ (1|2|3)$/,
-        "hr_syntax": "!loc result (1|2|3)<br/>Gets the hit location"
+        "re_syntax": /^!loc [0-9]+ [0-9]+$/,
+        "hr_syntax": "!loc result aim_index<br/>Gets the hit location for a die roll and aim"
     },
     "!time": {
         "action": (args, msg) => { handle_time(args, msg); },

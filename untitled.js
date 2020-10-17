@@ -143,14 +143,6 @@ function initRoll() {
 function handle_attack(atk, msg) {
 	if (trace) {log(`handle_attack(${atk},${msg.content})`)}
 
-	var re_syntax = /^(!sheetattack|!attack) [-a-zA-Z0-9]+ (mid|low|high) (H|B|E|P|F) (melee|missile) [-a-zA-Z0-9]+ .+$/
-	var hr_syntax="!sheetattack attacker_id (high|low|mid) (H|B|E|P) (missile|melee) modifier defender_id weapon"
-	if (!re_syntax.test(msg.content)) {
-	    sendChat(msg.who, "Invalid syntax<br/>"+hr_syntax);
-		return;
-	}
-
-
     if(atk[0] == "!sheetattack")  {
         var tokelist = findObjs({
 		  represents: atk[1],
@@ -1375,9 +1367,6 @@ function handle_invin(args, msg) {
  */
 function handle_sheetattack(args, msg) {
 	if (trace) {log(`handle_sheetattack(${args},${msg.content})`)}
-
-	if (!/[^ ]{4+}/.test(msg.content)) {sendChat("API","Syntax error")}
-
 	if (args.length > 4) {
 		handle_attack(args, msg);
 	}
