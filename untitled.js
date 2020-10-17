@@ -1475,7 +1475,7 @@ function initializeTables(playerid) {
 	}
 
 	_.each(_.keys(default_macros), function(obj) {
-		log(obj);
+		if (trace) {log("macro: " +obj)}
 	
 		var out = default_macros[obj];
 		var mac = findObjs({
@@ -1519,7 +1519,6 @@ function initializeTables(playerid) {
 	    setWeaponsList(c);
 	});
 	
-	//default_abilities
 	if (trace) {log("<initializeTables()")}
 	return;
 }
