@@ -12,7 +12,6 @@ on("ready", function() {
 	started = true;
 });
 
-
 on("change:attribute:current", function(obj, prev) {
 
     if((obj.get('name') == "INITIATIVE_ML") || (obj.get('name') == "UNIVERSAL_PENALTY") || (obj.get('name') == "ENCUMBRANCE") || (obj.get('name') == "RIDER")){

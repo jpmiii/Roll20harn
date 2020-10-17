@@ -67,7 +67,7 @@ var dispatch_table = {
     },
     "!attack": {
         "action": (args, msg) => { handle_attack(args, msg); },
-        "re_syntax": /^(!sheetattack|!attack) [-_a-zA-Z0-9]{20} (mid|low|high) (H|B|E|P|F) (melee|missile) [-+]?[0-9]+ [-_a-zA-Z0-9]{20} .+$/,
+        "re_syntax": /^(!sheetattack|!attack) [-_a-zA-Z0-9]{20} (high|mid|low|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin) (H|B|E|P|F) (melee|missile) [-+]?[0-9]+ [-_a-zA-Z0-9]{20} .+$/,
         "hr_syntax": "![sheet]attack attacker_id (high|low|mid) (H|B|E|P) (missile|melee) modifier defender_id weapon"
     },
     "!defend": {
