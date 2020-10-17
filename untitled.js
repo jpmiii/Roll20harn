@@ -12,21 +12,21 @@ on("ready", function() {
 
 
 on("change:attribute:current", function(obj, prev) {
-    
+
     if((obj.get('name') == "INITIATIVE_ML") || (obj.get('name') == "UNIVERSAL_PENALTY") || (obj.get('name') == "ENCUMBRANCE") || (obj.get('name') == "RIDER")){
 
         charid = obj.get("_characterid");
 
-    	var rideratt = findObjs({                              
-    		name: 'RIDER',                              
+    	var rideratt = findObjs({
+    		name: 'RIDER',
     		_type: "attribute",
     		_characterid: charid,
     	})[0];
         if (rideratt) {
-    
-        	var rider = findObjs({                              
-        		name: rideratt.get('current'),                              
-        		_type: "character",                          
+
+        	var rider = findObjs({
+        		name: rideratt.get('current'),
+        		_type: "character",
         	})[0];
         	if (rider) {
             	mySet('STEED_INIT',rider.id,(parseInt(myGet('INITIATIVE_ML', charid, 0)) - (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0)) * 5)- (parseInt(myGet('ENCUMBRANCE', charid, 0)) * 5)));
@@ -39,7 +39,7 @@ on("change:attribute:current", function(obj, prev) {
 
 
 
-on("change:campaign:turnorder", function(obj, prev) {    
+on("change:campaign:turnorder", function(obj, prev) {
     if(Campaign().get("turnorder") !== "") {
         if(prev["turnorder"] !== "") {
             var turnorder = JSON.parse(Campaign().get("turnorder"));
@@ -68,11 +68,6 @@ const sendGMPing = (left, top, pageid, playerid=null, moveAll=false) => {
     }
 };
 
-/**
- * 
- */
-
-
 function initRoll() {
 	if (randomize_init_roll) {
 		return randomInteger(6) + randomInteger(6) + randomInteger(6);
@@ -81,23 +76,17 @@ function initRoll() {
 	}
 
 }
-
-
-
-
-function handle_attack(args, msg) {
-
-
-	atk = msg.content.split(" ");
-	if (atk.length < 8) { 
-	    sendChat(msg.who, "Not enough arguments.");
-	    return;}
+/**
+ * Process an attack message
+ */
+function handle_attack(atk, msg) {
+	if (trace) {log(`handle_attack(${atk},${msg.content})`)}
 
     if(atk[0] == "!sheetattack")  {
-        var tokelist = findObjs({                              
+        var tokelist = findObjs({
 		  represents: atk[1],
 		  _pageid: Campaign().get("playerpageid"),
-          _type: "graphic",                          
+          _type: "graphic",
         });
         if (tokelist == null || tokelist.length < 1) {
             sendChat(msg.who, "Move the player banner to this page.");
@@ -123,8 +112,12 @@ function handle_attack(args, msg) {
 		dist = tokendistance(atoke, toke);
 		res = res + "Distance: " + dist[0] + "<br/>Attacker Move: " + atkmov + "<br/>Defender Move: " + defmov + "<br/>";
 	}
-	wepname = msg.content
-			.slice((msg.content.indexOf(atk[6]) + atk[6].length + 1))
+	// Use regular expression to get the string which starts after the 7th space delimited word
+	weapNameArray = msg.content.match(/^([^ ]+ ){7}(.*)$/);
+	wepname=weapNameArray[weapNameArray.length-1];
+	log(`selected weapon: ${wepname}`);
+	// wepname = msg.content
+	// 		.slice((msg.content.indexOf(atk[6]) + atk[6].length + 1))
 
 	if (wepname == "") {
 		log(msg.content);
@@ -148,15 +141,15 @@ function handle_attack(args, msg) {
 
 	app = app + hit_loc_penalty[atk[2]]["penalty"]
 	appstr = appstr + " -" + hit_loc_penalty[atk[2]]["penalty"] +"[Loc]";
-	
-	
+
+
 	if (atk[4] == "missile") {
 		var missi;
 		({ missi, app, appstr } = missileAttack(dist, app, appstr, atkmov, charid));
 	}
 
 	var wep = findWeapon(charid);
-	
+
 	if (!wep[0]) {
 	    sendChat(msg.who, "Weapon " + wepname + " not found");
 	    return;
@@ -165,7 +158,7 @@ function handle_attack(args, msg) {
 
 	var ojn = wep[0].get('name');
 
-	var atkml = computeAttackML(ojn, charid, app);
+	var atkml = computeAttackML(ojn, charid, app, atk[5]);
 
     if (atkml >97) {atkml=97;}
 	aroll = randomInteger(100);
@@ -187,11 +180,11 @@ function handle_attack(args, msg) {
 	    }
 	    if (ctype > 0) {
 	    	aroll = 101 - aroll;
-	    } 
+	    }
 	    log("Cheat Roll: " + aroll);
 
 	}
-	
+
 	if (state.MainGameNS["cheat"] > 0) {
 	    if (state.MainGameNS["cheat"] >100) {
 	        aroll = 100 - state.MainGameNS["cheat"]
@@ -199,7 +192,7 @@ function handle_attack(args, msg) {
 	        aroll = state.MainGameNS["cheat"]
 	        state.MainGameNS["cheat"] = 0;
 	    }
-	    
+
 	}
 
 	var { asuc, ais } = determineSuccess(atkml);
@@ -232,7 +225,7 @@ function handle_attack(args, msg) {
 	}
 	atkstr = "&{template:harnroll} {{rolldesc=" + atoke.get('name')+" "+atk[4]+" attacks "+ toke.get('name')
 			+ " with a "
-			+ wepname 
+			+ wepname
 			+ "}} {{info="
 			+ res
 			+ "}} {{def=[Dodge](!defend dodge ?{Mod|0} WeaponName:Dagger)[Ignore](!defend ignore ?{Mod|0} WeaponName:)";
@@ -315,11 +308,11 @@ function determineSuccess(atkml) {
 	}
 }
 
-function computeAttackML(ojn, charid, app) {
+function computeAttackML(ojn, charid, app, mod) {
 	return parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0))
 		+ parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0))
 		+ parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0))
-		+ parseInt(atk[5]) - (app);
+		+ parseInt(mod) - (app);
 }
 
 function findWeapon(charid) {
@@ -362,12 +355,11 @@ function missileAttack(dist, app, appstr, atkmov, charid) {
 	return { missi, app, appstr };
 }
 
-function handle_defend(args, msg) {
+function handle_defend(def, msg) {
 
-	var def = msg.content.split(" ");
 	var atk = state.MainGameNS.attacker.content.split(" ");
     if(atk[0] == "!sheetattack")  {
-        var tokelist = findObjs({                              
+        var tokelist = findObjs({
 		  represents: atk[1],
 		  _pageid: Campaign().get("playerpageid"),
           _type: "graphic",
@@ -491,7 +483,7 @@ function handle_defend(args, msg) {
 			});
 
 			var ojn = defwep[0].get('name');
-			
+
 			if (def[1] == "counterstrike") {
 			    var defml = parseInt(myGet(ojn.slice(0, -4) + "ML", defcharid, 0)) - pp + parseInt(myGet(ojn.slice(0, -4) + "ATK", defcharid, 0)) + parseInt(myGet(ojn.slice(0, -4) + "HM", defcharid, 0)) + parseInt(def[2]);
 
@@ -508,7 +500,7 @@ function handle_defend(args, msg) {
 	}
 
 	droll = randomInteger(100);
-	
+
 	var ctype = parseInt(myGet('DCType', defcharid, 0))
 
 	log("Def roll: " + droll);
@@ -522,13 +514,13 @@ function handle_defend(args, msg) {
 	    }
 	    if (ctype > 0) {
 	        droll = 101 - droll;
-	    } 
+	    }
 	    log("Cheat Def roll: " + droll);
 
 	}
-	
+
 	log("defml="+defml)
-	
+
 	if (state.MainGameNS["cheat"] > 0) {
 	    if (state.MainGameNS["cheat"] >100) {
 	        droll = 100 - state.MainGameNS["cheat"]
@@ -536,7 +528,7 @@ function handle_defend(args, msg) {
 	        droll = state.MainGameNS["cheat"]
 	        state.MainGameNS["cheat"] = 0;
 	    }
-	    
+
 	}
 
 	if (defml >97) {defml=97;}
@@ -589,10 +581,10 @@ function handle_defend(args, msg) {
     		characterid: charid,
     		name: aojn.slice(0, -4) + "NOTE"
 	    })[0]
-	    
+
 	    if (attribute) {
 	        imd = attribute.get('current');
-	        
+
 	    }
 	    log("imd: " + imd);
 
@@ -612,10 +604,10 @@ function handle_defend(args, msg) {
             			tot = tot + ir;
             			if (impactroll.length > 2) {
             				impactroll = impactroll + " + " + ir;
-            
+
             			} else {
             				impactroll = impactroll + "[[" + ir;
-            
+
             			}
     		        }
     		    } else {
@@ -654,7 +646,7 @@ function handle_defend(args, msg) {
 			res = res + "<br/>Defender Injury: " + eff + " " + aspstr
 			var unipenalty =  parseInt(eff.match(/\d/));
 			if (toke.get('bar3_link')) {
-				
+
 				var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', defcharid, 0));
 				toke.set('bar3_value', unipenalty);
 				addinjury(aspstr+" "+hitloc, eff, defcharid)
@@ -707,10 +699,10 @@ function handle_defend(args, msg) {
     		characterid: defcharid,
     		name: aojn.slice(0, -4) + "NOTE"
 	    })[0]
-	    
+
 	    if (attribute) {
 	        imd = attribute.get('current');
-	        
+
 	    }
 		if (imd.length>0) {
     		var impactmod = imd.split(":")
@@ -727,10 +719,10 @@ function handle_defend(args, msg) {
             			tot = tot + ir;
             			if (impactroll.length > 2) {
             				impactroll = impactroll + " + " + ir;
-            
+
             			} else {
             				impactroll = impactroll + "[[" + ir;
-            
+
             			}
     		        }
     		    } else {
@@ -767,7 +759,7 @@ function handle_defend(args, msg) {
 			res = res + "<br/>Attacker Injury: " + eff + " " + defaspstr
 			var unipenalty =  parseInt(eff.match(/\d/));
 			if (atoke.get('bar3_link')) {
-				
+
 				var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', charid, 0));
 				atoke.set('bar3_value', unipenalty);
 				addinjury(defaspstr+" "+hitloc, eff, charid)
@@ -790,13 +782,13 @@ function handle_defend(args, msg) {
             var drolltarg = parseInt(myGet("DODGE_ML", defcharid, 0)) + "[ML] -" + (pp) + "[PP] +" +parseInt(def[2]) + "[Sit]";
         }
 
-		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " attempts dodge}} {{rollresult=[[" 
+		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " attempts dodge}} {{rollresult=[["
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{drollresult=[[" +  droll + "]]}} {{drolltarget=[["
 		        + drolltarg+ "]]}}{{drollsuccess=[["	+ dis + "]]}} {{result=" + res + "}}";
 	} else if (def[1] == "ignore") {
 
 
-		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " ignores}} {{rollresult=[[" 
+		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " ignores}} {{rollresult=[["
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{result=" + res + "}}";
 	} else {
 		var notestr =   + state.MainGameNS.atkstrout + "<br><h4>"
@@ -813,7 +805,7 @@ function handle_defend(args, msg) {
 
 		}
 
-		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} {{rollresult=[[" 
+		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} {{rollresult=[["
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{drollresult=[[" +  droll + "]]}} {{drolltarget=[["
 		        + drolltarg+ "]]}}{{drollsuccess=[["	+ dis + "]]}} {{result=" + res + "}}";
 
@@ -848,8 +840,8 @@ function rollshock(charid, token, unipenalty) {
 
 }
 
-function handle_rollatts(args, char) {
-
+function handle_rollatts(args, msg) {
+	var char = getObj("character", args[1]);
 	var rolls = [ "STR", "STA", "DEX", "AGL", "INT", "AUR", "WIL", "EYE",
 			"HRG", "SML", "VOI", "CML", "FRAME" ]
 	_.each(rolls, function(attname) {
@@ -902,6 +894,7 @@ function gethitloc(roll, aim) {
 		if (row[aim] !== "-") {
 			if (parseInt(row[aim].slice(0, 2)) <= roll) {
 				lr = row[3];
+				if (trace) {log(`location table ${row[aim]} hits ${row[3]}`)}
 			}
 		}
 
@@ -913,19 +906,39 @@ function gethitloc(roll, aim) {
 
 on("chat:message", function(msg) {
  if(msg.type == "api") {
-	if (trace) {log("chat:message("+msg.playerid +":"+msg.content+")");}
+	if (trace) {log(`>chat:message(${msg.content})`);}
 	var args = msg.content.split(" ");
-	var command = dispatch_table[args[0]];
-	if (command != null) {
+	if (dispatch_table.hasOwnProperty(args[0])) {
+		var commandMap = dispatch_table[args[0]];
 		try {
-			command(args, msg)
+			// First, test the syntax regular expression if it has one
+			if (commandMap.hasOwnProperty("re_syntax")) {
+				log(`comparing syntax to ${commandMap.re_syntax}`)
+				if (!commandMap.re_syntax.test(msg.content)) {
+					var errorMessage = `&{template:default} {{name=Syntax error}} {{Received=${msg.content}}}`;
+					if (commandMap.hasOwnProperty("hr_syntax")) {
+						errorMessage += `{{Expected=${commandMap.hr_syntax}}}`;
+					}
+					sendChat("API", errorMessage);
+					return;
+				}
+			}
+			// syntax check passed or doesn't exist. Execute the action if it exists.
+			if (commandMap.hasOwnProperty("action")) {
+				commandMap.action(args, msg)
+			} else {
+				sendChat("API Error", `No action defined for ${args[0]}`)
+			}
 		} catch (err) {
+			// Something went wrong. Log it, alert in chat and prevent the sandbox from bailing.
 			log(err.stack);
 			sendChat("API Error", err.message);
 		}
 	} else {
-		sendChat("API Error", "Unknown command " + arg[0])
+		log(`No such command ${msg.content}`);
+		sendChat("API Error", `&{template:default} {{name=Unknown command}} {{Received=${msg.content}}}`)
 	}
+	if (trace) {log("<chat:message")}
  }
 });
 
@@ -942,7 +955,7 @@ function handle_calcsb(args, msg) {
 }
 
 /**
- * Build a skill list table - probable candicate for initializing on startup.
+ * Build a skill list table - probable candidate for initializing on startup.
  * @param {Message} msg the message representing the command, with arguments separated by spaces
  */
 function handle_skilllist(args, msg) {
@@ -978,7 +991,7 @@ function handle_skilllist(args, msg) {
 }
 
 /**
- * Allow the hand of god to tip the scales. 
+ * Allow the hand of god to tip the scales.
  * @param {Message} msg the message representing the command, with arguments separated by spaces
  */
 function handle_cheat(args, msg) {
@@ -996,14 +1009,15 @@ function handle_cheat(args, msg) {
 function handle_mapsend(args, msg) {
 	if (trace) {log(`handle_mapsend(${args},${msg.content})`)}
 	args = msg.content.substr(9).split(",");
+	//TODO defensive programming
 	var player = findObjs({
 		type: 'player',
 		_displayname: args[0]
 	})[0];
 
+	//TODO defensive programming
 	var page = findObjs({
 		type: 'page',
-
 		name: args[1]
 	})[0];
 
@@ -1018,7 +1032,6 @@ function handle_mapsend(args, msg) {
 	playerspecificpages = Object.assign(playerspecificpages, pl);
 	log(playerspecificpages);
 	Campaign().set("playerspecificpages", playerspecificpages);
-	return args;
 }
 
 /**
@@ -1093,9 +1106,9 @@ function handle_time(args, msg) {
 	sendChat("Timekeeper", getHarnTimeStr(state.MainGameNS.GameTime));
 }
 
-function handle_loc(msg, args) {
+function handle_loc(args, msg) {
 	if (trace) {log(`handle_loc(${args},${msg.content})`)}
-	gethitloc(args[1], args[2], args[3]);
+	gethitloc(args[1], args[2]);
 }
 
 function handle_attack_melee_table(args, msg) {
@@ -1230,6 +1243,7 @@ function handle_invin(args, msg) {
  * @param {Message} msg the message representing the command, with arguments separated by spaces
  */
 function handle_sheetattack(args, msg) {
+	if (trace) {log(`handle_sheetattack(${args},${msg.content})`)}
 	if (args.length > 4) {
 		handle_attack(args, msg);
 	}
@@ -1259,7 +1273,7 @@ function initializeTables(playerid) {
 			return;
 		}
 	}
-	
+
 	var out = "";
 	var outarmor = "";
 	var outweap = "";
@@ -1339,15 +1353,15 @@ function addinjury(loc, injstr, charid) {
 		var lvl = parseInt(injstr.slice(1,2))
 	}
 	var mid = makeid();
-	
+
 	mySet("repeating_injury_"+ mid +"_INJURY_LOCATION",charid,loc);
 	mySet("repeating_injury_"+ mid +"_INJURY_SEVERITY",charid,sev);
 	mySet("repeating_injury_"+ mid +"_INJURY_LEVEL",charid,lvl);
 	mySet("repeating_injury_"+ mid +"_INJURY_HEALINGROLL",charid,"");
 	mySet("repeating_injury_"+ mid +"_INJURY_INFECTED",charid,0);
 	mySet("repeating_injury_"+ mid +"_INJURY_INFECTED_FEEDBACK",charid,0);
-	
-	return;	
+
+	return;
 }
 
 
@@ -1372,15 +1386,15 @@ function getrange(weapname, dist){
 function handle_newturn(args, msg) {
 	turnorder = [];
 
-	var currentPageGraphics = findObjs({                              
-		_pageid: Campaign().get("playerpageid"),                              
-		_type: "graphic",                          
+	var currentPageGraphics = findObjs({
+		_pageid: Campaign().get("playerpageid"),
+		_type: "graphic",
 	});
 
-	_.each(currentPageGraphics, function(obj) {    
+	_.each(currentPageGraphics, function(obj) {
 
 		if(obj.get('represents').startsWith('-M') && (obj.get('layer') == 'objects')  && !obj.get('status_skull')) {
-		    
+
         	if (msg.selected) {
         	    for(i=0;i<msg.selected.length;i++) {
         	        if (obj.id == msg.selected[i]["_id"]) {
@@ -1403,9 +1417,9 @@ function turnPush(obj) {
 		var pp = (parseInt(obj.get('bar3_value')) + parseInt(myGet('ENCUMBRANCE',obj.get("represents"),0)))*5;
 	} else {
 		var pp = (parseInt(myGet('UNIVERSAL_PENALTY',obj.get("represents"),0)) + parseInt(myGet('ENCUMBRANCE',obj.get("represents"),0)))*5;
-	}            
+	}
 	obj.set('lastmove',obj.get('left')+','+obj.get('top'))
-	
+
 	if (obj.get('status_sleepy')) {
 	    var initml = 0;
 	} else {
@@ -1439,21 +1453,21 @@ function addWeapon(charid,weapon_name) {
 		mySet("repeating_weapon_"+ mid +"_WEAPON_B",charid,weapons_table[weapon_name][4]);
 		mySet("repeating_weapon_"+ mid +"_WEAPON_E",charid,weapons_table[weapon_name][5]);
 		mySet("repeating_weapon_"+ mid +"_WEAPON_P",charid,weapons_table[weapon_name][6]);
-		
+
 		if (weapon_name.indexOf("Unarmed") == 0) {
 		    mySet("repeating_weapon_"+ mid +"_WEAPON_ML",charid,myGet("UNARMED_ML",charid,0));
 		} else {
     		var wepskill  = filterObjs(function(obj) {
     			obn = obj.get('name');
     			if(obn) {
-    				if((obn.indexOf("COMBATSKILL_NAME")) !== -1 && (obj.get("_characterid") == charid) && (weapon_name.indexOf(obj.get("current")) !== -1)) {return true;   
+    				if((obn.indexOf("COMBATSKILL_NAME")) !== -1 && (obj.get("_characterid") == charid) && (weapon_name.indexOf(obj.get("current")) !== -1)) {return true;
     				} else {return false;}
     			} else {return false;}
     		});
-    
+
     		if (wepskill[0]) {
     			mySet("repeating_weapon_"+ mid +"_WEAPON_ML",charid,myGet(wepskill[0].get('name').slice(0,-4)+"ML",charid,0));
-    		} 
+    		}
 		}
 		mySet("repeating_weapon_"+ mid +"_WEAPON_AML",charid,0);
 		mySet("repeating_weapon_"+ mid +"_WEAPON_DML",charid,0);
@@ -1490,14 +1504,14 @@ function addItem(charid, item) {
     	} else {
     	    mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_TYPE",charid,"Item");
     	}
-    	
+
     	mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_NOTES",charid,"");
     	mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_Q",charid,"0");
     	mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_QUANTITY",charid,"1");
     	mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_WORN",charid,"on");
     	log(item)
-    
-    
+
+
     	if(item in prices) {
     	    mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_WGT",charid,prices[item]["weight"]);
     	    mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_PRICE",charid,prices[item]["price"]);
@@ -1506,7 +1520,7 @@ function addItem(charid, item) {
     		mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_PRICE",charid,0)
     	}
     }
-}     
+}
 
 function addArmor(charid, item) {
 	if (trace) {log("addIArmor("+charid+", "+item+")")}
@@ -1526,14 +1540,14 @@ function addArmor(charid, item) {
 		mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_WGT",charid,0);
 		mySet("repeating_inventoryitems_"+ mid +"_INVENTORY_PRICE",charid,0)
 	}
-}  
+}
 
 function calcArmor(charid) {
 
 	var atts  = filterObjs(function(obj) {
 		obn = obj.get('name');
 		if(obn) {
-			if((obn.indexOf("INVENTORY_NAME")) !== -1 && (obj.get("_characterid") == charid)) {return true;   
+			if((obn.indexOf("INVENTORY_NAME")) !== -1 && (obj.get("_characterid") == charid)) {return true;
 			} else {return false;}
 		} else {return false;}
 	});
@@ -1541,7 +1555,7 @@ function calcArmor(charid) {
 
 
 	var newa = coverage2loc
-	_.each(newa,  function(ob1) { 
+	_.each(newa,  function(ob1) {
 		ob1["COV"]="";
 		ob1["AQ"]=0;
 		ob1["B"]=0;
@@ -1552,7 +1566,7 @@ function calcArmor(charid) {
 
 
 		});
-	_.each(atts,  function(ob1) { 
+	_.each(atts,  function(ob1) {
 
 
 		var ojn = ob1.get('name');
@@ -1560,7 +1574,7 @@ function calcArmor(charid) {
     		if(myGet(ojn.slice(0, -4) + "WORN", charid, 0) == "on") {
         		ojv = ob1.get('current');
         		if(ojv.slice(ojv.lastIndexOf(",")+2) in armor_prot) {
-        
+
         			var art = armor_prot[ojv.slice(ojv.lastIndexOf(",")+2)];
 
         			if(ojv.slice(0,ojv.lastIndexOf(",")) in armor_coverage) {
@@ -1575,12 +1589,12 @@ function calcArmor(charid) {
             				newa[arl[i]]["F"] += parseInt(art[4])+aq;
             			}
         			}
-        		} 
+        		}
     		}
 		}
 	});
 
-	_.each(newa,  function(ob1) { 
+	_.each(newa,  function(ob1) {
 		mySet(ob1["LOC"]+"_LAYERS",charid,ob1["COV"]);
 		mySet(ob1["LOC"]+"_AQ",charid,ob1["AQ"]);
 		mySet(ob1["LOC"]+"_B",charid,ob1["B"]);
@@ -1658,7 +1672,7 @@ function myGet(attname, tid, deft) {
 		});
 	}
 
-	return attribute.get('current');   
+	return attribute.get('current');
 
 }
 
@@ -1676,7 +1690,7 @@ function mySet(attname, tid, deft) {
 			max: ''
 		});
 	}
-	attribute.set('current', deft);            
+	attribute.set('current', deft);
 }
 
 function myGetmax(attname, tid, deft) {
@@ -1693,7 +1707,7 @@ function myGetmax(attname, tid, deft) {
 			max: deft
 		});
 	}
-	return attribute.get('max');            
+	return attribute.get('max');
 }
 
 function mySetmax(attname, tid, deft) {
@@ -1710,7 +1724,7 @@ function mySetmax(attname, tid, deft) {
 			max: deft
 		});
 	}
-	attribute.set('max', deft);            
+	attribute.set('max', deft);
 }
 
 function getIndex() {
@@ -1719,7 +1733,7 @@ function getIndex() {
 }
 function tokemove(toke) {
 	var curPage = getObj("page", toke.get("_pageid"));
-	var curScale = curPage.get("scale_number"); // scale for 1 unit, eg. 1 unit = 5ft 
+	var curScale = curPage.get("scale_number"); // scale for 1 unit, eg. 1 unit = 5ft
     var lastmove = toke.get("lastmove");
     var moves = lastmove.split(",");
 
@@ -1743,7 +1757,7 @@ function pixel2dis(left1,top1,left2,top2) {
 function tokendistance(token1,token2) {
 
 	var curPage = getObj("page", token1.get("_pageid"));
-	var curScale = curPage.get("scale_number"); // scale for 1 unit, eg. 1 unit = 5ft 
+	var curScale = curPage.get("scale_number"); // scale for 1 unit, eg. 1 unit = 5ft
 	var curUnit = curPage.get("scale_units"); // ft, m, km, mi etc.
 	var gridSize = 70;
 	var lDist = Math.abs(token1.get("left")-token2.get("left"))/gridSize;
@@ -1758,18 +1772,18 @@ function tokendistance(token1,token2) {
 
 
 function skillList(char) {
-    
+
 	var slist = [];
-	
+
 	slist.push.apply(slist,autoskillsnames);
 
-	var atts = findObjs({                              
-		_characterid: char.id,                              
-		_type: "attribute",                          
+	var atts = findObjs({
+		_characterid: char.id,
+		_type: "attribute",
 	});
-	
-	_.each(atts,  function(ob1) {    
-		
+
+	_.each(atts,  function(ob1) {
+
 		ojn = ob1.get('name')
 		ojv = ob1.get('current')
 
@@ -1788,19 +1802,19 @@ function skillList(char) {
 
 
 function findSkill(char,skillname) {
-    
+
     var nameout = "False"
     if (skillname.toUpperCase() in autoskills) {
         nameout = skillname.toUpperCase() + "_NAME"
     } else {
-        var atts = findObjs({                              
-          _characterid: char.id,                              
-          _type: "attribute",                          
+        var atts = findObjs({
+          _characterid: char.id,
+          _type: "attribute",
         });
-        
-        _.each(atts,  function(ob1) {    
-            
-    
+
+        _.each(atts,  function(ob1) {
+
+
             ojn = ob1.get('name')
             ojv = ob1.get('current')
 
@@ -1818,7 +1832,7 @@ function findSkill(char,skillname) {
         _.each(_.keys(skilllist), function(obj) {
             if (skillname.indexOf(obj) !== -1) {
                 var mid = makeid();
-                
+
                 if (skilllist[obj]["type"] == "PHYSICAL") {
                     mySet("repeating_physicalskill_"+ mid +"_PHYSICALSKILL_NAME",char.id,obj);
                     mySet("repeating_physicalskill_"+ mid +"_PHYSICALSKILL_SB",char.id,0);
@@ -1854,14 +1868,14 @@ function findSkill(char,skillname) {
         });
 
     }
-    
+
     return nameout;
 }
 
 
 function calcSB(char,msg) {
 
-    
+
     var rolls = ["STR","STA","DEX","AGL","INT","AUR","WIL","EYE","HRG","SML","VOI","CML","FRAME"]
     _.each(rolls, function(attname) {
         var r = randomInteger(6) + randomInteger(6) + randomInteger(6);
@@ -1874,21 +1888,21 @@ function calcSB(char,msg) {
     });
 
 
-    
-    var atts = findObjs({                              
-      _characterid: char.id,                              
-      _type: "attribute",                          
+
+    var atts = findObjs({
+      _characterid: char.id,
+      _type: "attribute",
     });
     var sss = myGet('SUNSIGN', char.id,"Ulandus").split('-');
 
-    _.each(atts,  function(ob1) {    
-        
+    _.each(atts,  function(ob1) {
+
 
         ojn = ob1.get('name')
         ojv = ob1.get('current')
 
         if (ojn.indexOf("SKILL_NAME") !== -1){
-            
+
             _.each(_.keys(skilllist), function(obj) {
                 if (ojv.indexOf(obj) !== -1) {
                     var sb = Math.round(((Number(myGet(skilllist[obj]["sba"][0], char.id))+Number(myGet(skilllist[obj]["sba"][1], char.id))+Number(myGet(skilllist[obj]["sba"][2], char.id)))/3));
@@ -1911,9 +1925,9 @@ function calcSB(char,msg) {
                     } else {
                         if (sss[0].slice(0,3) in skilllist[obj]["ssm"]) {
                         sb = sb + Number(skilllist[obj]["ssm"][sss[0].slice(0,3)])
-                        } 
+                        }
                     }
-                                       
+
                     log(obj + " - " + Math.round(sb))
                     if ( msg.content.indexOf("?") !== -1) {
                         myGet(ojn.slice(0,-4)+"SB",char.id, sb);
@@ -1922,7 +1936,7 @@ function calcSB(char,msg) {
                         mySet(ojn.slice(0,-4)+"SB",char.id, sb);
                     }
                     var ml = parseInt(myGet(ojn.slice(0,-4)+"ML",char.id,0));
-                    
+
                     if((!ml) || (ml == 0)) {
                         if(skilllist[obj]["oml"]) {
                             mySet(ojn.slice(0,-4)+"ML",char.id,(sb*parseInt(skilllist[obj]["oml"])))
@@ -1936,13 +1950,13 @@ function calcSB(char,msg) {
             });
         }
         if (ojn.indexOf("_SB") !== -1){
-            
+
             _.each(_.keys(skilllist), function(obj) {
                 if (ojn.indexOf(obj) !== -1) {
-                    var sb = Math.round(((Number(myGet(skilllist[obj]["sba"][0], char.id))+Number(myGet(skilllist[obj]["sba"][1], char.id))+Number(myGet(skilllist[obj]["sba"][2], char.id)))/3));   
+                    var sb = Math.round(((Number(myGet(skilllist[obj]["sba"][0], char.id))+Number(myGet(skilllist[obj]["sba"][1], char.id))+Number(myGet(skilllist[obj]["sba"][2], char.id)))/3));
                     var sb1 = 0;
                     var sb2 = 0;
-                    
+
                     if (sss.length == 2) {
                         if (sss[0].slice(0,3) in skilllist[obj]["ssm"]) {
                         sb1 = Number(skilllist[obj]["ssm"][sss[0].slice(0,3)])
@@ -1958,8 +1972,8 @@ function calcSB(char,msg) {
                     } else {
                         if (sss[0].slice(0,3) in skilllist[obj]["ssm"]) {
                         sb = sb + Number(skilllist[obj]["ssm"][sss[0].slice(0,3)])
-                        } 
-                    }                  
+                        }
+                    }
                     if ( msg.content.indexOf("?") !== -1) {
                         myGet(ojn,char.id, sb);
                     }
@@ -1967,7 +1981,7 @@ function calcSB(char,msg) {
                         mySet(ojn,char.id, sb);
                     }
                     var ml = parseInt(myGet(ojn.slice(0,-2)+"ML",char.id,0));
-                    
+
                     if((!ml) || (ml == 0)) {
                         if(skilllist[obj]["oml"]) {
                             mySet(ojn.slice(0,-2)+"ML",char.id,(sb*parseInt(skilllist[obj]["oml"])))
@@ -1977,41 +1991,41 @@ function calcSB(char,msg) {
                             mySet(ojn.slice(0,-2)+"ML",char.id,(sb*parseInt(ml)))
                         }
                     }
-                    
+
                 }
 
             });
-        
+
         }
-            
+
     });
     sendChat("API", "/w gm done calc SB");
 }
 
 
 function out(charid) {
-    
-    
+
+
     var char = getObj("character", charid);
-    var atts = findObjs({                              
-      _characterid: charid,                              
-      _type: "attribute",    
+    var atts = findObjs({
+      _characterid: charid,
+      _type: "attribute",
 
     });
     log("=================================")
-    _.each(atts,  function(ob1) {    
+    _.each(atts,  function(ob1) {
         ojn = ob1.get('name')
         ojv = ob1.get('current')
         log(ojn+ " - "+ojv)
 
-            
+
     });
 }
 function invin(charid) {
     var char = getObj("character", charid);
-    var atts = findObjs({                              
-      _characterid: charid,                              
-      _type: "attribute",    
+    var atts = findObjs({
+      _characterid: charid,
+      _type: "attribute",
       name: "TEXTAREA_NOTE"
     });
 
@@ -2021,41 +2035,41 @@ function invin(charid) {
         log(atts[0]);
         if (ojv.length > 100) {
             ojv = ojv.replace(/\t/g,"")
-            for (i = 0; i < 10; i++) {  
+            for (i = 0; i < 10; i++) {
                 ojv = ojv.replace(/  /g," ")
             }
-        
+
             ojv = ojv.replace(/\n /g,"\n");
             ojv = ojv.replace(/\nOffspring:/g,"");
             ojv = ojv.replace(/\nOrphan:/g,"");
             lns = ojv.split("\n");
-        
-        
-        
+
+
+
             var tv = lns[1].split(" ");
             var xi = 0;
-    
+
             if(lns[xi].slice(0,15) == "Clothing/Armor:"){
                 lns[xi] = lns[xi].slice(16);
                 while((lns[xi].slice(0,8) !== "Weapons:") && (lns[xi].slice(0,6) !== "Notes:")) {
                     if(lns[xi].length >2) {addArmor(charid, lns[xi]);}
                     xi++;
-            
-                     
+
+
                 }
-        
+
             }
-    
+
             if(lns[xi].slice(0,8) == "Weapons:"){
                 lns[xi] = lns[xi].slice(9);
                 while((lns[xi].slice(0,10) !== "Equipment:") && (lns[xi].slice(0,6) !== "Notes:")) {
                     if(lns[xi].length >2) {addWeapon(charid,lns[xi]);}
                     xi++;
                 }
-        
-        
+
+
             }
-    
+
             if(lns[xi].slice(0,10) == "Equipment:"){
                 lns[xi] = lns[xi].slice(11);
                 while(lns[xi].slice(0,6) !== "Notes:") {
@@ -2068,9 +2082,9 @@ function invin(charid) {
 }
 function xin(charid) {
     var char = getObj("character", charid);
-    var atts = findObjs({                              
-      _characterid: charid,                              
-      _type: "attribute",    
+    var atts = findObjs({
+      _characterid: charid,
+      _type: "attribute",
       name: "TEXTAREA_NOTE"
     });
 
@@ -2080,17 +2094,17 @@ function xin(charid) {
         //log(atts[0]);
         if (ojv.length > 100) {
         ojv = ojv.replace(/\t/g,"")
-        for (i = 0; i < 10; i++) {  
+        for (i = 0; i < 10; i++) {
             ojv = ojv.replace(/  /g," ")
         }
-    
+
         ojv = ojv.replace(/\n /g,"\n");
         ojv = ojv.replace(/\nOffspring:/g,"");
         ojv = ojv.replace(/\nOrphan:/g,"");
         lns = ojv.split("\n");
-    
-    
-    
+
+
+
         var tv = lns[1].split(" ");
         if(tv[0]!=="Strength"){
             log("no");
@@ -2113,7 +2127,7 @@ function xin(charid) {
             mySet("INT",charid,parseInt(tv[5]));
             mySet("MORAL",charid,parseInt(tv[7]));
             mySet("SPECIES",charid,lns[4].slice(9));
-        
+
             mySet("GENDER",charid,lns[5].slice(5));
             mySet("BIRTHDATE",charid,(lns[7].slice(12)+" "+lns[8].slice(11)+", "+lns[9].slice(12)));
             mySet("SUNSIGN",charid,lns[10].slice(10,-1));
@@ -2133,9 +2147,9 @@ function xin(charid) {
             mySet("CLANHEAD",charid,lns[17].slice(10));
 
 
-            
-        
-            
+
+
+
             var xi = 26;
             while(lns[xi].indexOf("Physical Skills:")==-1) {
                 if(lns[xi].indexOf("Occupation:")!==-1){
@@ -2155,11 +2169,11 @@ function xin(charid) {
                 if(lns[xi].indexOf("Piety:")!==-1){
                     mySet("PIETY",charid,lns[xi].slice(7));
                 }
-        
+
                 xi++;
             }
             xi++;
-            
+
             while(lns[xi] !== "Communications Skills:") {
                 tv = lns[xi].replace(/ /g,"").split("/");
                 if(tv.length > 1) {
@@ -2168,8 +2182,8 @@ function xin(charid) {
                         tv3 = tv2[1].split(")OML:");
                         mySet(tv[0]+"_SB",charid,tv3[0])
                         mySet(tv[0]+"_ML",charid,tv2[0])
-                        
-            
+
+
                     } else {
                         var tv2 = tv[1].split("(SB:");
                         var tv3 = tv2[1].split(")OML:");
@@ -2179,10 +2193,10 @@ function xin(charid) {
                         mySet("repeating_physicalskill_"+ mid +"_PHYSICALSKILL_ML",charid,tv2[0]);
                     }
                 }
-                xi++ 
+                xi++
             }
-        
-        
+
+
             xi++;
             while(lns[xi] !== "Combat Skills:") {
                 var stv = lns[xi].replace(/ /g,"")
@@ -2193,7 +2207,7 @@ function xin(charid) {
                         var tv3 = tv2[1].split(")OML:");
                         mySet(tv[0]+"_SB",charid,tv3[0])
                         mySet(tv[0]+"_ML",charid,tv2[0])
-            
+
                     } else {
                         var tv2 = tv[1].split("(SB:");
                         var tv3 = tv2[1].split(")OML:");
@@ -2203,9 +2217,9 @@ function xin(charid) {
                         mySet("repeating_communicationskill_"+ mid +"_COMMUNICATIONSKILL_ML",charid,tv2[0]);
                     }
                 }
-                xi++ 
+                xi++
             }
-        
+
             xi++;
             while(lns[xi] !== "Crafts & Lore Skills:") {
                 tv = lns[xi].replace(/ /g,"").split("/");
@@ -2215,8 +2229,8 @@ function xin(charid) {
                         tv3 = tv2[1].split(")OML:");
                         mySet(tv[0]+"_SB",charid,tv3[0])
                         mySet(tv[0]+"_ML",charid,tv2[0])
-                        
-            
+
+
                     } else {
                         var tv2 = tv[1].split("(SB:");
                         var tv3 = tv2[1].split(")OML:");
@@ -2226,16 +2240,16 @@ function xin(charid) {
                         mySet("repeating_combatskill_"+ mid +"_COMBATSKILL_ML",charid,tv2[0]);
                     }
                 }
-                xi++ 
+                xi++
             }
-            
-        
+
+
             xi++;
-            
-            
+
+
             while(lns[xi] !== "Convocaton Skills:") {
                 tv = lns[xi].replace(/ /g,"").split("/");
-        
+
                 if(tv.length > 1) {
                     var tv2 = tv[1].split("(SB:");
                     var tv3 = tv2[1].split(")OML:");
@@ -2244,14 +2258,14 @@ function xin(charid) {
                     mySet("repeating_loreskill_"+ mid +"_LORESKILL_SB",charid,tv3[0]);
                     mySet("repeating_loreskill_"+ mid +"_LORESKILL_ML",charid,tv2[0]);
                 }
-                xi++ 
+                xi++
             }
-        
+
             xi++;
-        
+
             while(lns[xi] !== "Psionics Skills:") {
                 tv = lns[xi].replace(/ /g,"").split("/");
-        
+
                 if(tv.length > 1) {
                     var tv2 = tv[1].split("(SB:");
                     var tv3 = tv2[1].split(")OML:");
@@ -2260,12 +2274,12 @@ function xin(charid) {
                     mySet("repeating_magicskill_"+ mid +"_MAGICSKILL_SB",charid,tv3[0]);
                     mySet("repeating_magicskill_"+ mid +"_MAGICSKILL_ML",charid,tv2[0]);
                 }
-                xi++ 
+                xi++
             }
-        
+
             xi++;
-        
-            
+
+
             while(lns[xi] !== "Ritual Skills:") {
                 tv = lns[xi].replace(/ /g,"").split("/");
                 if(tv.length > 1) {
@@ -2277,36 +2291,36 @@ function xin(charid) {
                     mySet("repeating_psionics_"+ mid +"_TALENT_TIME",charid,"0");
                     mySet("repeating_psionics_"+ mid +"_TALENT_EML",charid,tv2[0]);
                     mySet("repeating_psionics_"+ mid +"_TALENT_NOTE",charid,lns[xi]);
-        
+
                 }
-        
-        
-                xi++ 
+
+
+                xi++
             }
-        
+
             xi++;
-        
+
             while((lns[xi].slice(0,6) !== "Money:") && (lns[xi].slice(0,7) !== "Spells:") && (lns[xi].slice(0,12) !== "Invocations:")) {
                 tv = lns[xi].replace(/ /g,"").split("/");
-        
+
                 if(tv.length > 1) {
                     var tv2 = tv[1].split("(SB:");
                     var tv3 = tv2[1].split(")OML:");
                     var mid = makeid();
                     mySet("repeating_ritualskill_"+ mid +"_RITUALSKILL_NAME",charid,tv[0]);
                     mySet("repeating_ritualskill_"+ mid +"_RITUALSKILL_SB",charid,tv3[0]);
-                    mySet("repeating_ritualskill_"+ mid +"_RITUALSKILL_ML",charid,tv2[0]);    
+                    mySet("repeating_ritualskill_"+ mid +"_RITUALSKILL_ML",charid,tv2[0]);
                 }
-        
-        
-                xi++ 
+
+
+                xi++
             }
             if(lns[xi].slice(0,12) == "Invocations:"){
                 lns[xi] = lns[xi].slice(12);
                 while(lns[xi].slice(0,6) !== "Money:") {
                     tv = lns[xi].split("/");
                     if(tv.length > 1) {
-        
+
                         var mid = makeid();
                         mySet("repeating_rituals_"+ mid +"_RITUAL_NAME",charid,tv[0]);
                         mySet("repeating_rituals_"+ mid +"_RITUAL_RELIGION",charid,diety);
@@ -2314,20 +2328,20 @@ function xin(charid) {
 						mySet("repeating_rituals_"+ mid +"_RITUAL_ML",charid,0);
                         mySet("repeating_rituals_"+ mid +"_RITUAL_EML",charid,0);
                         mySet("repeating_rituals_"+ mid +"_RITUAL_NOTE",charid,lns[xi]);
-            
+
                     }
-            
-            
-                    xi++ 
+
+
+                    xi++
                 }
-        
+
             }
             if(lns[xi].slice(0,7) == "Spells:"){
                 lns[xi] = lns[xi].slice(7);
                 while(lns[xi].slice(0,6) !== "Money:") {
                     tv = lns[xi].split("/");
                     if(tv.length > 1) {
-        
+
                         var mid = makeid();
                         mySet("repeating_spells_"+ mid +"_SPELL_NAME",charid,tv[0]);
                         mySet("repeating_spells_"+ mid +"_SPELL_CONVOCATION",charid,"");
@@ -2336,13 +2350,13 @@ function xin(charid) {
                         mySet("repeating_spells_"+ mid +"_SPELL_EML",charid,0);
                         mySet("repeating_spells_"+ mid +"_SPELL_NOTE",charid,"");
 
-            
+
                     }
-            
-            
-                    xi++ 
+
+
+                    xi++
                 }
-        
+
             }
             if(lns[xi].slice(0,6) == "Money:") {
                 var mid = makeid();
@@ -2355,10 +2369,10 @@ function xin(charid) {
                 while((lns[xi].slice(0,8) !== "Weapons:") && (lns[xi].slice(0,6) !== "Notes:")) {
                     addItem(charid, lns[xi]);
                     xi++;
-            
-                     
+
+
                 }
-        
+
             }
 
             if(lns[xi].slice(0,8) == "Weapons:"){
@@ -2367,18 +2381,18 @@ function xin(charid) {
                     addWeapon(charid,lns[xi]);
                     xi++;
                 }
-        
-        
+
+
             }
 
 	            if(lns[xi].slice(0,10) == "Equipment:"){
 	                lns[xi] = lns[xi].slice(11);
 	                while(lns[xi].slice(0,6) !== "Notes:") {
 	                    addItem(charid, lns[xi]);
-	        
+
 	                    xi++;
-	            
-	                     
+
+
 	                }
 	            }
             }
@@ -2394,15 +2408,15 @@ function replaceArg(acom, msg) {
     for (var i=0; i<acom.length; i++)  {
         if (acom[i].indexOf('args') == 0) {
             acom[i] = args[parseInt(acom[i].substr(4))];
-            
+
         }
         if (acom[i].indexOf('inline') == 0) {
             acom[i] = msg.inlinerolls[parseInt(acom[i].substr(6))].results.total;
         }
-        
+
     }
     return acom;
-    
+
 }
 
 
@@ -2427,13 +2441,13 @@ function handle_table(args, msg) {
         for (var i=2; i<tt3.length; i++)  {
             if (r1 <= parseInt(tt3[i][0]) ) {
                 i1 = i;
-                break;            
+                break;
             }
         }
         for (var i=1; i<tt3[0].length; i++)  {
             if (r2 <= parseInt(tt3[0][i]) ) {
                 i2 = i;
-                break;            
+                break;
             }
         }
         var description = tt3[i1][i2].split(';');
@@ -2467,11 +2481,10 @@ function handle_table(args, msg) {
                     for (var j=2; j<commandLine.length; j++) {
                         out = out + ' ' + commandLine[j];
                     }
-                    
+
                     sendChat(args[1], out);
                 }
             }
         }
         });
 }
-
