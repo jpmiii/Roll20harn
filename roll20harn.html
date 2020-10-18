@@ -577,7 +577,7 @@
         <div class="sheet-skill-header sheet-skill-value sheet-center">Mis</div>
 
         <!--<div class="sheet-skill-header sheet-skill-value sheet-center">&nbsp;</div> -->
-        <div class="sheet-skill-header sheet-skill-value sheet-center">Def</div>
+
         <div class="sheet-skill-header sheet-skill-label">Note</div>
     </div>
     <fieldset class="repeating_weapon">
@@ -600,7 +600,6 @@
                                                    value="!sheetattack @{character_id} ?{aim zone|mid|low|high} H missile ?{Mod|0} @{target|token_id} @{WEAPON_NAME}" name="roll_WeaponAMLSkillCheck2"></button></div>
             
             <!--<div class="sheet-skill-value"><button type="roll" value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=blocks with a @{WEAPON_NAME}}} {{rolltarget=[[@{WEAPON_DML} - [[(@{PHYSICAL_PENALTY})*5]] + ?{Target Modifier?|0}]]}} {{penalty=[[(@{PHYSICAL_PENALTY})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{WEAPON_DML}}} {{note=WQ @{WEAPON_WQ}}}" name="roll_WeaponDMLSkillCheck"></button></div>-->
-            <div class="sheet-skill-value"><button type="roll" value="!defend ?{response|block|dodge|counterstrike|ignore} ?{Mod|0} WeaponName:@{WEAPON_NAME}" name="roll_WeaponDMLSkillCheck"></button></div>
 
             <input type="text" name="attr_WEAPON_NOTE" class="sheet-skill-label">
         </div>
