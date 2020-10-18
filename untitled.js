@@ -34,81 +34,17 @@ on("change:attribute:current", function(obj, prev) {
         	}
         }
     } else if (obj.get('name').includes("WEAPON_NAME") && weapon_list_on) {
-        var char = findObjs({
-        		id: obj.get("_characterid"),
-        		_type: "character",
-        })[0];
-        setWeaponsList(char);
+        setWeaponsList(obj.get("_characterid"));
     } else if (obj.get('name').includes("SKILL_NAME") && skill_list_on) {
-        var char = findObjs({
-        		id: obj.get("_characterid"),
-        		_type: "character",
-        })[0];
-        setSkillList(char);
+        setSkillList(obj.get("_characterid"));
     } else if (obj.get('name') == "tab") {
 		if (obj.get('current') == 2 && skill_list_on) {
-	        var char = findObjs({
-	        		id: obj.get("_characterid"),
-	        		_type: "character",
-	        })[0];
-	        setSkillList(char);
+	        setSkillList(obj.get("_characterid"));
 		} else if (obj.get('current') == 3 && weapon_list_on) {
-	        var char = findObjs({
-	        		id: obj.get("_characterid"),
-	        		_type: "character",
-	        })[0];
-	        setWeaponsList(char);
+	        setWeaponsList(obj.get("_characterid"));
 		}
     }
 });
-
-/*
-
-// THIS STUFF WON'T WORK
-
-on("add:attribute", function(obj) {
-    if (started) {
-        if (obj.get('name').includes("WEAPON_NAME")) {
-            log(obj);
-            var char = findObjs({                              
-            		id: obj.get("_characterid"),                              
-            		_type: "character",                          
-            })[0];
-            setWeaponsList(char);
-        } else if (obj.get('name').includes("SKILL_NAME")) {
-            var char = findObjs({                              
-            		id: obj.get("_characterid"),                              
-            		_type: "character",                          
-            })[0];
-            setSkillList(char);
-        }
-    }
-});
-
-
-
-
-on("destroy:attribute", function(obj) {
-
-    if (obj.get('name').includes("WEAPON_NAME")) {
-        log("destroy");
-        log(obj)
-        var char = findObjs({                              
-        		id: obj.get("_characterid"),                              
-        		_type: "character",                          
-        })[0];
-        setWeaponsList(char);
-    } else if (obj.get('name').includes("SKILL_NAME")) {
-        var char = findObjs({                              
-        		id: obj.get("_characterid"),                              
-        		_type: "character",                          
-        })[0];
-        setSkillList(char);
-    }
-
-});
-
-*/
 
 on("change:campaign:turnorder", function(obj, prev) {
 
@@ -1114,42 +1050,6 @@ function handle_calcsb(args, msg) {
 }
 
 /**
- * Build a skill list table - probable candidate for initializing on startup.
- * @param {Message} msg the message representing the command, with arguments separated by spaces
- */
-function handle_skilllist(args, msg) {
-	if (trace) {log(`handle_skilllist(${args},${msg.content})`)}
-	var char = getObj("character", args[1]);
-	if (char) {
-		var out = "";
-		var sl = skillList(char);
-
-		for (i = 0; i < sl.length; i++) {
-			out += "|" + sl[i];
-		}
-
-		//log(out+"\n\n");
-		out = out.replace(/,/g, "&#44;");
-		out = "?{Skills" + out + "}";
-		var mac = findObjs({
-			type: 'macro',
-			_characterid: msg.playerid,
-			name: 'SkillList'
-		})[0];
-		if (mac) {
-			mac.set('action', out);
-		} else {
-			createObj('macro', {
-				name: 'SkillList',
-				action: out,
-				playerid: msg.playerid
-			});
-		}
-	}
-	return { char, out, args };
-}
-
-/**
  * Allow the hand of god to tip the scales.
  * @param {Message} msg the message representing the command, with arguments separated by spaces
  */
@@ -1545,12 +1445,12 @@ function initializeTables(playerid) {
 	return;
 }
 
-function getWep(char) {
+function getWep(charid) {
     return filterObjs(function(obj) {
 		obn = obj.get('name');
 		if (obn) {
 			if (obn.includes("WEAPON_NAME")
-					&& (obj.get("_characterid") == char.id)) {
+					&& (obj.get("_characterid") == charid)) {
 				return true;
 			} else {
 				return false;
@@ -1561,17 +1461,17 @@ function getWep(char) {
 	});
 }
 
-function setWeaponsList(char) {
+function setWeaponsList(charid) {
 
 	var out2 = "";
-	getWep(char).forEach( function(w) {
-	    out2 += "|" + myGet(w.get('name'),char.id,"");
+	getWep(charid).forEach( function(w) {
+	    out2 += "|" + myGet(w.get('name'),charid,"");
 	})
 	out2 = out2.replace(/,/g, "&#44;");
 	out2 = "?{Weapon" + out2 + "}";
 	var mac = findObjs({
 		type: 'ability',
-		_characterid: char.id,
+		_characterid: charid,
 		name: 'Weapons'
 	})[0];
 
@@ -1581,7 +1481,7 @@ function setWeaponsList(char) {
 		createObj('ability', {
 			name: 'Weapons',
 			action: out2,
-			_characterid: char.id
+			_characterid: charid
 		});
 	}
 	
@@ -1589,9 +1489,9 @@ function setWeaponsList(char) {
 
 }
 
-function setSkillList(char) {
+function setSkillList(charid) {
 	var out = "";
-	var sl = skillList(char);
+	var sl = skillList(charid);
 
 	for (i = 0; i < sl.length; i++) {
 		out += "|" + sl[i];
@@ -1602,7 +1502,7 @@ function setSkillList(char) {
 	out = "?{Skills" + out + "}";
 	var mac = findObjs({
 		type: 'ability',
-		_characterid: char.id,
+		_characterid: charid,
 		name: 'SkillList'
 	})[0];
 	if (mac) {
@@ -1611,7 +1511,7 @@ function setSkillList(char) {
 		createObj('ability', {
 			name: 'SkillList',
 			action: out,
-			_characterid: char.id
+			_characterid: charid
 		});
 	}
 }
@@ -2044,14 +1944,14 @@ function tokendistance(token1,token2) {
 }
 
 
-function skillList(char) {
+function skillList(charid) {
 
 	var slist = [];
 
 	slist.push.apply(slist,autoskillsnames);
 
 	var atts = findObjs({
-		_characterid: char.id,
+		_characterid: charid,
 		_type: "attribute",
 	});
 

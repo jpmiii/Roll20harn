@@ -18,11 +18,6 @@ var dispatch_table = {
         "re_syntax": /^!calcsb [-_a-zA-Z0-9]{20}$/,
         "hr_syntax": "!calcsb character_id<br/>Calculate the skill bonus for the selected character."
     },
-    "!skilllist": {
-        "action": (args, msg) => { handle_skilllist(args, msg); },
-        "re_syntax": /^!skilllist [-_a-zA-Z0-9]{20}$/,
-        "hr_syntax": "!skilllist<br/>Prepares the skill lists for use by other macros."
-    },
     "!cheat": {
         "action": (args, msg) => { handle_cheat(args, msg); },
         "re_syntax": /^!cheat [-+]?[0-9]+$/,
