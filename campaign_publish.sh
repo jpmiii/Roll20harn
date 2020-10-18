@@ -19,8 +19,8 @@ rm roll20*.cookies 2>/dev/null
 # get all the js into a single variable
 tempfile=$(mktemp -t harn)
 
-echo "# Published on $(date "+%Y%m%d %H:%M")" > $tempfile
-echo "# Git branch: $(git branch --show-current)" >> $tempfile
+echo "// Published on $(date "+%Y%m%d %H:%M")" > $tempfile
+echo "// Git branch: $(git branch --show-current)" >> $tempfile
 
 # combine all the JS files into a single JS file
 cat *.js >> $tempfile
@@ -50,7 +50,7 @@ curl \
         -H 'Accept-Language: en-us' \
         -H 'Referer: https://app.roll20.net/sessions/create' \
         https://app.roll20.net/campaigns/save_script/${campaign}/${script} \
-        --data-urlencode 'name=harn.js' \
+        --data-urlencode 'name=roll20harn.js' \
         --data-urlencode content@$tempfile
 
 rm $tempfile
