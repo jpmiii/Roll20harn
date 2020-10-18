@@ -239,7 +239,7 @@ function handle_attack(atk, msg) {
 
 
 
-	var wep = getWep(defchar);
+	var wep = getWep(defcharid);
 
 	atkstr = "&{template:harnroll} {{rolldesc=" + atoke.get('name')+" "+atk[4]+" attacks "+ toke.get('name')
 			+ " with a "
