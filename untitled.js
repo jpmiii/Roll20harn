@@ -136,6 +136,28 @@ function initRoll() {
 	}
 
 }
+
+function getSelectedPage(msg) {
+	if (msg.selected) {
+		var obj = getObj("graphic", msg.selected[0]['_id']);
+		return obj.get("_pageid")
+	} else {
+		return getPlayerPage(msg.playerid)
+	}
+}
+
+function getPlayerPage(player_id) {
+	var psp = Campaign().get("playerspecificpages");
+	if (psp) {
+		if (player_id in psp) {
+			return psp[player_id];
+		} else {
+			return Campaign().get("playerpageid");
+		}
+	} else {
+		return Campaign().get("playerpageid");
+	}
+}
 /**
  * Process an attack message
  */
@@ -145,7 +167,7 @@ function handle_attack(atk, msg) {
     if(atk[0] == "!sheetattack")  {
         var tokelist = findObjs({
 		  represents: atk[1],
-		  _pageid: Campaign().get("playerpageid"),
+		  _pageid: getSelectedPage(msg),
           _type: "graphic",
         });
         if (tokelist == null || tokelist.length < 1) {
@@ -262,7 +284,7 @@ function handle_attack(atk, msg) {
 	state.MainGameNS["asuc"] = asuc
 	state.MainGameNS["ais"] = ais
 	state.MainGameNS["wepname"] = wepname
-	state.MainGameNS["attacker"] = msg
+	state.MainGameNS["attacker"] = atk
 	state.MainGameNS["missi"] = missi
 
 
@@ -369,22 +391,13 @@ function missileAttack(dist, app, appstr, atkmov, charid) {
 
 function handle_defend(def, msg) {
 
-	var atk = state.MainGameNS.attacker.content.split(" ");
-    if(atk[0] == "!sheetattack")  {
-        var tokelist = findObjs({
-		  represents: atk[1],
-		  _pageid: Campaign().get("playerpageid"),
-          _type: "graphic",
-        });
-        atk[1] = tokelist[0].id;
-    }
+	var atk = state.MainGameNS.attacker;
 	var wepname = state.MainGameNS.wepname;
 	var atoke = getObj("graphic", atk[1]);
 
 	var toke = getObj("graphic", atk[6]);
 	if (!toke.get("represents")) {sendChat(msg.who, "No defender"); return;}
-	if (!toke.get("represents").startsWith("-M")) {sendChat(msg.who, "No defender sheet"); return;}
-
+	if (!toke.get("represents").startsWith("-M")) {sendChat(msg.who, "No defender -M"); return;}
 	var charid = atoke.get("represents")
 	var defcharid = toke.get("represents")
 	var defchar = getObj("character", defcharid);
@@ -392,7 +405,7 @@ function handle_defend(def, msg) {
 	var allowed = defchar.get("controlledby");
     if(!playerIsGM(msg.playerid)) {
         if (allowed.indexOf(msg.playerid) == -1 &&  allowed.indexOf("all") == -1){
-            log(msg.who + " denied");
+            senChat("API", msg.who + " is not in control")
             return;
         }
     }
@@ -413,6 +426,7 @@ function handle_defend(def, msg) {
 		}
 	});
 	if (!wep) {
+		senChat("API", msg.who + " No weapon")
 		return;
 	}
 
@@ -1360,14 +1374,12 @@ function handle_invin(args, msg) {
 }
 
 /**
- * The main command used for attacking
+ * The command used for attacking without a selected token
  * @param {Message} msg the message representing the command, with arguments separated by spaces
  */
 function handle_sheetattack(args, msg) {
 	if (trace) {log(`handle_sheetattack(${args},${msg.content})`)}
-	if (args.length > 4) {
-		handle_attack(args, msg);
-	}
+	handle_attack(args, msg);
 }
 
 /**
@@ -1626,7 +1638,7 @@ function handle_newturn(args, msg) {
 	turnorder = [];
 
 	var currentPageGraphics = findObjs({
-		_pageid: Campaign().get("playerpageid"),
+		_pageid: getSelectedPage(msg),
 		_type: "graphic",
 	});
 
