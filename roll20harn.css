@@ -3,7 +3,7 @@
 @import url('https://fonts.googleapis.com/css?family=Uncial+Antiqua|Berkshire+Swash|Creepster|Spirax&display=swap');
 
 .sheet-formula{
-    display;
+    display:float;
 }
 
 .sheet-arrow:checked + *.sheet-formula{
