@@ -927,7 +927,7 @@ props:
 
 <rolltemplate class="sheet-rolltemplate-harnroll">
     <table>
-        {{#rolldesc}}<tr><th><span class="sheet-tcat">{{rolldesc}}</span></th></tr>{{/rolldesc}}
+        
         {{#rollresult}}<tr><td>Attack Roll: {{rollresult}} {{#rolltarget}}Target: {{rolltarget}}{{/rolltarget}}</td></tr>{{/rollresult}}
         {{#info}}
         <tr>
@@ -939,11 +939,11 @@ props:
             <td class="sheet-note">{{def}}</td>
         </tr>
         {{/def}}
-
+        
         {{#rollsuccess}}
             {{#rollTotal() rollsuccess 3}}
             <tr>
-                <td class="sheet-crit-success">Critical Success!!</td>
+                <td class="sheet-crit-success">Critical<br><br>Success!!</td>
             </tr>
             {{/rollTotal() rollsuccess 3}}
             {{#rollTotal() rollsuccess 2}}
@@ -956,7 +956,7 @@ props:
     
             {{#rollTotal() rollsuccess 0}}
             <tr>
-                <td class="sheet-crit-failure">Critical Failure!!</td>
+                <td class="sheet-crit-failure">Critical<br><br>Failure!!</td>
             </tr>
             {{/rollTotal() rollsuccess 0}}
             {{#rollTotal() rollsuccess 1}}
@@ -966,13 +966,14 @@ props:
             {{/rollTotal() rollsuccess 1}}
             
         {{/rollsuccess}}
+        {{#rolldesc}}<tr><th><img src="https://jpmiii.com/break.png"><br><span class="sheet-tcat">{{rolldesc}}</span><br><img src="https://jpmiii.com/break.png"></th></tr>{{/rolldesc}}
         {{#drollresult}}<tr><td>Defence Roll:{{drollresult}} {{#drolltarget}} Target:  {{drolltarget}}{{/drolltarget}}</td></tr>{{/drollresult}}
 
 
         {{#drollsuccess}}
             {{#rollTotal() drollsuccess 3}}
             <tr>
-                <td class="sheet-crit-success">Critical Success!!</td>
+                <td class="sheet-crit-success">Critical<br><br>Success!!</td>
             </tr>
             {{/rollTotal() drollsuccess 3}}
             {{#rollTotal() drollsuccess 2}}
@@ -985,7 +986,7 @@ props:
     
             {{#rollTotal() drollsuccess 0}}
             <tr>
-                <td class="sheet-crit-failure">Critical Failure!!</td>
+                <td class="sheet-crit-failure">Critical<br><br>Failure!!</td>
             </tr>
             {{/rollTotal() drollsuccess 0}}
             {{#rollTotal() drollsuccess 1}}
@@ -1006,6 +1007,7 @@ props:
             <td class="sheet-note">{{note}}</td>
         </tr>
         {{/note}}
+        <tr><td><img src="https://jpmiii.com/break.png"></td></tr>
     </table>
 </rolltemplate>
 
@@ -1039,7 +1041,7 @@ props:
             {{#^rollGreater() rollresult rolltarget}}
             {{#rollWasCrit() rollresult }}
             <tr>
-                <td class="sheet-crit-success">Critical Success!!</td>
+                <td class="sheet-crit-success">Critical<br>Success!!</td>
             </tr>
             {{/rollWasCrit() rollresult }}
             {{#^rollWasCrit() rollresult }}
@@ -1052,7 +1054,7 @@ props:
             {{#rollGreater() rollresult rolltarget}}
             {{#rollWasCrit() rollresult }}
             <tr>
-                <td class="sheet-crit-failure">Critical Failure!!</td>
+                <td class="sheet-crit-failure">Critical<br>Failure!!</td>
             </tr>
             {{/rollWasCrit() rollresult }}
             {{#^rollWasCrit() rollresult }}

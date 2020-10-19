@@ -3,7 +3,7 @@
 @import url('https://fonts.googleapis.com/css?family=Uncial+Antiqua|Berkshire+Swash|Creepster|Spirax&display=swap');
 
 .sheet-formula{
-    display:float;
+    display: float;
 }
 
 .sheet-arrow:checked + *.sheet-formula{
@@ -193,7 +193,7 @@ input[type=number]::-webkit-inner-spin-button {
 .sheet-panel {
     text-align: center;
     padding: 3px;
-	border-radius: 5px;
+    border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px; }
 
@@ -510,22 +510,27 @@ input[type=number]::-webkit-inner-spin-button {
     font-weight: bold;
 }
 .sheet-rolltemplate-harnroll table {
+    
+    font-family: "Berkshire Swash";
+    text-align: center;
     background-image: url("https://jpmiii.com/bg.gif");
-    width: 100%;
-    border: 1px solid;
+    width: 240px;
     color: black;
-    font-size: 1em;
-    font-family: "Helvetica Neue", Helvetica, sans-serif;
+    border-style: none solid none solid;
+    border-width: 5;
+    border-color: black;
+
 }
 
 
 .sheet-rolltemplate-harnroll th {
-    background-color: #313131;
-    color: #ffffff;
-    padding: 2px;
-    border-bottom: 1px solid black;
-    line-height: 1.6em;
-    font-size: 1.2em;
+
+    padding-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    text-align: center;
+    font-family: "Uncial Antiqua";
+    font-size: large;
 }
 
 .sheet-rolltemplate-harnroll .sheet-tcat {
@@ -535,19 +540,9 @@ input[type=number]::-webkit-inner-spin-button {
 
 .sheet-rolltemplate-harnroll td {
     padding: 5px;
-    border-bottom: 1px solid black;
+
 }
 
-
-
-.sheet-rolltemplate-harnroll tr:nth-child(odd) {
-    background-color: #FDF5E6;
-}
-
-
-.sheet-rolltemplate-harnroll tr:nth-child(even) {
-    background-color: #FFFAF0;
-}
 
 
 .sheet-rolltemplate-harnroll .inlinerollresult  {
@@ -575,49 +570,53 @@ input[type=number]::-webkit-inner-spin-button {
 
 .sheet-rolltemplate-harnroll .sheet-note {
     text-align: center;
-    border: 2px solid 	#778899;
-    background-color: #DCDCDC;
 }
 
 
 .sheet-rolltemplate-harnroll .sheet-infected {
     text-align: center;
-    border: 2px solid 	#D8D456;
-    background-color: #83AB2C;
     font-weight: bold;
     font-style: oblique;
 }
 
 
 .sheet-rolltemplate-harnroll .sheet-success {
-    border: 2px solid #3FB315;
-    background-color: #99FF99;
+
+    color: #99FF99;
     text-align: center;
     font-weight: bold;
+    font-family: "Spirax";
+    font-size: 2.0em;
 }
 
 
 .sheet-rolltemplate-harnroll .sheet-failure {
-    border: 2px solid #CC6600;
-    background-color: #FFCC99;
+
+    color: #AA0000;
     text-align: center;
     font-weight: bold;
+    font-family: "Creepster";
+    font-size: 2.0em;
 }
 
 
 .sheet-rolltemplate-harnroll .sheet-crit-success {
-    border: 2px solid #009900;
-    background-color: #00CC00;
+
+    color: #55FF55;
     text-align: center;
     font-weight: bold;
+    font-family: "Spirax";
+    font-size: 2.5em;
 }
 
 
 .sheet-rolltemplate-harnroll .sheet-crit-failure {
-    border: 2px solid #990000;
-    background-color: #CC0000;
-    
+
+    color: #FF0000;
+    text-align: center;
     font-weight: bold;
+    font-family: "Creepster";
+    font-size: 2.5em;
 }
 
 
