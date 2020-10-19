@@ -87,6 +87,39 @@ function initRoll() {
 
 }
 
+function getMeleeEML(toke, ojn, charid, mod = 0, loc = "mid") {
+	var out = {};
+	out['Mastery Level'] = parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0));
+	out['Attack Mod'] = parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0));
+	out['H Mod'] = parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0));
+	if (toke.get('bar3_value')) {
+		out['Universal Penalty'] = (parseInt(toke.get('bar3_value')) ) * -5;
+	} else {
+		out['Universal Penalty'] = (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0)) ) * -5;
+	}
+	out['Encumbrance'] = parseInt(myGet('ENCUMBRANCE', charid, 0)) * -5;
+	out['Location '+loc] = -1*hit_loc_penalty[loc]["penalty"];
+	out['Situational Mod'] = parseInt(mod);
+	var tot=0;
+	_.each(_.keys(out), function(k) {
+		tot += out[k];
+	});
+	out['Total'] = tot;
+	 
+
+	return out;
+}
+
+
+
+function computeAttackML(ojn, charid, app, mod) {
+
+	return parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0))
+		+ parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0))
+		+ parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0))
+		+ parseInt(mod) - (app);
+}
+
 function getSelectedPage(msg) {
 	if (msg.selected) {
 		var obj = getObj("graphic", msg.selected[0]['_id']);
@@ -108,171 +141,7 @@ function getPlayerPage(player_id) {
 		return Campaign().get("playerpageid");
 	}
 }
-/**
- * Process an attack message
- */
-function handle_attack(atk, msg) {
-	if (trace) {log(`handle_attack(${atk},${msg.content})`)}
 
-    if(atk[0] == "!sheetattack")  {
-        var tokelist = findObjs({
-		  represents: atk[1],
-		  _pageid: getSelectedPage(msg),
-          _type: "graphic",
-        });
-        if (tokelist == null || tokelist.length < 1) {
-            sendChat(msg.who, "Move the player banner to this page.");
-            return;
-        }
-        atk[1] = tokelist[0].id;
-
-    }
-	var atoke = getObj("graphic", atk[1]);
-	var charid = atoke.get("represents")
-	var toke = getObj("graphic", atk[6]);
-	if (!toke.get("represents")) {sendChat(msg.who, "No defender"); return;}
-	var defcharid = toke.get("represents");
-	var defchar = getObj("character", defcharid);
-	var dist = 0;
-	var res = "";
-	var atkmov = 0;
-	var defmov = 0;
-
-	if (atoke && toke) {
-	    atkmov = tokemove(atoke);
-	    defmov = tokemove(toke);
-		dist = tokendistance(atoke, toke);
-		res = res + "Distance: " + dist[0] + "<br/>Attacker Move: " + atkmov + "<br/>Defender Move: " + defmov + "<br/>";
-	}
-	// Use regular expression to get the string which starts after the 7th space delimited word
-	weapNameArray = msg.content.match(/^([^ ]+ ){7}(.*)$/);
-	wepname=weapNameArray[weapNameArray.length-1];
-	log(`selected weapon: ${wepname}`);
-	// wepname = msg.content
-	// 		.slice((msg.content.indexOf(atk[6]) + atk[6].length + 1))
-
-	if (wepname == "") {
-		log(msg.content);
-		return;
-	}
-
-	var atkstr = "";
-	var appstr = "";
-
-
-	if (atoke.get('bar3_value')) {
-		var app = (parseInt(atoke.get('bar3_value')) + parseInt(myGet(
-				'ENCUMBRANCE', charid, 0))) * 5;
-		appstr = appstr + " -" + (parseInt(atoke.get('bar3_value'))*5) + "[UP] -" + (parseInt(myGet('ENCUMBRANCE', charid, 0))*5) + "[EP]";
-	} else {
-		var app = (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0)) + parseInt(myGet(
-				'ENCUMBRANCE', charid, 0))) * 5;
-		appstr = appstr + " -" + (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0))*5) + "[UP] -" + (parseInt(myGet('ENCUMBRANCE', charid, 0))*5) + "[EP]";
-	}
-
-
-	app = app + hit_loc_penalty[atk[2]]["penalty"]
-	appstr = appstr + " -" + hit_loc_penalty[atk[2]]["penalty"] +"[Loc]";
-
-
-	if (atk[4] == "missile") {
-		var missi;
-		({ missi, app, appstr } = missileAttack(dist, app, appstr, atkmov, charid));
-	}
-
-	var wep = findWeapon(charid);
-
-	if (!wep[0]) {
-	    sendChat(msg.who, "Weapon " + wepname + " not found");
-	    return;
-	}
-
-
-	var ojn = wep[0].get('name');
-
-
-	var atkml = computeAttackML(ojn, charid, app, atk[5]);
-
-
-    if (atkml >97) {atkml=97;}
-	aroll = randomInteger(100);
-	var ctype = parseInt(myGet('CType', charid, 0))
-
-	log("Roll: " + aroll);
-	log("AtkML:" + atkml);
-	if (!atkml) {
-		sendChat("API","attack ml problem");
-		return;
-	}
-	if (ctype !== 0) {
-	    for (i=0;i<(ctype*-1);i++) {
-	        var broll = randomInteger(300);
-	        log("cheat: " + aroll + " " +broll);
-	        if (broll < aroll) {
-	            aroll=broll;
-	        }
-	    }
-	    if (ctype > 0) {
-	    	aroll = 101 - aroll;
-	    }
-	    log("Cheat Roll: " + aroll);
-
-	}
-
-	if (state.MainGameNS["cheat"] > 0) {
-	    if (state.MainGameNS["cheat"] >100) {
-	        aroll = 100 - state.MainGameNS["cheat"]
-	    } else {
-	        aroll = state.MainGameNS["cheat"]
-	        state.MainGameNS["cheat"] = 0;
-	    }
-
-	}
-
-	var { asuc, ais } = determineSuccess(atkml);
-	state.MainGameNS["aroll"] = aroll
-	state.MainGameNS["asuc"] = asuc
-	state.MainGameNS["ais"] = ais
-	state.MainGameNS["wepname"] = wepname
-	state.MainGameNS["attacker"] = atk
-	state.MainGameNS["missi"] = missi
-
-
-
-	var wep = getWep(defcharid);
-
-	atkstr = "&{template:harnroll} {{rolldesc=" + atoke.get('name')+" "+atk[4]+" attacks "+ toke.get('name')
-			+ " with a "
-			+ wepname
-			+ "}} {{info="
-			+ res
-			+ "}} {{def=[Dodge](!defend dodge ?{Mod|0} WeaponName:Dodge)[Ignore](!defend ignore ?{Mod|0} WeaponName:)";
-	for (var i=0;i<wep.length;i++) {
-	    atkstr += "["
-			+ myGet(wep[i].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[i].get('name'),defcharid,"").replace(')','&#41;') +")";
-	}
-	atkstr = atkstr + "}}"
-
-
-	state.MainGameNS["appstr"] = myGet(ojn.slice(0, -4) + "ML", charid, 0) +  "[ML] +" + myGet(ojn.slice(0, -4) + "ATK", charid, 0) + "[Atk] +" + myGet(ojn.slice(0, -4) 	+ "HM", charid, 0) + "[HM]" + appstr + " +" + atk[5] + "[Sit]";
-
-	state.MainGameNS["atkstrout"] =   "<br/>Penalty: "
-			+ app
-			+ "<br/>Other Mods: "
-			+ atk[5]
-			+ "<br/>Mastery Level: "
-			+ myGet(ojn.slice(0, -4) + "ML", charid, 0)
-			+ "<br/>Attack Mod: "
-			+ myGet(ojn.slice(0, -4) + "ATK", charid, 0)
-
-
-
-
-	sendChat(msg.who, atkstr);
-
-}
 
 function determineSuccess(atkml) {
 	if (aroll <= atkml) {
@@ -291,21 +160,13 @@ function determineSuccess(atkml) {
 }
 
 
-function computeAttackML(ojn, charid, app, mod) {
-
-	return parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0))
-		+ parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0))
-		+ parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0))
-		+ parseInt(mod) - (app);
-}
-
-function findWeapon(charid) {
+function findWeapon(charid, weaponname) {
 	return filterObjs(function (obj) {
 		obn = obj.get('name');
 		if (obn) {
 			if ((obn.indexOf("WEAPON_NAME")) !== -1
 				&& (obj.get("_characterid") == charid)
-				&& (obj.get("current") == wepname)) {
+				&& (obj.get("current") == weaponname)) {
 				return true;
 			} else {
 				return false;
@@ -320,21 +181,21 @@ function missileAttack(dist, app, appstr, atkmov, charid) {
 	var missi = getrange(wepname, dist[0]);
 	app = app + missi[0];
 	if (missi[0] < 0) {
-		appstr = appstr + " +" + missi[0] * -1 + "[Rng]";
+		appstr += " +" + missi[0] * -1 + "[Rng]";
 	} else {
-		appstr = appstr + " -" + missi[0] + "[Rng]";;
+		appstr += " -" + missi[0] + "[Rng]";;
 	}
 	if (atkmov < 5) {
 		app = app - Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5);
-		appstr = appstr + " +" + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5) + "[NM]";
+		appstr += " +" + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5) + "[NM]";
 	}
 	if (atkmov > 5) {
 		app = app + 10;
-		appstr = appstr + " -10[Mov]";
+		appstr += " -10[Mov]";
 	}
 	if (myGet('IS_MOUNTED', charid, 0) == 'on') {
 		app = app + 10;
-		appstr = appstr + " -10[Mnt]";
+		appstr += " -10[Mnt]";
 	}
 	return { missi, app, appstr };
 }

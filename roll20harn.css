@@ -1,4 +1,7 @@
 
+
+@import url('https://fonts.googleapis.com/css?family=Uncial+Antiqua|Berkshire+Swash|Creepster|Spirax&display=swap');
+
 .sheet-formula{
     display;
 }
@@ -190,6 +193,7 @@ input[type=number]::-webkit-inner-spin-button {
 .sheet-panel {
     text-align: center;
     padding: 3px;
+	border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px; }
 
@@ -395,6 +399,7 @@ input[type=number]::-webkit-inner-spin-button {
 /* ROLL TEMPLATES */
 .sheet-rolltemplate-check-lt table,
 .sheet-rolltemplate-rollcheck table {
+    background-image: url("https://jpmiii.com/bg.gif");
     width: 100%;
     border: 1px solid;
     color: black;
@@ -505,6 +510,7 @@ input[type=number]::-webkit-inner-spin-button {
     font-weight: bold;
 }
 .sheet-rolltemplate-harnroll table {
+    background-image: url("https://jpmiii.com/bg.gif");
     width: 100%;
     border: 1px solid;
     color: black;
@@ -610,6 +616,89 @@ input[type=number]::-webkit-inner-spin-button {
 .sheet-rolltemplate-harnroll .sheet-crit-failure {
     border: 2px solid #990000;
     background-color: #CC0000;
-    text-align: center;
+    
     font-weight: bold;
 }
+
+
+.sheet-rolltemplate-harn-fancy .sheet-harn-fancy-bg {
+    
+    font-family: "Berkshire Swash";
+    text-align: center;
+    background-image: url("https://jpmiii.com/bg.gif");
+    width: 240px;
+    color: black;
+    
+    
+    
+}
+.sheet-rolltemplate-harn-fancy .sheet-harn-fancy-top {
+    
+    background-image: url("https://jpmiii.com/border250.png");
+    background-repeat: no-repeat;
+    background-size: 240px 257px;
+
+}
+.sheet-rolltemplate-harn-fancy .sheet-harn-fancy-content {
+    
+    padding-left: 5px;
+    padding-right: 5px;
+    border-style: none solid none solid;
+    border-width: 4px;
+    
+    
+}
+.sheet-rolltemplate-harn-fancy .sheet-harn-fancy-header {
+
+    padding-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    text-align: center;
+    font-family: "Uncial Antiqua";
+    font-size: large;
+    
+}
+
+
+
+.sheet-rolltemplate-harn-bottom .sheet-harn-bottom-bg {
+    
+    font-family: "Berkshire Swash";
+    text-align: center;
+    background-image: url("https://jpmiii.com/bg.gif");
+    width: 240px;
+    color: black;
+    
+    
+    
+}
+.sheet-rolltemplate-harn-bottom .sheet-harn-bottom-top {
+    
+    background-image: url("https://jpmiii.com/bottom.png");
+    background-repeat: no-repeat;
+    background-size: 240px 257px;
+
+}
+.sheet-rolltemplate-harn-bottom .sheet-harn-bottom-content {
+    
+    padding-left: 5px;
+    padding-right: 5px;
+    border-style: none solid none solid;
+    border-width: 4;
+    
+    
+}
+.sheet-rolltemplate-harn-bottom .sheet-harn-bottom-header {
+
+    padding-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    text-align: center;
+    font-family: "Uncial Antiqua";
+    font-size: large;
+    
+}
+
+
+
+
