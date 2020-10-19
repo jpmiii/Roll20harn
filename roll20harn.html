@@ -966,6 +966,7 @@ props:
             {{/rollTotal() rollsuccess 1}}
             
         {{/rollsuccess}}
+        {{#aresult}}<tr><td>{{aresult}}</td></tr>{{/aresult}}
         {{#rolldesc}}<tr><th><img src="https://jpmiii.com/break.png"><br><span class="sheet-tcat">{{rolldesc}}</span><br><img src="https://jpmiii.com/break.png"></th></tr>{{/rolldesc}}
         {{#drollresult}}<tr><td>Defence Roll:{{drollresult}} {{#drolltarget}} Target:  {{drolltarget}}{{/drolltarget}}</td></tr>{{/drollresult}}
 
@@ -996,6 +997,7 @@ props:
             {{/rollTotal() drollsuccess 1}}
             
         {{/drollsuccess}}
+        {{#dresult}}<tr><td>{{dresult}}</td></tr>{{/dresult}}
         {{#result}}
         <tr><th><span class="tcat">Result</span></th></tr>
         <tr>

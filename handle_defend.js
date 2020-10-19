@@ -205,6 +205,8 @@ function handle_defend(def, msg) {
 
 
 	var res = r + "<br/>";
+	var ares = "";
+	var dres = "";
 
 	if ((r.indexOf("A*") == 0) || (r.indexOf("B*") == 0)
 			|| (r.indexOf("M*") == 0)) {
@@ -279,12 +281,12 @@ function handle_defend(def, msg) {
 
 		var avatloc = myGet(hitloc + "_" + aspstr, defcharid,0);
 
-		res = res + "<br/>Attacker "+atoke.get('name')+" Impact: " + impactroll + "<br/>Location: "
+		ares= ares+ "<br/>Attacker "+atoke.get('name')+" Impact: " + impactroll + "<br/>Location: "
 				+ hitloc + "<br/>AV at Loc: " + avatloc
 				+ "<br/>Effective Impact: " + (tot - avatloc);
 		if (tot - avatloc > 0) {
 			var eff = gethiteff(hitloc, tot - avatloc);
-			res = res + "<br/>Defender Injury: " + eff + " " + aspstr
+			ares= ares+ "<br/>Defender Injury: " + eff + " " + aspstr
 			var unipenalty =  parseInt(eff.match(/\d/));
 			if (toke.get('bar3_link')) {
 
@@ -299,7 +301,7 @@ function handle_defend(def, msg) {
 				toke.set('bar3_value', unipenalty);
 			}
 
-			res = res + rollshock(defcharid, toke, unipenalty)
+			ares= ares+ rollshock(defcharid, toke, unipenalty)
 
 		}
 
@@ -392,12 +394,12 @@ function handle_defend(def, msg) {
 
 		var avatloc = myGet(hitloc + "_" + defaspstr, charid,0);
 
-		res = res + "<br/>Counterstriker "+toke.get('name')+" Impact: " + impactroll + "<br/>Location: "
+		dres= dres+ "<br/>Counterstriker "+toke.get('name')+" Impact: " + impactroll + "<br/>Location: "
 				+ hitloc + "<br/>AV at Loc: " + avatloc
 				+ "<br/>Effective Impact: " + (tot - avatloc);
 		if (tot - avatloc > 0) {
 			var eff = gethiteff(hitloc, tot - avatloc);
-			res = res + "<br/>Attacker Injury: " + eff + " " + defaspstr
+			dres= dres+ "<br/>Attacker Injury: " + eff + " " + defaspstr
 			var unipenalty =  parseInt(eff.match(/\d/));
 			if (atoke.get('bar3_link')) {
 
@@ -411,7 +413,7 @@ function handle_defend(def, msg) {
 				var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', charid, 0));
 				atoke.set('bar3_value', unipenalty);
 			}
-			res = res + rollshock(charid, atoke, unipenalty)
+			dres= dres+ rollshock(charid, atoke, unipenalty)
 		}
 	}
 
@@ -425,12 +427,12 @@ function handle_defend(def, msg) {
 
 		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " attempts dodge}} {{rollresult=[["
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{drollresult=[[" +  droll + "]]}} {{drolltarget=[["
-		        + drolltarg+ "]]}}{{drollsuccess=[["	+ dis + "]]}} {{result=" + res + "}}";
+		        + drolltarg+ "]]}}{{drollsuccess=[["	+ dis + "]]}}{{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 	} else if (def[1] == "ignore") {
 
 
 		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " ignores}} {{rollresult=[["
-		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{result=" + res + "}}";
+		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 	} else {
 		var notestr =   + state.MainGameNS.atkstrout + "<br><h4>"
 				+ toke.get('name') + " " + def[1] + "s with a "
@@ -448,7 +450,7 @@ function handle_defend(def, msg) {
 
 		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} {{rollresult=[["
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{drollresult=[[" +  droll + "]]}} {{drolltarget=[["
-		        + drolltarg+ "]]}}{{drollsuccess=[["+ dis + "]]}} {{result=" + res + "}}";
+		        + drolltarg+ "]]}}{{drollsuccess=[["+ dis + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 
 	}
 	//log crits
