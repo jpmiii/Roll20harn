@@ -193,7 +193,6 @@ input[type=number]::-webkit-inner-spin-button {
 .sheet-panel {
     text-align: center;
     padding: 3px;
-    border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px; }
 
@@ -572,6 +571,15 @@ input[type=number]::-webkit-inner-spin-button {
     text-align: center;
 }
 
+.sheet-rolltemplate-harnroll .sheet-note-bottom {
+    font-family: "Berkshire Swash";
+    text-align: center;
+    background-image: url("https://jpmiii.com/bottom.png");
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: 243px;
+
+}
 
 .sheet-rolltemplate-harnroll .sheet-infected {
     text-align: center;
