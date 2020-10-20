@@ -1900,3 +1900,56 @@ function handle_table(args, msg) {
         }
         });
 }
+
+
+function chatParser(msg) {
+
+	// check for and log crits
+	if (msg.content.startsWith(" {{character_name=")) {
+		var d = new Date();
+		var n = d.toLocaleString();
+		if (msg.content.includes("rolldesc=rolls ")) {
+			if (msg.inlinerolls[3].results.total % 5 == 0) {
+				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name")+15),msg.content.indexOf("}} ")));
+
+				if (msg.inlinerolls[1].results.total >= msg.inlinerolls[3].results.total) {
+					charLog(char.id,  ": CS " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))),realtime,gametime)
+				} else {
+					charLog(char.id,  ": CF " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))),realtime,gametime)
+				}
+			}
+		} else 	if (msg.content.includes("rolldesc=performs ")) {
+			if (msg.inlinerolls[7].results.total % 5 == 0) {
+				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name")+15),msg.content.indexOf("}} ")));
+
+				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+					charLog(char.id,  ": CS " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ")+18,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))),realtime,gametime)
+				} else {
+					charLog(char.id,  ": CF " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ")+18,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))),realtime,gametime )
+				}
+			}
+		} else 	if (msg.content.includes("rolldesc=casts ")) {
+			if (msg.inlinerolls[7].results.total % 5 == 0) {
+				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name")+15),msg.content.indexOf("}} ")));
+
+				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+					charLog(char.id,  ": CS " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))),realtime,gametime)
+				} else {
+					charLog(char.id,  ": CF " 
+						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ")+15,
+						msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))),realtime,gametime )
+				}
+			}
+		}
+	}
+}
