@@ -371,7 +371,7 @@
             <input type="text" name="attr_PHYSICIAN_SB" class="sheet-skill-value" value="0">
             <input type="text" name="attr_PHYSICIAN_ML" class="sheet-skill-value" value="0">
             <button type="roll"
-                    value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=rolls @{PHYSICIAN_NAME}}} {{rolltarget=[[@{PHYSICIAN_ML} - [[(@{UNIVERSAL_PENALTY})*5]] + #helper-sician-roll + ?{Target Modifier?|0}]]}} {{penalty=[[(@{UNIVERSAL_PENALTY})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{PHYSICIAN_ML}}}"
+                    value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=rolls @{PHYSICIAN_NAME}}} {{rolltarget=[[@{PHYSICIAN_ML} - [[(@{UNIVERSAL_PENALTY})*5]] + #helper-Physician-roll + ?{Target Modifier?|0}]]}} {{penalty=[[(@{UNIVERSAL_PENALTY})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{PHYSICIAN_ML}}}"
                     name="roll_AwarenessSkillCheck"></button>
         </div>
         <fieldset class="repeating_loreskill">
@@ -815,9 +815,9 @@
             </span>
         </fieldset>
     </div>
-    <div class="sheet-row">Add Item<button type='roll' value='!addItem @{character_id} #helper-ItemList'></button>
-    Add Armor<button type='roll' value='!addItem @{character_id} #helper-ArmorList'></button>
-    Add Weapon<button type='roll' value='!addItem @{character_id} #helper-WeaponList'></button>
+    <div class="sheet-row"><button type='roll' value='!addItem @{character_id} #helper-ItemList'>Add Item</button>
+    <button type='roll' value='!addItem @{character_id} #helper-ArmorList'>Add Armor</button>
+    <button type='roll' value='!addItem @{character_id} #helper-WeaponList'>Add Weapon</button>
 
     </div>
 </div>

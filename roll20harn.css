@@ -19,6 +19,7 @@ input.sheet-tab7:not(:checked) ~ .sheet-tab7 {
     display: none;
 }
 
+
 input.sheet-tab {
     width: calc(20% - 4px);
     max-width: 40px;
