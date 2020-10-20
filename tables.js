@@ -7,7 +7,7 @@
 
 var default_macros = {"Physician-roll":"?{Treatment Bonus|Minor cut - Clean & Dress,30|Serious cut - Surgery,20|Grevious cut - Surgery,10|Minor stab - Clean & Dress,25|Serious stab - Clean & Dress,15|Grevious stab - Surgery,5|Minor bruise - Compress,30|Serious blunt fracture - Splint,20|Grevious blunt crush -Surgery/Splint,10|Bleeding wound - Tourniquet,50|No Bonus,0}",
 			"Random-Char":"!rand"};
-var default_abilities = {"Atk":"!attack @{selected|token_id} ?{aim zone|mid|low|high|arms|legs|torso|head|neck} ?{Aspect|H|B|E|P} ?{Attack Type|melee|missle} ?{Mod|0} @{target|token_id} %{@{character_name}|Weapons}",
+var default_abilities = {"Atk":"!attack @{selected|token_id} ?{aim zone|mid|high|low|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin} ?{Aspect|H|B|E|P} ?{Attack Type|melee|missle} ?{Mod|0} @{target|token_id} %{@{character_name}|Weapons}",
 			"ImproveSkill":"!improveskill @{character_id} %{@{character_name}|SkillList}"};
 
 var skilllist = {"Acrobatics": {"type":"PHYSICAL","sba":["STR","AGL","AGL"],"ssm":{"Nad":"2","Hir":"1"},"oml":"2","notes":"Trapeze, Tumbling, Vaulting, etc."},

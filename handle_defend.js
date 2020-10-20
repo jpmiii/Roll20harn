@@ -204,7 +204,7 @@ function handle_defend(def, msg) {
 	}
 
 
-	var res = "<br/><br/>" + r + "<br/><br/>";
+	var res =  r + "<br/><br/>";
 	var ares = "";
 	var dres = "";
 
