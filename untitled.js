@@ -818,7 +818,7 @@ function handle_newturn(args, msg) {
         	}
 		}
 	});
-	Campaign().set("turnorder", JSON.stringify(turnorder));
+	Campaign().set("turnorder", JSON.stringify(turnorder.sort((a, b) => (a.pr < b.pr) ? 1 : -1)));
 
 	state.MainGameNS.GameTime += 10;
 	sendChat("New Round", getHarnTimeStr(state.MainGameNS.GameTime));
