@@ -152,7 +152,7 @@ function charLog(character_id, text, rtime=false, gtime=false) {
 
 function handle_pickskill(args, msg) {
 	sendChat("Skill Improvement Roll",  msg.content.slice(msg.content.indexOf(args[1])+21) + "<br>[Pick Skill](!improveskill " + args[1] 
-		+ " %{" + msg.content.slice(msg.content.indexOf(args[1])+21) + "|SkillList})")
+		+ " %{" + msg.content.slice(msg.content.indexOf(args[1])+21) + "|helper-SkillList})")
 }
 
 
@@ -590,13 +590,13 @@ function initializeTables(playerid) {
 		var mac = findObjs({
 			type: 'macro',
 			playerid: gmId,
-			name: 'ItemList'
+			name: 'helper-ItemList'
 		})[0];
 		if (mac) {
 			mac.set('action', out);
 		} else {
 			createObj('macro', {
-				name: 'ItemList',
+				name: 'helper-ItemList',
 				visibleto: "all",
 				action: out,
 				playerid: gmId
@@ -607,7 +607,7 @@ function initializeTables(playerid) {
 		var mac = findObjs({
 			type: 'macro',
 			playerid: gmId,
-			name: 'WeaponList'
+			name: 'helper-WeaponList'
 		})[0];
 		if (mac) {
 			log("registering #WeaponList");
@@ -615,7 +615,7 @@ function initializeTables(playerid) {
 		} else {
 			log("creating #WeaponList");
 			createObj('macro', {
-				name: 'WeaponList',
+				name: 'helper-WeaponList',
 				visibleto: "all",
 				action: outweap,
 				playerid: gmId
@@ -626,13 +626,13 @@ function initializeTables(playerid) {
 		var mac = findObjs({
 			type: 'macro',
 			playerid: gmId,
-			name: 'ArmorList'
+			name: 'helper-ArmorList'
 		})[0];
 		if (mac) {
 			mac.set('action', outarmor);
 		} else {
 			createObj('macro', {
-				name: 'ArmorList',
+				name: 'helper-ArmorList',
 				visibleto: "all",
 				action: outarmor,
 				playerid: gmId
@@ -711,14 +711,14 @@ function setWeaponsList(charid) {
 	var mac = findObjs({
 		type: 'ability',
 		_characterid: charid,
-		name: 'Weapons'
+		name: 'helper-Weapons'
 	})[0];
 
 	if (mac) {
 		mac.set('action', out2);
 	} else {
 		createObj('ability', {
-			name: 'Weapons',
+			name: 'helper-Weapons',
 			action: out2,
 			_characterid: charid
 		});
@@ -742,13 +742,13 @@ function setSkillList(charid) {
 	var mac = findObjs({
 		type: 'ability',
 		_characterid: charid,
-		name: 'SkillList'
+		name: 'helper-SkillList'
 	})[0];
 	if (mac) {
 		mac.set('action', out);
 	} else {
 		createObj('ability', {
-			name: 'SkillList',
+			name: 'helper-SkillList',
 			action: out,
 			_characterid: charid
 		});

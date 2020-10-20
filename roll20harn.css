@@ -603,7 +603,6 @@ input[type=number]::-webkit-inner-spin-button {
 
     color: #AA0000;
     text-align: center;
-    font-weight: bold;
     font-family: "Creepster";
     font-size: 2.0em;
 }
@@ -623,7 +622,6 @@ input[type=number]::-webkit-inner-spin-button {
 
     color: #FF0000;
     text-align: center;
-    font-weight: bold;
     font-family: "Creepster";
     font-size: 2.5em;
 }
