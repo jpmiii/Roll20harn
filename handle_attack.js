@@ -100,6 +100,7 @@ function handle_attack(atk, msg) {
 	log("Roll: " + aroll);
 	log("AtkML:" + atkml);
 
+
 	if (ctype !== 0) {
 	    for (i=0;i<(ctype*-1);i++) {
 	        var broll = randomInteger(300);
@@ -153,17 +154,6 @@ function handle_attack(atk, msg) {
 
 
 	state.MainGameNS["appstr"] = myGet(ojn.slice(0, -4) + "ML", charid, 0) +  "[ML] +" + myGet(ojn.slice(0, -4) + "ATK", charid, 0) + "[Atk] +" + myGet(ojn.slice(0, -4) 	+ "HM", charid, 0) + "[HM]" + appstr + " +" + atk[5] + "[Sit]";
-
-	state.MainGameNS["atkstrout"] =   "<br/>Penalty: "
-			+ app
-			+ "<br/>Other Mods: "
-			+ atk[5]
-			+ "<br/>Mastery Level: "
-			+ myGet(ojn.slice(0, -4) + "ML", charid, 0)
-			+ "<br/>Attack Mod: "
-			+ myGet(ojn.slice(0, -4) + "ATK", charid, 0)
-
-
 
 
 	sendChat(msg.who, atkstr);

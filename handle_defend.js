@@ -434,11 +434,6 @@ function handle_defend(def, msg) {
 		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " ignores}} {{rollresult=[["
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 	} else {
-		var notestr =   + state.MainGameNS.atkstrout + "<br><h4>"
-				+ toke.get('name') + " " + def[1] + "s with a "
-				+ defwepname + "</h4><br/>Penalty: " + pp
-				+ "<br/>Other mods: "+ def[2] + "<br>Mastery Level: "	+ (parseInt(myGet(ojn.slice(0, -4) + "ML", defcharid, 0)) + parseInt(myGet(ojn.slice(0, -4) + "DEF", defcharid, 0)))
-				+ "<h4>Result:</h4>" + res
 
 		if (def[1] =="counterstrike") {
 		    var drolltarg = myGet(ojn.slice(0, -4) + "ML", defcharid, 0) + "[ML] +" + myGet(ojn.slice(0, -4) + "ATK", defcharid, 0) + "[Atk] +" + myGet(ojn.slice(0, -4) + "HM", defcharid, 0) + "[HM] -" +  pp + "[PP] +" + def[2] + "[Sit]";

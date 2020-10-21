@@ -24,19 +24,46 @@ function initRoll() {
 
 }
 
-function getMeleeEML(toke, ojn, charid, mod = 0, loc = "mid") {
+function getMeleeEML(toke, ojn, charid, mod = 0, loc = "mid", block = false) {
 	var out = {};
+	var tot = 0;
+	var targstr = "";
 	out['Mastery Level'] = parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0));
-	out['Attack Mod'] = parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0));
+	tot += out['Mastery Level'];
+	targstr = `${targstr}${out['Mastery Level']}[ML] + `;
+	if (block)  {
+		out['Defence Mod'] = parseInt(myGet(ojn.slice(0, -4) + "DEF", charid, 0));
+		tot += out['Defence Mod'];
+		targstr = `${targstr}${out['Defence Mod']}[Def] + `;
+	} else {
+		out['Attack Mod'] = parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0));
+		tot += out['Attack Mod'];
+		targstr = `${targstr}${out['Attack Mod']}[Atk] + `;
+	}
 	out['H Mod'] = parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0));
+	tot += out['H Mod'];
+	targstr = `${targstr}${out['H Mod']}[HM] + `;
 	if (toke.get('bar3_value')) {
 		out['Universal Penalty'] = (parseInt(toke.get('bar3_value')) ) * -5;
+		tot += out['Universal Penalty'];
+		targstr = `${targstr}${out['Universal Penalty']}[UP] + `;
 	} else {
 		out['Universal Penalty'] = (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0)) ) * -5;
+		tot += out['Universal Penalty'];
+		targstr = `${targstr}${out['Universal Penalty']}[UP] + `;
 	}
 	out['Encumbrance'] = parseInt(myGet('ENCUMBRANCE', charid, 0)) * -5;
-	out['Location '+loc] = -1*hit_loc_penalty[loc]["penalty"];
+	tot += out['Encumbrance'];
+	targstr = `${targstr}${out['Encumbrance']}[EP] + `;
+	out['Location'] = -1*hit_loc_penalty[loc]["penalty"];
+	tot += out['Location'];
+	targstr = `${targstr}${out['Location']}[Loc] + `;
 	out['Situational Mod'] = parseInt(mod);
+	tot += out['Situational Mod'];
+	targstr = `${targstr}${out['Situational Mod']}[Sit]`;
+	out['Total'] = tot;
+	out['targstr'] = targstr
+	
 
 	return out;
 }
