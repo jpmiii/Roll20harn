@@ -37,12 +37,6 @@ function getMeleeEML(toke, ojn, charid, mod = 0, loc = "mid") {
 	out['Encumbrance'] = parseInt(myGet('ENCUMBRANCE', charid, 0)) * -5;
 	out['Location '+loc] = -1*hit_loc_penalty[loc]["penalty"];
 	out['Situational Mod'] = parseInt(mod);
-	var tot=0;
-	_.each(_.keys(out), function(k) {
-		tot += out[k];
-	});
-	out['Total'] = tot;
-	 
 
 	return out;
 }
@@ -196,9 +190,9 @@ function rollshock(charid, token, unipenalty) {
 	end = myGet("COMBAT_ENDURANCE", charid,0);
 	if (shockroll > end) {
 		token.set("status_sleepy");
-		return "<br/>Shock Roll: " + shockstr + "]]<br/><h4>FAIL</h4><br/>";
+		return "<br/>Shock Roll: " + shockstr + "]]<br/><h4>FAIL</h4>";
 	} else {
-		return "<br/>Shock Roll: " + shockstr + "]]<br/>Pass<br/>";
+		return "<br/>Shock Roll: " + shockstr + "]]<br/>Pass";
 	}
 
 }

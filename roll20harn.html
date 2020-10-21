@@ -925,7 +925,95 @@ props:
 
 
 
+
 <rolltemplate class="sheet-rolltemplate-harnroll">
+    <table>
+        {{#rolldesc}}<tr><th><span class="sheet-tcat">{{rolldesc}}</span></th></tr>{{/rolldesc}}
+		{{#header}}<tr><th><span class="sheet-tcat">{{header}}</span></th></tr>{{/header}}
+        {{#rollresult}}<tr><td>Attack Roll: {{rollresult}} {{#rolltarget}}Target: {{rolltarget}}{{/rolltarget}}</td></tr>{{/rollresult}}
+        {{#info}}
+        <tr>
+            <td class="sheet-note">{{info}}</td>
+        </tr>
+        {{/info}}
+        {{#def}}
+        <tr>
+            <td class="sheet-note">{{def}}</td>
+        </tr>
+        {{/def}}
+
+        {{#rollsuccess}}
+            {{#rollTotal() rollsuccess 3}}
+            <tr>
+                <td class="sheet-crit-success">Critical Success!!</td>
+            </tr>
+            {{/rollTotal() rollsuccess 3}}
+            {{#rollTotal() rollsuccess 2}}
+            <tr>
+                <td class="sheet-success">Marginal Success.</td>
+            </tr>
+            {{/rollTotal() rollsuccess 2}}
+            
+    
+    
+            {{#rollTotal() rollsuccess 0}}
+            <tr>
+                <td class="sheet-crit-failure">Critical Failure!!</td>
+            </tr>
+            {{/rollTotal() rollsuccess 0}}
+            {{#rollTotal() rollsuccess 1}}
+            <tr>
+                <td class="sheet-failure">Marginal Failure.</td>
+            </tr>
+            {{/rollTotal() rollsuccess 1}}
+            
+        {{/rollsuccess}}
+        {{#drollresult}}<tr><td>Defence Roll:{{drollresult}} {{#drolltarget}} Target:  {{drolltarget}}{{/drolltarget}}</td></tr>{{/drollresult}}
+
+
+        {{#drollsuccess}}
+            {{#rollTotal() drollsuccess 3}}
+            <tr>
+                <td class="sheet-crit-success">Critical Success!!</td>
+            </tr>
+            {{/rollTotal() drollsuccess 3}}
+            {{#rollTotal() drollsuccess 2}}
+            <tr>
+                <td class="sheet-success">Marginal Success.</td>
+            </tr>
+            {{/rollTotal() drollsuccess 2}}
+            
+    
+    
+            {{#rollTotal() drollsuccess 0}}
+            <tr>
+                <td class="sheet-crit-failure">Critical Failure!!</td>
+            </tr>
+            {{/rollTotal() drollsuccess 0}}
+            {{#rollTotal() drollsuccess 1}}
+            <tr>
+                <td class="sheet-failure">Marginal Failure.</td>
+            </tr>
+            {{/rollTotal() drollsuccess 1}}
+            
+        {{/drollsuccess}}
+        {{#result}}
+        <tr><th><span class="tcat">Result</span></th></tr>
+        <tr>
+            <td class="sheet-note">{{result}}{{#aresult}}{{aresult}}{{/aresult}}{{#dresult}}{{dresult}}{{/dresult}}</td>
+        </tr>
+        {{/result}}
+        {{#note}}
+        <tr>
+            <td class="sheet-note">{{note}}</td>
+        </tr>
+        {{/note}}
+    </table>
+</rolltemplate>
+
+
+
+<rolltemplate class="sheet-rolltemplate-harn-defend">
     <table>
         
         {{#rollresult}}<tr><td>Attack Roll: {{rollresult}} {{#rolltarget}}Target: {{rolltarget}}{{/rolltarget}}</td></tr>{{/rollresult}}
@@ -999,7 +1087,7 @@ props:
         {{/drollsuccess}}
         {{#dresult}}<tr><td>{{dresult}}</td></tr>{{/dresult}}
         {{#result}}
-        <tr><th class="sheet-note-bottom"><span class="tcat">Result</span><br>{{result}}</th></tr>
+        <tr><th class="sheet-note-bottom"><span class="tcat">Result</span><br>{{result}}<br><br></th></tr>
         {{/result}}
         {{#note}}
         <tr>
@@ -1144,6 +1232,7 @@ props:
     <div class="sheet-harn-fancy-bg">
        <div class="sheet-harn-fancy-top">
             <div class="sheet-harn-fancy-header">
+				{{#rolldesc}}{{rolldesc}}{{/rolldesc}}
                 {{#header}}{{header}}{{/header}}
             </div>
             <img src="https://jpmiii.com/break.png"><br>

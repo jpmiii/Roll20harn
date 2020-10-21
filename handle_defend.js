@@ -204,7 +204,7 @@ function handle_defend(def, msg) {
 	}
 
 
-	var res =  r + "<br/><br/>";
+	var res =  r;
 	var ares = "";
 	var dres = "";
 
@@ -425,13 +425,13 @@ function handle_defend(def, msg) {
             var drolltarg = parseInt(myGet("DODGE_ML", defcharid, 0)) + "[ML] -" + (pp) + "[PP] +" +parseInt(def[2]) + "[Sit]";
         }
 
-		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " attempts dodge}} {{rollresult=[["
+		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " attempts dodge}} {{rollresult=[["
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{drollresult=[[" +  droll + "]]}} {{drolltarget=[["
 		        + drolltarg+ "]]}}{{drollsuccess=[["	+ dis + "]]}}{{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 	} else if (def[1] == "ignore") {
 
 
-		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " ignores}} {{rollresult=[["
+		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " ignores}} {{rollresult=[["
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 	} else {
 		var notestr =   + state.MainGameNS.atkstrout + "<br><h4>"
@@ -448,7 +448,7 @@ function handle_defend(def, msg) {
 
 		}
 
-		var defstr = "&{template:harnroll} {{rolldesc=" + toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} {{rollresult=[["
+		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} {{rollresult=[["
 		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{drollresult=[[" +  droll + "]]}} {{drolltarget=[["
 		        + drolltarg+ "]]}}{{drollsuccess=[["+ dis + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 

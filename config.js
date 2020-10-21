@@ -9,6 +9,8 @@ var skill_list_on = true; //regenerate skill list ability on change to skill tab
 var weapon_list_on = true; //regenerate weapon list ability on change to weapontab and weapon name change
 var realtime = true; //character sheet log shows real time 
 var gametime = true; //character sheet log shows game time 
+var attack_template = "harn-fancy";
+var defend_template = "harn-defend";
 //
 // House rules
 //

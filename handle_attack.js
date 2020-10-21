@@ -137,7 +137,7 @@ function handle_attack(atk, msg) {
 
 	var wep = getWep(defcharid);
 
-	atkstr = "&{template:harn-fancy} {{header=" + atoke.get('name')+" "+atk[4]+" attacks "+ toke.get('name')
+	atkstr = "&{template:" + attack_template + "} {{header=" + atoke.get('name')+" "+atk[4]+" attacks "+ toke.get('name')
 			+ " with a "
 			+ wepname
 			+ "}} {{info="
