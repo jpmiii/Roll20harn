@@ -137,22 +137,20 @@ function findWeapon(charid, weaponname) {
 
 function missileAttack(dist, app, appstr, atkmov, charid) {
 	var missi = getrange(wepname, dist[0]);
-	app = app + missi[0];
-	if (missi[0] < 0) {
-		appstr += " +" + missi[0] * -1 + "[Rng]";
-	} else {
-		appstr += " -" + missi[0] + "[Rng]";;
-	}
+	app = app - missi[0];
+
+		appstr += " - " + missi[0] + "[Rng]";;
+
 	if (atkmov < 5) {
-		app = app - Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5);
+		app = app + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5);
 		appstr += " +" + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5) + "[NM]";
 	}
 	if (atkmov > 5) {
-		app = app + 10;
+		app = app - 10;
 		appstr += " -10[Mov]";
 	}
 	if (myGet('IS_MOUNTED', charid, 0) == 'on') {
-		app = app + 10;
+		app = app - 10;
 		appstr += " -10[Mnt]";
 	}
 	return { missi, app, appstr };
