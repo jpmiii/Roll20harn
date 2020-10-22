@@ -17,32 +17,51 @@ function handle_defend(def, msg) {
 	var allowed = defchar.get("controlledby");
     if(!playerIsGM(msg.playerid)) {
         if (allowed.indexOf(msg.playerid) == -1 &&  allowed.indexOf("all") == -1){
-            senChat("API", msg.who + " is not in control")
+            sendChat("API", msg.who + " is not in control")
             return;
         }
     }
+///////////////////////////////////////////////////////////////////////
 
+	if (wepname == "") {
+		log(msg.content);
+		return;
+	}
+	var wep = findWeapon(charid, wepname);
 
-	var wep = filterObjs(function(obj) {
-		obn = obj.get('name');
-		if (obn) {
-			if ((obn.indexOf("WEAPON_NAME")) !== -1
-					&& (obj.get("_characterid") == charid)
-					&& (obj.get("current") == wepname)) {
-				return true;
-			} else {
-				return false;
-			}
-		} else {
-			return false;
-		}
+	if (!wep[0]) {
+	    sendChat(msg.who, "Weapon " + wepname + " not found");
+	    return;
+	}
+	
+
+	var aojn = wep[0].get('name');
+
+	var aeml = getMeleeEML(atoke, aojn, charid, atk[5], atk[2]);
+	var app = 0;
+	var appstr = "";
+
+	if (atk[4] == "missile") {
+		var missi;
+
+		({ missi, app, appstr } = missileAttack(tokendistance(atoke, toke), wepname, tokemove(atoke), charid));
+	}
+
+	_.each(_.keys(aeml), function(k) {
+		log(k+"=="+aeml[k]);
 	});
-	if (!wep) {
-		senChat("API", msg.who + " No weapon")
+	var atkml = aeml['Total'] + app;
+	if (!atkml) {
+		sendChat("API","attack ml problem");
 		return;
 	}
 
-	var aojn = wep[0].get('name');
+	appstr = `${aeml['targstr']} ${appstr}`;
+	
+	
+    if (atkml >95) {atkml=95;}
+	var { asuc, ais } = determineSuccess(atkml);
+///////////////////////////////////////////////////////////////////////
 
 	if (atk[3] == "H") {
 
@@ -72,9 +91,9 @@ function handle_defend(def, msg) {
 	}
 	if (atk[4] == "missile") {
 	    if (wepname in missile_range) {
-	        aspect = state.MainGameNS.missi[1];
+	        aspect = missi[1];
 	    } else {
-	        aspect = Math.round(aspect * parseFloat(state.MainGameNS.missi[1]))
+	        aspect = Math.round(aspect * parseFloat(missi[1]))
 	    }
 	}
 
@@ -197,10 +216,10 @@ function handle_defend(def, msg) {
 
 	if (atk[4] == "missile") {
 
-		var r = attack_missile[def[1]][state.MainGameNS.ais][dis];
+		var r = attack_missile[def[1]][ais][dis];
 
 	} else {
-		var r = attack_melee[def[1]][state.MainGameNS.ais][dis];
+		var r = attack_melee[def[1]][ais][dis];
 	}
 
 
@@ -425,14 +444,14 @@ function handle_defend(def, msg) {
             var drolltarg = parseInt(myGet("DODGE_ML", defcharid, 0)) + "[ML] -" + (pp) + "[PP] +" +parseInt(def[2]) + "[Sit]";
         }
 
-		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " attempts dodge}} {{rollresult=[["
-		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{drollresult=[[" +  droll + "]]}} {{drolltarget=[["
-		        + drolltarg+ "]]}}{{drollsuccess=[["	+ dis + "]]}}{{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
+		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " attempts dodge}} {{rollresult="
+		        +  labelMaker(`Roll d100: ${state.MainGameNS.aroll}`,null,null,1.3) + "}} {{rolltarget=" + labelMaker(`Target: ${atkml}`,appstr,null,1.3) + "}} {{rollsuccess=[["	+ ais + "]]}} {{drollresult=" +  labelMaker(`Roll d100: ${droll}`,null,null,1.3) + "}} {{drolltarget="
+		        + labelMaker(`Target: ${defml}`,drolltarg,null,1.3)+ "}}{{drollsuccess=[["	+ dis + "]]}}{{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 	} else if (def[1] == "ignore") {
 
 
-		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " ignores}} {{rollresult=[["
-		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
+		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " ignores}} {{rollresult="
+		        +  labelMaker(`Roll d100: ${state.MainGameNS.aroll}`,null,null,1.3) + "}} {{rolltarget=" + labelMaker(`Target: ${atkml}`,appstr,null,1.3) + "}} {{rollsuccess=[["	+ ais + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 	} else {
 
 		if (def[1] =="counterstrike") {
@@ -443,18 +462,18 @@ function handle_defend(def, msg) {
 
 		}
 
-		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} {{rollresult=[["
-		        +  state.MainGameNS.aroll + "]]}} {{rolltarget=[[" + state.MainGameNS.appstr + "]]}} {{rollsuccess=[["	+ state.MainGameNS.ais + "]]}} {{drollresult=[[" +  droll + "]]}} {{drolltarget=[["
-		        + drolltarg+ "]]}}{{drollsuccess=[["+ dis + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
+		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} {{rollresult="
+		        +  labelMaker(`Roll d100: ${state.MainGameNS.aroll}`,null,null,1.3) + "}} {{rolltarget=" + labelMaker(`Target: ${atkml}`,appstr,null,1.3) + "}} {{rollsuccess=[["	+ ais + "]]}} {{drollresult=" +  labelMaker(`Roll d100: ${droll}`,null,null,1.3) + "}} {{drolltarget="
+		        + labelMaker(`Target: ${defml}`,drolltarg,null,1.3) + "}}{{drollsuccess=[["+ dis + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 
 	}
 	//log crits
 	
 
-	if (state.MainGameNS.asuc == "CS") {
+	if (asuc == "CS") {
 
 		charLog(charid, ": Attack CS " + wepname,realtime,gametime)
-	} else if (state.MainGameNS.asuc == "CF") {
+	} else if (asuc == "CF") {
 
 		charLog(charid, ": Attack CF " + wepname,realtime,gametime)
 	} 

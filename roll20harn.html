@@ -1016,7 +1016,7 @@ props:
 <rolltemplate class="sheet-rolltemplate-harn-defend">
     <table>
         
-        {{#rollresult}}<tr><td>Attack Roll: {{rollresult}} {{#rolltarget}}Target: {{rolltarget}}{{/rolltarget}}</td></tr>{{/rollresult}}
+        {{#rollresult}}<tr><td>{{#rolltarget}}{{rolltarget}}{{/rolltarget}}{{rollresult}}</td></tr>{{/rollresult}}
         {{#info}}
         <tr>
             <td class="sheet-note">{{info}}</td>
@@ -1056,7 +1056,7 @@ props:
         {{/rollsuccess}}
         {{#aresult}}<tr><td>{{aresult}}</td></tr>{{/aresult}}
         {{#rolldesc}}<tr><th><img src="https://jpmiii.com/break.png"><br><span class="sheet-tcat">{{rolldesc}}</span><br><img src="https://jpmiii.com/break.png"></th></tr>{{/rolldesc}}
-        {{#drollresult}}<tr><td>Defence Roll:{{drollresult}} {{#drolltarget}} Target:  {{drolltarget}}{{/drolltarget}}</td></tr>{{/drollresult}}
+        {{#drollresult}}<tr><td>{{#drolltarget}}{{drolltarget}}{{/drolltarget}}{{drollresult}}</td></tr>{{/drollresult}}
 
 
         {{#drollsuccess}}

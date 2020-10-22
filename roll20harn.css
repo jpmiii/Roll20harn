@@ -1,6 +1,6 @@
 
 
-@import url('https://fonts.googleapis.com/css?family=Uncial+Antiqua|Berkshire+Swash|Creepster|Spirax&display=swap');
+@import url('https://fonts.googleapis.com/css?family=Secular+One|Acme|Uncial+Antiqua|Berkshire+Swash|Creepster|Spirax&display=swap');
 
 .sheet-formula{
     display: float;
@@ -629,7 +629,7 @@ input[type=number]::-webkit-inner-spin-button {
 
 .sheet-rolltemplate-harn-defend table {
     
-    font-family: "Berkshire Swash";
+    font-family: "Acme";
     text-align: center;
     background-image: url("https://jpmiii.com/bg.gif");
     width: 240px;
@@ -647,7 +647,7 @@ input[type=number]::-webkit-inner-spin-button {
     padding-left: 15px;
     padding-right: 15px;
     text-align: center;
-    font-family: "Uncial Antiqua";
+    font-family: "Secular One";
     font-size: large;
 }
 
@@ -691,7 +691,7 @@ input[type=number]::-webkit-inner-spin-button {
 }
 
 .sheet-rolltemplate-harn-defend .sheet-note-bottom {
-    font-family: "Berkshire Swash";
+    font-family: "Acme";
     text-align: center;
     background-image: url("https://jpmiii.com/bottom.png");
     background-repeat: no-repeat;
@@ -711,9 +711,8 @@ input[type=number]::-webkit-inner-spin-button {
 
     color: #99FF99;
     text-align: center;
-    font-weight: bold;
-    font-family: "Spirax";
-    font-size: 2.0em;
+    font-family: "Secular One";
+    font-size: 1.5em;
 }
 
 
@@ -722,7 +721,7 @@ input[type=number]::-webkit-inner-spin-button {
     color: #AA0000;
     text-align: center;
     font-family: "Creepster";
-    font-size: 2.0em;
+    font-size: 1.5em;
 }
 
 
@@ -730,8 +729,7 @@ input[type=number]::-webkit-inner-spin-button {
 
     color: #55FF55;
     text-align: center;
-    font-weight: bold;
-    font-family: "Spirax";
+    font-family: "Secular One";
     font-size: 2.5em;
 }
 
@@ -747,7 +745,7 @@ input[type=number]::-webkit-inner-spin-button {
 
 .sheet-rolltemplate-harn-fancy .sheet-harn-fancy-bg {
     
-    font-family: "Berkshire Swash";
+    font-family: "Acme";
     text-align: center;
     background-image: url("https://jpmiii.com/bg.gif");
     width: 240px;
@@ -778,7 +776,7 @@ input[type=number]::-webkit-inner-spin-button {
     padding-left: 15px;
     padding-right: 15px;
     text-align: center;
-    font-family: "Uncial Antiqua";
+    font-family: "Secular One";
     font-size: large;
     
 }
@@ -787,7 +785,7 @@ input[type=number]::-webkit-inner-spin-button {
 
 .sheet-rolltemplate-harn-bottom .sheet-harn-bottom-bg {
     
-    font-family: "Berkshire Swash";
+    font-family: "Acme";
     text-align: center;
     background-image: url("https://jpmiii.com/bg.gif");
     width: 240px;
@@ -818,7 +816,7 @@ input[type=number]::-webkit-inner-spin-button {
     padding-left: 15px;
     padding-right: 15px;
     text-align: center;
-    font-family: "Uncial Antiqua";
+    font-family: "Secular One";
     font-size: large;
     
 }

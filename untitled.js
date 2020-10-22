@@ -24,45 +24,71 @@ function initRoll() {
 
 }
 
+function buttonMaker(command,text,tip,style,size){
+        let tipExtra=(tip ? `class="showtip tipsy" title="${tip}"` :'');
+        return `<a ${tipExtra} style="color:black;background-color:transparent;border: 1px solid #555555;border-radius:1em;display:inline-block;height:1em;line-height:1em;min-width:1em;padding:1px;margin:0;margin-left:.2em;text-align:center;font-size:${size}em;${style||''}" href="${command}">${text}</a>`;
+}
+
+function labelMaker(text,tip,style,size){
+        let tipExtra=(tip ? `class="showtip tipsy" title="${tip}"` :'');
+        return `<a ${tipExtra} style="color:black;background-color:transparent;border: 1px solid #000000;display:inline-block;height:1em;line-height:1em;min-width:1em;padding:2px;margin:0;margin-left:.2em;text-align:center;font-size:${size}em;${style||''}">${text}</a>`;
+}
+
+
+
 function getMeleeEML(toke, ojn, charid, mod = 0, loc = "mid", block = false) {
-	var out = {};
-	var tot = 0;
-	var targstr = "";
-	out['Mastery Level'] = parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0));
-	tot += out['Mastery Level'];
-	targstr = `${targstr}${out['Mastery Level']}[ML] + `;
+	var x = 0;
+	var tot = parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0));
+	var targstr = `<div style='width:180px;'>Mastery Level: ${tot}<br>`;
 	if (block)  {
-		out['Defence Mod'] = parseInt(myGet(ojn.slice(0, -4) + "DEF", charid, 0));
-		tot += out['Defence Mod'];
-		targstr = `${targstr}${out['Defence Mod']}[Def] + `;
+		x = parseInt(myGet(ojn.slice(0, -4) + "DEF", charid, 0));
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Defence Mod: ${x}<br>`;
+		}
 	} else {
-		out['Attack Mod'] = parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0));
-		tot += out['Attack Mod'];
-		targstr = `${targstr}${out['Attack Mod']}[Atk] + `;
+		x = parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0));
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Attack Mod: ${x}<br>`;
+		}
 	}
-	out['H Mod'] = parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0));
-	tot += out['H Mod'];
-	targstr = `${targstr}${out['H Mod']}[HM] + `;
+	x = parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0));
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}H Mod: ${x}<br>`;
+		}
 	if (toke.get('bar3_value')) {
-		out['Universal Penalty'] = (parseInt(toke.get('bar3_value')) ) * -5;
-		tot += out['Universal Penalty'];
-		targstr = `${targstr}${out['Universal Penalty']}[UP] + `;
+		x = (parseInt(toke.get('bar3_value')) ) * -5;
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Universal: ${x}<br>`;
+		}
 	} else {
-		out['Universal Penalty'] = (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0)) ) * -5;
-		tot += out['Universal Penalty'];
-		targstr = `${targstr}${out['Universal Penalty']}[UP] + `;
+		x = (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0)) ) * -5;
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Universal: ${x}<br>`;
+		}
 	}
-	out['Encumbrance'] = parseInt(myGet('ENCUMBRANCE', charid, 0)) * -5;
-	tot += out['Encumbrance'];
-	targstr = `${targstr}${out['Encumbrance']}[EP] + `;
-	out['Location'] = -1*hit_loc_penalty[loc]["penalty"];
-	tot += out['Location'];
-	targstr = `${targstr}${out['Location']}[Loc] + `;
-	out['Situational Mod'] = parseInt(mod);
-	tot += out['Situational Mod'];
-	targstr = `${targstr}${out['Situational Mod']}[Sit]`;
+	x = parseInt(myGet('ENCUMBRANCE', charid, 0)) * -5;
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Encumbrance: ${x}<br>`;
+		}
+	x = -1*hit_loc_penalty[loc]["penalty"];
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Location ${loc}: ${x}<br>`;
+		}
+	x = parseInt(mod);
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Situational Mod: ${x}<br>`;
+		}
+	var out ={}
 	out['Total'] = tot;
-	out['targstr'] = targstr
+	out['targstr'] = `${targstr}</div>`;
 	
 
 	return out;
@@ -135,23 +161,23 @@ function findWeapon(charid, weaponname) {
 	});
 }
 
-function missileAttack(dist, app, appstr, atkmov, charid) {
+function missileAttack(dist, wepname, atkmov, charid) {
 	var missi = getrange(wepname, dist[0]);
-	app = app - missi[0];
 
-		appstr += " - " + missi[0] + "[Rng]";;
+	var app = -1* missi[0];
+	var appstr = `Missile Range: ${missi[0]}<br>`;
 
 	if (atkmov < 5) {
 		app = app + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5);
-		appstr += " +" + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5) + "[NM]";
+		appstr = `${appstr}No Movement: ${Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5)}<br>`;
 	}
 	if (atkmov > 5) {
 		app = app - 10;
-		appstr += " -10[Mov]";
+		appstr = `${appstr}Movement: -10<br>`;
 	}
 	if (myGet('IS_MOUNTED', charid, 0) == 'on') {
 		app = app - 10;
-		appstr += " -10[Mnt]";
+		appstr = `${appstr}Mounted: -10<br>`;
 	}
 	return { missi, app, appstr };
 }

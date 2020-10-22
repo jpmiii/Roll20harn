@@ -36,43 +36,10 @@ function handle_attack(atk, msg) {
 		log(msg.content);
 		return;
 	}
-	var wep = findWeapon(charid, wepname);
-
-	if (!wep[0]) {
-	    sendChat(msg.who, "Weapon " + wepname + " not found");
-	    return;
-	}
-	
-
-	var ojn = wep[0].get('name');
-
-	var aeml = getMeleeEML(atoke, ojn, charid, atk[5], atk[2]);
-	var app = aeml['Total'];
-	var appstr = "";
-	if (atk[4] == "missile") {
-		var missi;
-		({ missi, app, appstr } = missileAttack(tokendistance(atoke, toke), app, appstr, tokemove(atoke), charid));
-	}
-
-
-	var atkml = app;//computeAttackML(ojn, charid, app, atk[5]);
-	if (!atkml) {
-		sendChat("API","attack ml problem");
-		return;
-	}
-
-	_.each(_.keys(aeml), function(k) {
-		log(k+"=="+aeml[k]);
-	});
-	
-	
-    if (atkml >95) {atkml=95;}
 	aroll = randomInteger(100);
 	var ctype = parseInt(myGet('CType', charid, 0))
 
 	log("Roll: " + aroll);
-	log("AtkML:" + atkml);
-
 
 	if (ctype !== 0) {
 	    for (i=0;i<(ctype*-1);i++) {
@@ -99,14 +66,10 @@ function handle_attack(atk, msg) {
 
 	}
 
-	var { asuc, ais } = determineSuccess(atkml);
+
 	state.MainGameNS["aroll"] = aroll
-	state.MainGameNS["asuc"] = asuc
-	state.MainGameNS["ais"] = ais
 	state.MainGameNS["wepname"] = wepname
 	state.MainGameNS["attacker"] = atk
-	state.MainGameNS["missi"] = missi
-
 
 
 	var wep = getWep(defcharid);
@@ -114,18 +77,11 @@ function handle_attack(atk, msg) {
 	var atkstr = `&{template:${attack_template}} \
 		{{rolldesc=${atoke.get('name')} ${atk[4]} attacks ${toke.get('name')} with a ${wepname}}} \
 		{{info=${res}}} \
-		{{def=[Dodge](!defend dodge ?{Mod|0} WeaponName:Dodge)[Ignore](!defend ignore ?{Mod|0} WeaponName:)`;
+		{{def=${buttonMaker("!defend dodge ?{Mod|0} WeaponName:Dodge","Dodge",null,null,1.2)}${buttonMaker("!defend ignore ?{Mod|0} WeaponName:","Ignore",null,null,1.2)}`;
 	for (var i=0;i<wep.length;i++) {
-	    atkstr += "["
-			+ myGet(wep[i].get('name'),defcharid,"")
-			+ "](!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"
-			+ myGet(wep[i].get('name'),defcharid,"").replace(')','&#41;') +")";
+	    atkstr += buttonMaker("!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"+ myGet(wep[i].get('name'),defcharid,"").replace(')','&#41;'), myGet(wep[i].get('name'),defcharid,""),null,null,1.2)
 	}
 	atkstr += "}}"
-
-
-	state.MainGameNS["appstr"] = myGet(ojn.slice(0, -4) + "ML", charid, 0) +  "[ML] +" + myGet(ojn.slice(0, -4) + "ATK", charid, 0) + "[Atk] +" + myGet(ojn.slice(0, -4) 	+ "HM", charid, 0) + "[HM]" + appstr + " +" + atk[5] + "[Sit]";
-	state.MainGameNS["appstr"] = `${aeml['targstr']} ${appstr}`;
 
 	sendChat(msg.who, atkstr);
 
