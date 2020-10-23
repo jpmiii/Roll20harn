@@ -37,7 +37,7 @@ function handle_defend(def, msg) {
 
 	var aojn = wep[0].get('name');
 
-	var aeml = getMeleeEML(atoke, aojn, charid, atk[5], atk[2]);
+	var aeml = getMeleeEML(atoke, aojn.slice(0, -4), charid, atk[5], atk[2]);
 	var app = 0;
 	var appstr = "";
 
@@ -60,9 +60,9 @@ function handle_defend(def, msg) {
 	
 	
     if (atkml >95) {atkml=95;}
-	var { asuc, ais } = determineSuccess(atkml);
+	var { asuc, ais } = determineSuccess(atkml,state.MainGameNS.aroll);
 ///////////////////////////////////////////////////////////////////////
-
+/*
 	if (atk[3] == "H") {
 
 		var baspect = myGet(aojn.slice(0, -4) + "B", charid, 0)
@@ -96,6 +96,10 @@ function handle_defend(def, msg) {
 	        aspect = Math.round(aspect * parseFloat(missi[1]))
 	    }
 	}
+	*/
+	var wep_impact = getWeaponImpact(aojn.slice(0, -4),charid,atk[3],missi);
+	aspect = wep_impact.impact;
+	var aspstr = wep_impact.aspect;
 
 	if (toke.get('bar3_value')) {
 
@@ -125,28 +129,17 @@ function handle_defend(def, msg) {
 
 		if (defwepname.length > 3) {
 
-			var defwep = filterObjs(function(obj) {
-				obn = obj.get('name');
-				if (obn) {
-					if ((obn.indexOf("WEAPON_NAME")) !== -1
-							&& (obj.get("_characterid") == defcharid)
-							&& (obj.get("current") == defwepname)) {
-						return true;
-					} else {
-						return false;
-					}
-				} else {
-					return false;
-				}
-			});
+			var defwep = findWeapon(defcharid,defwepname);
 
 			var ojn = defwep[0].get('name');
 
 			if (def[1] == "counterstrike") {
-			    var defml = parseInt(myGet(ojn.slice(0, -4) + "ML", defcharid, 0)) - pp + parseInt(myGet(ojn.slice(0, -4) + "ATK", defcharid, 0)) + parseInt(myGet(ojn.slice(0, -4) + "HM", defcharid, 0)) + parseInt(def[2]);
+				var deml = getMeleeEML(toke, ojn.slice(0, -4), defcharid, def[2], 'mid');
+			    var defml = deml.Total; 
 
 			} else {
-			    var defml = parseInt(myGet(ojn.slice(0, -4) + "ML", defcharid, 0)) - pp + parseInt(myGet(ojn.slice(0, -4) + "DEF", defcharid, 0)) + parseInt(myGet(ojn.slice(0, -4) + "HM", defcharid, 0)) + parseInt(def[2]);
+				var deml = getMeleeEML(toke, ojn.slice(0, -4), defcharid, def[2], 'mid', true);
+			    var defml = deml.Total; 
 
 			}
 
@@ -454,17 +447,9 @@ function handle_defend(def, msg) {
 		        +  labelMaker(`Roll d100: ${state.MainGameNS.aroll}`,null,null,1.3) + "}} {{rolltarget=" + labelMaker(`Target: ${atkml}`,appstr,null,1.3) + "}} {{rollsuccess=[["	+ ais + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 	} else {
 
-		if (def[1] =="counterstrike") {
-		    var drolltarg = myGet(ojn.slice(0, -4) + "ML", defcharid, 0) + "[ML] +" + myGet(ojn.slice(0, -4) + "ATK", defcharid, 0) + "[Atk] +" + myGet(ojn.slice(0, -4) + "HM", defcharid, 0) + "[HM] -" +  pp + "[PP] +" + def[2] + "[Sit]";
-
-		} else {
-		    var drolltarg = myGet(ojn.slice(0, -4) + "ML", defcharid, 0) + "[ML] +" + myGet(ojn.slice(0, -4) + "DEF", defcharid, 0) + "[Def] +" + myGet(ojn.slice(0, -4) + "HM", defcharid, 0) + "[HM] -" +  pp + "[PP] +" + def[2] + "[Sit]";
-
-		}
-
 		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} {{rollresult="
 		        +  labelMaker(`Roll d100: ${state.MainGameNS.aroll}`,null,null,1.3) + "}} {{rolltarget=" + labelMaker(`Target: ${atkml}`,appstr,null,1.3) + "}} {{rollsuccess=[["	+ ais + "]]}} {{drollresult=" +  labelMaker(`Roll d100: ${droll}`,null,null,1.3) + "}} {{drolltarget="
-		        + labelMaker(`Target: ${defml}`,drolltarg,null,1.3) + "}}{{drollsuccess=[["+ dis + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
+		        + labelMaker(`Target: ${defml}`,deml['targstr'],null,1.3) + "}}{{drollsuccess=[["+ dis + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
 
 	}
 	//log crits

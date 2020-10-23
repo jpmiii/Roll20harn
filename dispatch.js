@@ -70,7 +70,7 @@ var dispatch_table = {
     },
     "!defend": {
         "action": (args, msg) => { handle_defend(args, msg); },
-        "re_syntax": /^!defend (ignore|dodge|block|counterstrike) [-+]?[0-9]+ WeaponName:.*$/,
+        "re_syntax": /^!defend (ignore|dodge|block|counterstrike) (#zero|[-+]?[0-9]+) WeaponName:.*$/,
         "hr_syntax": "!defend (block mod WeaponName: weapon_name|dodge mod|ignore|counterstrike mod WeaponName: weapon_name)<br/>defends against an attack"
     },
     "!invin": {

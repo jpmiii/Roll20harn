@@ -930,7 +930,7 @@ props:
     <table>
         {{#rolldesc}}<tr><th><span class="sheet-tcat">{{rolldesc}}</span></th></tr>{{/rolldesc}}
 		{{#header}}<tr><th><span class="sheet-tcat">{{header}}</span></th></tr>{{/header}}
-        {{#rollresult}}<tr><td>Attack Roll: {{rollresult}} {{#rolltarget}}Target: {{rolltarget}}{{/rolltarget}}</td></tr>{{/rollresult}}
+        {{#rollresult}}<tr><td>Attacker<br>{{#rolltarget}}{{rolltarget}}{{/rolltarget}}{{rollresult}} </td></tr>{{/rollresult}}
         {{#info}}
         <tr>
             <td class="sheet-note">{{info}}</td>
@@ -968,7 +968,7 @@ props:
             {{/rollTotal() rollsuccess 1}}
             
         {{/rollsuccess}}
-        {{#drollresult}}<tr><td>Defence Roll:{{drollresult}} {{#drolltarget}} Target:  {{drolltarget}}{{/drolltarget}}</td></tr>{{/drollresult}}
+        {{#drollresult}}<tr><td>Defender<br>{{#drolltarget}}{{drolltarget}}{{/drolltarget}}{{drollresult}}</td></tr>{{/drollresult}}
 
 
         {{#drollsuccess}}
@@ -998,9 +998,9 @@ props:
             
         {{/drollsuccess}}
         {{#result}}
-        <tr><th><span class="tcat">Result</span></th></tr>
+        <tr><th><span class="tcat">Result: </span>{{result}}</th></tr>
         <tr>
-            <td class="sheet-note">{{result}}{{#aresult}}{{aresult}}{{/aresult}}{{#dresult}}{{dresult}}{{/dresult}}</td>
+            <td class="sheet-note">{{#aresult}}{{aresult}}<br>{{/aresult}}{{#dresult}}{{dresult}}{{/dresult}}</td>
         </tr>
         {{/result}}
         {{#note}}

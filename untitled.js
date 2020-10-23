@@ -36,24 +36,24 @@ function labelMaker(text,tip,style,size){
 
 
 
-function getMeleeEML(toke, ojn, charid, mod = 0, loc = "mid", block = false) {
+function getMeleeEML(toke, repeating_weapon_name, charid, mod = 0, loc = "mid", block = false) {
 	var x = 0;
 	var tot = parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0));
 	var targstr = `<div style='width:180px;'>Mastery Level: ${tot}<br>`;
 	if (block)  {
-		x = parseInt(myGet(ojn.slice(0, -4) + "DEF", charid, 0));
+		x = parseInt(myGet(`${repeating_weapon_name}DEF`, charid, 0));
 		if (x !== 0) {
 			tot += x;
 			targstr = `${targstr}Defence Mod: ${x}<br>`;
 		}
 	} else {
-		x = parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0));
+		x = parseInt(myGet(`${repeating_weapon_name}ATK`, charid, 0));
 		if (x !== 0) {
 			tot += x;
 			targstr = `${targstr}Attack Mod: ${x}<br>`;
 		}
 	}
-	x = parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0));
+	x = parseInt(myGet(`${repeating_weapon_name}HM`, charid, 0));
 		if (x !== 0) {
 			tot += x;
 			targstr = `${targstr}H Mod: ${x}<br>`;
@@ -113,6 +113,48 @@ function getSelectedPage(msg) {
 	}
 }
 
+function getWeaponImpact(repeating_weapon_name, charid, aspect = "H", missi = null) {
+	var out = {};
+
+
+	if (aspect == "H") {
+
+		var baspect = myGet(`${repeating_weapon_name}B`, charid, 0)
+		var easpect = myGet(`${repeating_weapon_name}E`, charid, 0)
+		var paspect = myGet(`${repeating_weapon_name}P`, charid, 0)
+		out['impact'] = 0;
+		if (baspect !== "-") {
+			out['impact'] = parseInt(baspect);
+			out['aspect'] = "B";
+		}
+		if (easpect !== "-") {
+			if (parseInt(easpect) >= out['impact']) {
+				out['impact'] = parseInt(easpect);
+				out['aspect'] = "E";
+			}
+		}
+		if (paspect !== "-") {
+			if (parseInt(paspect) >= out['impact']) {
+				out['impact'] = parseInt(paspect);
+				out['aspect'] = "P";
+			}
+		}
+	} else {
+		out['impact'] = parseInt(myGet(`${repeating_weapon_name}${aspect}`, charid, 0));
+		out['aspect'] = aspect;
+	}
+
+	if (missi) {
+	    if (myGet(`${repeating_weapon_name}NAME`, charid, "") in missile_range) {
+	        out.impact = missi[1];
+	    } else {
+	        out.impact = Math.round(out.impact * parseFloat(missi[1]))
+	    }
+	}
+	return out;
+
+}
+
 function getPlayerPage(player_id) {
 	var psp = Campaign().get("playerspecificpages");
 	if (psp) {
@@ -127,15 +169,15 @@ function getPlayerPage(player_id) {
 }
 
 
-function determineSuccess(atkml) {
-	if (aroll <= atkml) {
-		if (aroll % 5 == 0) {
+function determineSuccess(ml,roll) {
+	if (roll <= ml) {
+		if (roll % 5 == 0) {
 			return { asuc:"CS", ais:3 };
 		} else {
 			return { asuc:"MS", ais:2 };
 		}
 	} else {
-		if (aroll % 5 !== 0) {
+		if (roll % 5 !== 0) {
 			return { asuc:"MF", ais:1 };
 		} else {
 			return { asuc:"CF", ais:0 };

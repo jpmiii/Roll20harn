@@ -77,7 +77,7 @@ function handle_attack(atk, msg) {
 	var atkstr = `&{template:${attack_template}} \
 		{{rolldesc=${atoke.get('name')} ${atk[4]} attacks ${toke.get('name')} with a ${wepname}}} \
 		{{info=${res}}} \
-		{{def=${buttonMaker("!defend dodge ?{Mod|0} WeaponName:Dodge","Dodge",null,null,1.2)}${buttonMaker("!defend ignore ?{Mod|0} WeaponName:","Ignore",null,null,1.2)}`;
+		{{def=${buttonMaker("!defend dodge ?{Mod|0} WeaponName:Dodge","Dodge",null,null,1.2)}${buttonMaker("!defend ignore #zero WeaponName:","Ignore",null,null,1.2)}`;
 	for (var i=0;i<wep.length;i++) {
 	    atkstr += buttonMaker("!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:"+ myGet(wep[i].get('name'),defcharid,"").replace(')','&#41;'), myGet(wep[i].get('name'),defcharid,""),null,null,1.2)
 	}

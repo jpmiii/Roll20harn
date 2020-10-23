@@ -519,6 +519,7 @@ input[type=number]::-webkit-inner-spin-button {
     color: black;
     font-size: 1em;
     font-family: "Helvetica Neue", Helvetica, sans-serif;
+    text-align: center;
 }
 
 
@@ -529,6 +530,7 @@ input[type=number]::-webkit-inner-spin-button {
     border-bottom: 1px solid black;
     line-height: 1.6em;
     font-size: 1.2em;
+    text-align: center;
 }
 
 .sheet-rolltemplate-harnroll .sheet-tcat {
