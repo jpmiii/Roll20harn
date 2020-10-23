@@ -29,7 +29,7 @@ function buttonMaker(command,text,tip,style,size){
         return `<a ${tipExtra} style="color:black;background-color:transparent;border: 1px solid #555555;border-radius:1em;display:inline-block;height:1em;line-height:1em;min-width:1em;padding:1px;margin:0;margin-left:.2em;text-align:center;font-size:${size}em;${style||''}" href="${command}">${text}</a>`;
 }
 
-function labelMaker(text,tip,style,size){
+function labelMaker(text,tip,style,size=1){
         let tipExtra=(tip ? `class="showtip tipsy" title="${tip}"` :'');
         return `<a ${tipExtra} style="color:black;background-color:transparent;border: 1px solid #000000;display:inline-block;height:1em;line-height:1em;min-width:1em;padding:2px;margin:0;margin-left:.2em;text-align:center;font-size:${size}em;${style||''}">${text}</a>`;
 }
@@ -38,7 +38,7 @@ function labelMaker(text,tip,style,size){
 
 function getMeleeEML(toke, repeating_weapon_name, charid, mod = 0, loc = "mid", block = false) {
 	var x = 0;
-	var tot = parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0));
+	var tot = parseInt(myGet(`${repeating_weapon_name}ML`, charid, 0));
 	var targstr = `<div style='width:180px;'>Mastery Level: ${tot}<br>`;
 	if (block)  {
 		x = parseInt(myGet(`${repeating_weapon_name}DEF`, charid, 0));
@@ -111,6 +111,77 @@ function getSelectedPage(msg) {
 	} else {
 		return getPlayerPage(msg.playerid)
 	}
+}
+
+function getImpact(base, repeating_weapon_name, charid, aspect = "H", missi = null) {
+
+	var out = {}
+	var wepimpact = getWeaponImpact(repeating_weapon_name, charid, aspect , missi);
+	out['impactstr'] = "";
+	out['total'] = 0;
+
+	var sides = 6;
+	var bm = 0;
+
+	var imd = "";
+	var attribute = findObjs({
+		type: 'attribute',
+		characterid: charid,
+		name: repeating_weapon_name + "NOTE"
+    })[0]
+
+    if (attribute) {
+        imd = attribute.get('current');
+
+    }
+
+	if (imd.length>0) {
+		var impactmod = imd.split(":")
+
+		if (impactmod.length==2) {
+		    wepimpact.impact += parseInt(impactmod[1]);
+		    log("Impact mod: "+impactmod[1]);
+		}
+		if (impactmod.length==3) {
+		    log("Impact mod: "+impactmod[1] + " : " + impactmod[2]);
+		    if(impactmod[1] == "d") {
+
+		        for (i = 0; i < parseInt(impactmod[2]); i++) {
+        			var ir = randomInteger(6);
+        			out.total += ir;
+        			if (out.impactstr.length > 2) {
+        				out.impactstr += " + " + ir;
+
+        			} else {
+        				out.impactstr += `${base}+${impactmod[2]}d${sides}+${bm}: ${ir}`;
+
+        			}
+		        }
+		    } else {
+		    sides =  parseInt(impactmod[1]);
+		    bm =  parseInt(impactmod[2]);
+		    }
+		}
+	}
+
+	for (i = 0; i < base; i++) {
+		var ir = randomInteger(sides) + bm;
+		out.total += ir
+		if (out.impactstr.length > 2) {
+			out.impactstr += " + " + ir;
+
+		} else {
+			out.impactstr += `${base}d${sides}+${bm}: ${ir}`;
+
+		}
+	}
+	
+
+	out.total += wepimpact.impact;
+	out.impactstr += " + "  + "Weapon Impact: " + wepimpact.impact;
+	out.aspect = wepimpact.aspect;
+	return out;
+
 }
 
 function getWeaponImpact(repeating_weapon_name, charid, aspect = "H", missi = null) {
@@ -273,19 +344,19 @@ function rollshock(charid, token, unipenalty) {
 		var ir = randomInteger(6);
 		shockroll = shockroll + ir
 		if (i > 0) {
-			shockstr = shockstr + " + " + ir;
+			shockstr +=  " + " + ir;
 
 		} else {
-			shockstr = shockstr + "[[" + ir;
+			shockstr += `${unipenalty}d6: ${ir}`;
 
 		}
 	}
 	end = myGet("COMBAT_ENDURANCE", charid,0);
 	if (shockroll > end) {
 		token.set("status_sleepy");
-		return "<br/>Shock Roll: " + shockstr + "]]<br/><h4>FAIL</h4>";
+		return "<br/>Shock Roll: " + labelMaker(shockroll,shockstr) + "<br/><h4>FAIL</h4>";
 	} else {
-		return "<br/>Shock Roll: " + shockstr + "]]<br/>Pass";
+		return "<br/>Shock Roll: " + labelMaker(shockroll,shockstr) + "<br/>Pass";
 	}
 
 }

@@ -62,64 +62,34 @@ function handle_defend(def, msg) {
     if (atkml >95) {atkml=95;}
 	var { asuc, ais } = determineSuccess(atkml,state.MainGameNS.aroll);
 ///////////////////////////////////////////////////////////////////////
-/*
-	if (atk[3] == "H") {
 
-		var baspect = myGet(aojn.slice(0, -4) + "B", charid, 0)
-		var easpect = myGet(aojn.slice(0, -4) + "E", charid, 0)
-		var paspect = myGet(aojn.slice(0, -4) + "P", charid, 0)
 
-		if (baspect !== "-") {
-			aspect = parseInt(baspect);
-			var aspstr = "B";
-		}
-		if (easpect !== "-") {
-			if (parseInt(easpect) >= aspect) {
-				aspect = parseInt(easpect);
-				var aspstr = "E";
-			}
-		}
-		if (paspect !== "-") {
-			if (parseInt(paspect) >= aspect) {
-				aspect = parseInt(paspect);
-				var aspstr = "P";
-			}
-		}
-	} else {
-		var aspect = parseInt(myGet(aojn.slice(0, -4) + atk[3], charid, 0));
-		var aspstr = atk[3];
-	}
-	if (atk[4] == "missile") {
-	    if (wepname in missile_range) {
-	        aspect = missi[1];
-	    } else {
-	        aspect = Math.round(aspect * parseFloat(missi[1]))
-	    }
-	}
-	*/
-	var wep_impact = getWeaponImpact(aojn.slice(0, -4),charid,atk[3],missi);
-	aspect = wep_impact.impact;
-	var aspstr = wep_impact.aspect;
-
-	if (toke.get('bar3_value')) {
-
-		var pp = (parseInt(toke.get('bar3_value')) + parseInt(myGet(
-				'ENCUMBRANCE', defcharid, 0))) * 5;
-
-	} else {
-		var pp = (parseInt(myGet('UNIVERSAL_PENALTY', defcharid, 0)) + parseInt(myGet(
-				'ENCUMBRANCE', defcharid, 0))) * 5;
-	}
 
 	if (def[1] == "dodge") {
 	    var defml = 0;
+		if (toke.get('bar3_value')) {
+	
+			var pp = (parseInt(toke.get('bar3_value')) + parseInt(myGet(
+					'ENCUMBRANCE', defcharid, 0))) * 5;
+	
+		} else {
+			var pp = (parseInt(myGet('UNIVERSAL_PENALTY', defcharid, 0)) + parseInt(myGet(
+					'ENCUMBRANCE', defcharid, 0))) * 5;
+		}
 	    if ((atk[4] == "missile") && (wepname.indexOf("Bow") !== -1)) {
 		    defml = Math.round(parseInt(myGet("DODGE_ML", defcharid, 0))/2) + parseInt(def[2])- (pp);
 	    } else {
 	        defml = parseInt(myGet("DODGE_ML", defcharid, 0)) + parseInt(def[2])- (pp);
-	    };
+	    }
 
-		var defstr = "";// "+" +  parseInt(myGet("DODGE_ML", defcharid, 0)) + "+" + parseInt(def[2])+ "-" + (pp);
+	    if ((atk[4] == "missile") && (wepname.indexOf("Bow") !== -1)) {
+            var drolltarg = parseInt(parseInt(myGet("DODGE_ML", defcharid, 0))/2) + "[1/2ML] -" + (pp) + "[PP] +" +parseInt(def[2]) + "[Sit]";
+        } else {
+            var drolltarg = parseInt(myGet("DODGE_ML", defcharid, 0)) + "[ML] -" + (pp) + "[PP] +" +parseInt(def[2]) + "[Sit]";
+        }
+
+
+		var defstr = "";
 		var defwepname = "Dodge";
 
 	}
@@ -171,7 +141,7 @@ function handle_defend(def, msg) {
 	}
 
 	
-	log("defml: "+defml)
+
 	
 
 	if (state.MainGameNS["cheat"] > 0) {
@@ -185,7 +155,7 @@ function handle_defend(def, msg) {
 	}
 
 	if (defml >95) {defml=95;}
-
+	log("defml: "+defml)
 	if ((droll <= defml) && (droll % 5 == 0)) {
 		var dsuc = "CS";
 		var dis = 3;
@@ -223,88 +193,25 @@ function handle_defend(def, msg) {
 	if ((r.indexOf("A*") == 0) || (r.indexOf("B*") == 0)
 			|| (r.indexOf("M*") == 0)) {
 
-
-		var impactroll = "";
-		var tot = 0;
-
-		var sides = 6;
-		var bm = 0;
-
-		var imd = "";//myGet(ojn.slice(0, -4) + "NOTE", charid, "")
-		var attribute = findObjs({
-    		type: 'attribute',
-    		characterid: charid,
-    		name: aojn.slice(0, -4) + "NOTE"
-	    })[0]
-
-	    if (attribute) {
-	        imd = attribute.get('current');
-
-	    }
-	    log("imd: " + imd);
-
-		if (imd.length>0) {
-    		var impactmod = imd.split(":")
-
-    		if (impactmod.length==2) {
-    		    aspect = aspect + parseInt(impactmod[1]);
-    		    log("Impact mod: "+impactmod[1]);
-    		}
-    		if (impactmod.length==3) {
-    		    log("Impact mod: "+impactmod[1] + " : " + impactmod[2]);
-    		    if(impactmod[1] == "d") {
-
-    		        for (i = 0; i < parseInt(impactmod[2]); i++) {
-            			var ir = randomInteger(6);
-            			tot = tot + ir;
-            			if (impactroll.length > 2) {
-            				impactroll = impactroll + " + " + ir;
-
-            			} else {
-            				impactroll = impactroll + "[[" + ir;
-
-            			}
-    		        }
-    		    } else {
-    		    sides =  parseInt(impactmod[1]);
-    		    bm =  parseInt(impactmod[2]);
-    		    }
-    		}
-		}
-
-		for (i = 0; i < parseInt(r.slice(2)); i++) {
-			var ir = randomInteger(sides) + bm;
-			tot = tot + ir
-			if (impactroll.length > 2) {
-				impactroll = impactroll + " + " + ir;
-
-			} else {
-				impactroll = impactroll + "[[" + ir;
-
-			}
-		}
-
-
-		tot = tot + aspect;
-		impactroll = impactroll + " + " + aspect + " ]]";
+		var atk_impact = getImpact(parseInt(r.slice(2)),aojn.slice(0, -4),charid,atk[3],missi);
 
 
 		var hitloc = gethitloc(randomInteger(100), hit_loc_penalty[atk[2]]["index"]);
 
-		var avatloc = myGet(hitloc + "_" + aspstr, defcharid,0);
+		var avatloc = myGet(hitloc + "_" + atk_impact.aspect, defcharid,0);
 
-		ares= ares+ "<br/>Attacker "+atoke.get('name')+" Impact: " + impactroll + "<br/>Location: "
+		ares= ares+ "<br/>Attacker "+atoke.get('name')+" Impact: " + labelMaker(atk_impact.total,atk_impact.impactstr) + "<br/>Location: "
 				+ hitloc + "<br/>AV at Loc: " + avatloc
-				+ "<br/>Effective Impact: " + (tot - avatloc);
-		if (tot - avatloc > 0) {
-			var eff = gethiteff(hitloc, tot - avatloc);
-			ares= ares+ "<br/>Defender Injury: " + eff + " " + aspstr
+				+ "<br/>Effective Impact: " + (atk_impact.total - avatloc);
+		if (atk_impact.total - avatloc > 0) {
+			var eff = gethiteff(hitloc, atk_impact.total - avatloc);
+			ares= ares+ "<br/>Defender Injury: " + eff + " " + atk_impact.aspect
 			var unipenalty =  parseInt(eff.match(/\d/));
 			if (toke.get('bar3_link')) {
 
 				var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', defcharid, 0));
 				toke.set('bar3_value', unipenalty);
-				addinjury(aspstr+" "+hitloc, eff, defcharid)
+				addinjury(atk_impact.aspect+" "+hitloc, eff, defcharid)
 			} else if (toke.get('bar3_value')){
 				var unipenalty = unipenalty + parseInt(toke.get('bar3_value'));
 				toke.set('bar3_value', unipenalty);
@@ -321,7 +228,7 @@ function handle_defend(def, msg) {
 
 	if ((r.indexOf("D*") == 0) || (r.indexOf("B*") == 0)) {
 
-		var baspect = myGet(ojn.slice(0, -4) + "B", defcharid, 0)
+/*		var baspect = myGet(ojn.slice(0, -4) + "B", defcharid, 0)
 		var easpect = myGet(ojn.slice(0, -4) + "E", defcharid, 0)
 		var paspect = myGet(ojn.slice(0, -4) + "P", defcharid, 0)
 		var defaspstr = "";
@@ -401,23 +308,25 @@ function handle_defend(def, msg) {
 
 		tot = tot + aspect;
 		impactroll = impactroll + " + " + aspect + " ]]";
+*/
 
+		var def_impact = getImpact(parseInt(r.slice(2)),ojn.slice(0, -4),defcharid);
 		var hitloc = gethitloc(randomInteger(100), 1);
 
-		var avatloc = myGet(hitloc + "_" + defaspstr, charid,0);
+		var avatloc = myGet(hitloc + "_" + def_impact.aspect, charid,0);
 
-		dres= dres+ "<br/>Counterstriker "+toke.get('name')+" Impact: " + impactroll + "<br/>Location: "
+		dres= dres+ "<br/>Counterstriker "+toke.get('name')+" Impact: " + labelMaker(def_impact.total,def_impact.impactstr) + "<br/>Location: "
 				+ hitloc + "<br/>AV at Loc: " + avatloc
-				+ "<br/>Effective Impact: " + (tot - avatloc);
-		if (tot - avatloc > 0) {
-			var eff = gethiteff(hitloc, tot - avatloc);
-			dres= dres+ "<br/>Attacker Injury: " + eff + " " + defaspstr
+				+ "<br/>Effective Impact: " + (def_impact.total - avatloc);
+		if (def_impact.total - avatloc > 0) {
+			var eff = gethiteff(hitloc, def_impact.total - avatloc);
+			dres= dres+ "<br/>Attacker Injury: " + eff + " " + def_impact.aspect
 			var unipenalty =  parseInt(eff.match(/\d/));
 			if (atoke.get('bar3_link')) {
 
 				var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', charid, 0));
 				atoke.set('bar3_value', unipenalty);
-				addinjury(defaspstr+" "+hitloc, eff, charid)
+				addinjury(def_impact.aspect+" "+hitloc, eff, charid)
 			} else if (atoke.get('bar3_value')){
 				var unipenalty = unipenalty + parseInt(atoke.get('bar3_value'));
 				atoke.set('bar3_value', unipenalty);
@@ -430,12 +339,6 @@ function handle_defend(def, msg) {
 	}
 
 	if (def[1] == "dodge") {
-
-	    if ((atk[4] == "missile") && (wepname.indexOf("Bow") !== -1)) {
-            var drolltarg = parseInt(parseInt(myGet("DODGE_ML", defcharid, 0))/2) + "[1/2ML] -" + (pp) + "[PP] +" +parseInt(def[2]) + "[Sit]";
-        } else {
-            var drolltarg = parseInt(myGet("DODGE_ML", defcharid, 0)) + "[ML] -" + (pp) + "[PP] +" +parseInt(def[2]) + "[Sit]";
-        }
 
 		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " attempts dodge}} {{rollresult="
 		        +  labelMaker(`Roll d100: ${state.MainGameNS.aroll}`,null,null,1.3) + "}} {{rolltarget=" + labelMaker(`Target: ${atkml}`,appstr,null,1.3) + "}} {{rollsuccess=[["	+ ais + "]]}} {{drollresult=" +  labelMaker(`Roll d100: ${droll}`,null,null,1.3) + "}} {{drolltarget="
