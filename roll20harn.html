@@ -572,11 +572,11 @@
         <div class="sheet-skill-header sheet-skill-value sheet-center">ML</div>
         <div class="sheet-skill-header sheet-skill-value sheet-center">AML</div>
         <div class="sheet-skill-header sheet-skill-value sheet-center">DML</div>
-        <div class="sheet-skill-header sheet-skill-value sheet-center">Mel</div>
+        <div class="sheet-skill-header sheet-skill-value sheet-center">api</div>
 
-        <div class="sheet-skill-header sheet-skill-value sheet-center">Mis</div>
+        <div class="sheet-skill-header sheet-skill-value sheet-center">atk</div>
 
-        <!--<div class="sheet-skill-header sheet-skill-value sheet-center">&nbsp;</div> -->
+        <div class="sheet-skill-header sheet-skill-value sheet-center">def</div>
 
         <div class="sheet-skill-header sheet-skill-label">Note</div>
     </div>
@@ -595,11 +595,10 @@
             <input type="text" name="attr_WEAPON_AML" class="sheet-skill-value" disabled="true" value="@{WEAPON_ML} + @{WEAPON_ATK} + @{WEAPON_HM}">
             <input type="text" name="attr_WEAPON_DML" class="sheet-skill-value" disabled="true" value="@{WEAPON_ML} + @{WEAPON_DEF} + @{WEAPON_HM}">
             <div class="sheet-skill-value"><button type="roll"
-                                                   value="!sheetattack @{character_id} ?{aim zone|mid|low|high} H melee ?{Mod|0} @{target|token_id} @{WEAPON_NAME}" name="roll_WeaponAMLSkillCheck"></button></div>
-           <div class="sheet-skill-value"><button type="roll"
-                                                   value="!sheetattack @{character_id} ?{aim zone|mid|low|high} H missile ?{Mod|0} @{target|token_id} @{WEAPON_NAME}" name="roll_WeaponAMLSkillCheck2"></button></div>
-            
-            <!--<div class="sheet-skill-value"><button type="roll" value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=blocks with a @{WEAPON_NAME}}} {{rolltarget=[[@{WEAPON_DML} - [[(@{PHYSICAL_PENALTY})*5]] + ?{Target Modifier?|0}]]}} {{penalty=[[(@{PHYSICAL_PENALTY})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{WEAPON_DML}}} {{note=WQ @{WEAPON_WQ}}}" name="roll_WeaponDMLSkillCheck"></button></div>-->
+                                                   value="!sheetattack @{character_id} ?{aim zone|mid|low|high} H ?{Type|melee|missile} ?{Mod|0} @{target|token_id} @{WEAPON_NAME}" name="roll_WeaponAMLSkillCheck"></button></div>
+			<div class="sheet-skill-value"><button type="roll"
+                                                   value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=attacks with a @{WEAPON_NAME}}} {{rolltarget=[[{[[{[[@{WEAPON_AML} - [[(@{PHYSICAL_PENALTY})*5]] + ?{Target Modifier?|0}]],5}kh1]],95}kl1]]}} {{penalty=[[(@{PHYSICAL_PENALTY})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{WEAPON_AML}}} {{note=B(@{WEAPON_B}) E(@{WEAPON_E}) P(@{WEAPON_P})}}" name="roll_WeaponAMLSkillCheck"></button></div>
+            <div class="sheet-skill-value"><button type="roll" value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=blocks with a @{WEAPON_NAME}}} {{rolltarget=[[@{WEAPON_DML} - [[(@{PHYSICAL_PENALTY})*5]] + ?{Target Modifier?|0}]]}} {{penalty=[[(@{PHYSICAL_PENALTY})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{WEAPON_DML}}} {{note=WQ @{WEAPON_WQ}}}" name="roll_WeaponDMLSkillCheck"></button></div>
 
             <input type="text" name="attr_WEAPON_NOTE" class="sheet-skill-label">
         </div>
