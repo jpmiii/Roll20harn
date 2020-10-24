@@ -55,6 +55,7 @@ function handle_defend(def, msg) {
 	var { asuc, ais } = determineSuccess(atkml,state.MainGameNS.aroll);
 ///////////////////////////////////////////////////////////////////////
 
+    var deml = {'total':0,'targstr':''};
 
 
 	if (def[1] == "dodge") {
