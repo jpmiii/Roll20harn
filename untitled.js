@@ -151,10 +151,8 @@ function getImpact(base, repeating_weapon_name, charid, aspect = "H", missi = nu
         			out.total += ir;
         			if (out.impactstr.length > 2) {
         				out.impactstr += " + " + ir;
-
         			} else {
-        				out.impactstr += `${base}+${impactmod[2]}d${sides}+${bm}: ${ir}`;
-
+        				out.impactstr += `${base}+${impactmod[2]}(d${sides}): ${ir}`;
         			}
 		        }
 		    } else {
@@ -163,7 +161,6 @@ function getImpact(base, repeating_weapon_name, charid, aspect = "H", missi = nu
 		    }
 		}
 	}
-
 	for (i = 0; i < base; i++) {
 		var ir = randomInteger(sides) + bm;
 		out.total += ir
@@ -171,14 +168,15 @@ function getImpact(base, repeating_weapon_name, charid, aspect = "H", missi = nu
 			out.impactstr += " + " + ir;
 
 		} else {
-			out.impactstr += `${base}d${sides}+${bm}: ${ir}`;
+			let bmExtra=((bm !== 0) ? `+${bm}` :'');
+			out.impactstr += `${base}(d${sides}${bmExtra}): ${ir}`;
 
 		}
 	}
 	
 
 	out.total += wepimpact.impact;
-	out.impactstr += " + "  + "Weapon Impact: " + wepimpact.impact;
+	out.impactstr += " + "  + "<br>Weapon Impact: " + wepimpact.impact;
 	out.aspect = wepimpact.aspect;
 	return out;
 
