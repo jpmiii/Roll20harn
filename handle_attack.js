@@ -29,7 +29,7 @@ function handle_attack(atk, msg) {
 	}
 	// Use regular expression to get the string which starts after the 7th space delimited word
 	weapNameArray = msg.content.match(/^([^ ]+ ){7}(.*)$/);
-	wepname=weapNameArray[weapNameArray.length-1];
+	var wepname=weapNameArray[weapNameArray.length-1];
 	log(`selected weapon: ${wepname}`);
 
 	if (wepname == "") {
@@ -67,9 +67,9 @@ function handle_attack(atk, msg) {
 	}
 
 
-	state.MainGameNS["aroll"] = aroll
-	state.MainGameNS["wepname"] = wepname
-	state.MainGameNS["attacker"] = atk
+	state.MainGameNS["aroll"] = aroll;
+	state.MainGameNS["wepname"] = wepname;
+	state.MainGameNS["attacker"] = atk;
 
 
 	var wep = getWep(defcharid);

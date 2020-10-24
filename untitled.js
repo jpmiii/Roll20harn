@@ -1,4 +1,4 @@
-log("loading javascript");
+log("loading javascript version 0.0.1");
 
 var started = false;
 
@@ -87,13 +87,54 @@ function getMeleeEML(toke, repeating_weapon_name, charid, mod = 0, loc = "mid", 
 			targstr = `${targstr}Situational Mod: ${x}<br>`;
 		}
 	var out ={}
-	out['Total'] = tot;
+	out['total'] = tot;
 	out['targstr'] = `${targstr}</div>`;
 	
 
 	return out;
 }
 
+
+
+function getDodgeEML(toke, charid, mod = 0, bow = false) {
+	var x = 0;
+	var tot = parseInt(myGet(`DODGE_ML`, charid, 0));
+	var targstr = `<div style='width:180px;'>Mastery Level: ${tot}<br>`;
+	if (bow)  {
+		x = (tot/-2)
+		tot += x;
+		targstr = `${targstr}Bow Mod: ${x}<br>`;
+	} 
+	if (toke.get('bar3_value')) {
+		x = (parseInt(toke.get('bar3_value')) ) * -5;
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Universal: ${x}<br>`;
+		}
+	} else {
+		x = (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0)) ) * -5;
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Universal: ${x}<br>`;
+		}
+	}
+	x = parseInt(myGet('ENCUMBRANCE', charid, 0)) * -5;
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Encumbrance: ${x}<br>`;
+		}
+	x = parseInt(mod);
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Situational Mod: ${x}<br>`;
+		}
+	var out ={}
+	out['total'] = tot;
+	out['targstr'] = `${targstr}</div>`;
+	
+
+	return out;
+}
 
 
 function computeAttackML(ojn, charid, app, mod) {
@@ -136,29 +177,31 @@ function getImpact(base, repeating_weapon_name, charid, aspect = "H", missi = nu
     }
 
 	if (imd.length>0) {
-		var impactmod = imd.split(":")
-
-		if (impactmod.length==2) {
-		    wepimpact.impact += parseInt(impactmod[1]);
-		    log("Impact mod: "+impactmod[1]);
-		}
-		if (impactmod.length==3) {
-		    log("Impact mod: "+impactmod[1] + " : " + impactmod[2]);
-		    if(impactmod[1] == "d") {
-
-		        for (i = 0; i < parseInt(impactmod[2]); i++) {
-        			var ir = randomInteger(6);
-        			out.total += ir;
-        			if (out.impactstr.length > 2) {
-        				out.impactstr += " + " + ir;
-        			} else {
-        				out.impactstr += `${base}+${impactmod[2]}(d${sides}): ${ir}`;
-        			}
-		        }
-		    } else {
-		    sides =  parseInt(impactmod[1]);
-		    bm =  parseInt(impactmod[2]);
-		    }
+		var t = imd.split(":!")
+		
+		if (t.length>1) {
+			var impactmod = t[1].split(":");
+			if (impactmod.length==1) {
+			    wepimpact.impact += parseInt(impactmod[0]);
+			    log("Impact mod: "+impactmod[0]);
+			}
+			if (impactmod.length==3) {
+			    sides =  parseInt(impactmod[1]);
+			    bm =  parseInt(impactmod[2]);
+			    if(parseInt(impactmod[0]) > 0) {
+	
+			        for (i = 0; i < parseInt(impactmod[0]); i++) {
+	        			var ir = randomInteger(sides) + bm;
+	        			out.total += ir;
+	        			if (out.impactstr.length > 2) {
+	        				out.impactstr += " + " + ir;
+	        			} else {
+							let bmExtra=((bm !== 0) ? `+${bm}` :'');
+	        				out.impactstr += `${base}+${impactmod[0]}(d${sides}${bmExtra}): ${ir}`;
+	        			}
+			        }
+			    } 
+			}
 		}
 	}
 	for (i = 0; i < base; i++) {
@@ -253,6 +296,21 @@ function determineSuccess(ml,roll) {
 		}
 	}
 }
+function determineDefSuccess(ml,roll) {
+	if (roll <= ml) {
+		if (roll % 5 == 0) {
+			return { dsuc:"CS", dis:3 };
+		} else {
+			return { dsuc:"MS", dis:2 };
+		}
+	} else {
+		if (roll % 5 !== 0) {
+			return { dsuc:"MF", dis:1 };
+		} else {
+			return { dsuc:"CF", dis:0 };
+		}
+	}
+}
 
 
 function findWeapon(charid, weaponname) {
@@ -276,7 +334,7 @@ function missileAttack(dist, wepname, atkmov, charid) {
 	var missi = getrange(wepname, dist[0]);
 
 	var app = -1* missi[0];
-	var appstr = `Missile Range: ${missi[0]}<br>`;
+	var appstr = `Missile Range: ${app}<br>`;
 
 	if (atkmov < 5) {
 		app = app + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5);
