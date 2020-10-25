@@ -55,7 +55,7 @@ function handle_defend(def, msg) {
 	var { asuc, ais } = determineSuccess(atkml,state.MainGameNS.aroll);
 ///////////////////////////////////////////////////////////////////////
 
-    var deml = {'total':0,'targstr':''};
+    var deml = {'total':-1000,'targstr':''};
 
 
 	if (def[1] == "dodge") {
@@ -138,88 +138,26 @@ function handle_defend(def, msg) {
 
 	if ((r.indexOf("A*") == 0) || (r.indexOf("B*") == 0)
 			|| (r.indexOf("M*") == 0)) {
-
-		var atk_impact = getImpact(parseInt(r.slice(2)),aojn.slice(0, -4),charid,atk[3],missi);
-
-
-		var hitloc = gethitloc(randomInteger(100), hit_loc_penalty[atk[2]]["index"]);
-
-		var avatloc = myGet(hitloc + "_" + atk_impact.aspect, defcharid,0);
-
-		ares= ares+ "<br/>Attacker "+atoke.get('name')+" Impact: " + labelMaker(atk_impact.total,atk_impact.impactstr) + "<br/>Location: "
-				+ hitloc + "<br/>AV at Loc: " + avatloc
-				+ "<br/>Effective Impact: " + (atk_impact.total - avatloc);
-		if (atk_impact.total - avatloc > 0) {
-			var eff = gethiteff(hitloc, atk_impact.total - avatloc);
-			ares= ares+ "<br/>Defender Injury: " + eff + " " + atk_impact.aspect
-			var unipenalty =  parseInt(eff.match(/\d/));
-			if (toke.get('bar3_link')) {
-
-				var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', defcharid, 0));
-				toke.set('bar3_value', unipenalty);
-				addinjury(atk_impact.aspect+" "+hitloc, eff, defcharid)
-			} else if (toke.get('bar3_value')){
-				var unipenalty = unipenalty + parseInt(toke.get('bar3_value'));
-				toke.set('bar3_value', unipenalty);
-			} else {
-				var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', defcharid, 0));
-				toke.set('bar3_value', unipenalty);
-			}
-
-			ares= ares+ rollshock(defcharid, toke, unipenalty)
-
-		}
-
+		ares = doHit(parseInt(r.slice(2)), aojn.slice(0, -4),
+			charid,defcharid,atk[3],missi,atk[2],atoke,toke);
 	}
 
 	if ((r.indexOf("D*") == 0) || (r.indexOf("B*") == 0)) {
-
-
-		var def_impact = getImpact(parseInt(r.slice(2)),ojn.slice(0, -4),defcharid);
-		var hitloc = gethitloc(randomInteger(100), 1);
-
-		var avatloc = myGet(hitloc + "_" + def_impact.aspect, charid,0);
-
-		dres= dres+ "<br/>Counterstriker "+toke.get('name')+" Impact: " + labelMaker(def_impact.total,def_impact.impactstr) + "<br/>Location: "
-				+ hitloc + "<br/>AV at Loc: " + avatloc
-				+ "<br/>Effective Impact: " + (def_impact.total - avatloc);
-		if (def_impact.total - avatloc > 0) {
-			var eff = gethiteff(hitloc, def_impact.total - avatloc);
-			dres= dres+ "<br/>Attacker Injury: " + eff + " " + def_impact.aspect
-			var unipenalty =  parseInt(eff.match(/\d/));
-			if (atoke.get('bar3_link')) {
-
-				var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', charid, 0));
-				atoke.set('bar3_value', unipenalty);
-				addinjury(def_impact.aspect+" "+hitloc, eff, charid)
-			} else if (atoke.get('bar3_value')){
-				var unipenalty = unipenalty + parseInt(atoke.get('bar3_value'));
-				atoke.set('bar3_value', unipenalty);
-			} else {
-				var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', charid, 0));
-				atoke.set('bar3_value', unipenalty);
-			}
-			dres= dres+ rollshock(charid, atoke, unipenalty)
-		}
+		dres = doHit(parseInt(r.slice(2)), ojn.slice(0, -4),
+			defcharid,charid,'H',null,'mid',toke,atoke);
 	}
 
 	if (def[1] == "dodge") {
-
-		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " attempts dodge}} {{rollresult="
-		        +  labelMaker(`Roll d100: ${state.MainGameNS.aroll}`,null,null,1.3) + "}} {{rolltarget=" + labelMaker(`Target: ${atkml}`,appstr,null,1.3) + "}} {{rollsuccess=[["	+ ais + "]]}} {{drollresult=" +  labelMaker(`Roll d100: ${droll}`,null,null,1.3) + "}} {{drolltarget="
-		        + labelMaker(`Target: ${deml.total}`,deml.targstr,null,1.3)+ "}}{{drollsuccess=[["	+ dis + "]]}}{{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
+		var rolldesc = `${toke.get('name')} attempts dodge`
 	} else if (def[1] == "ignore") {
-
-
-		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " ignores}} {{rollresult="
-		        +  labelMaker(`Roll d100: ${state.MainGameNS.aroll}`,null,null,1.3) + "}} {{rolltarget=" + labelMaker(`Target: ${atkml}`,appstr,null,1.3) + "}} {{rollsuccess=[["	+ ais + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
+		var rolldesc = `${toke.get('name')} ignores`
+		dis=5;
 	} else {
-
-		var defstr = "&{template:" + defend_template + "} {{rolldesc=" + toke.get('name') + " " + def[1] + "s with a " + defwepname + "}} {{rollresult="
-		        +  labelMaker(`Roll d100: ${state.MainGameNS.aroll}`,null,null,1.3) + "}} {{rolltarget=" + labelMaker(`Target: ${atkml}`,appstr,null,1.3) + "}} {{rollsuccess=[["	+ ais + "]]}} {{drollresult=" +  labelMaker(`Roll d100: ${droll}`,null,null,1.3) + "}} {{drolltarget="
-		        + labelMaker(`Target: ${deml.total}`,deml.targstr,null,1.3) + "}}{{drollsuccess=[["+ dis + "]]}} {{aresult=" + ares + "}}{{dresult=" + dres + "}} {{result=" + res + "}}";
-
+		var rolldesc = `${toke.get('name')} ${def[1]}s with a ${defwepname}`
 	}
+	
+	
+	
 	//log crits
 	
 
@@ -238,7 +176,15 @@ function handle_defend(def, msg) {
 		charLog(charid, ": Defend CF " + defwepname,realtime,gametime)
 	} 
 
-	sendChat(msg.who, defstr);
+	sendChat(msg.who, defendTemplate(defend_template,
+			rolldesc,
+			labelMaker(`Roll d100: ${state.MainGameNS.aroll}`,null,null,1.3),
+			labelMaker(`Target: ${atkml}`,appstr,null,1.3),
+			ais,
+			labelMaker(`Roll d100: ${droll}`,null,null,1.3),
+			labelMaker(`Target: ${deml.total}`,deml.targstr,null,1.3),
+			dis,ares,dres,res));
+
 
 }
 

@@ -2167,3 +2167,64 @@ function chatParser(msg) {
 		}
 	}
 }
+
+function doHit(base,atkrepwep,acharid,dcharid,aspect,missi,loc,atktoke,deftoke) {
+	
+
+	var atk_impact = getImpact(base,atkrepwep,acharid,aspect,missi);
+
+
+	var hitloc = gethitloc(randomInteger(100), hit_loc_penalty[loc]["index"]);
+
+	var avatloc = myGet(hitloc + "_" + atk_impact.aspect, dcharid,0);
+
+	var out = "<br/>Attacker "+atktoke.get('name')+" Impact: " + labelMaker(atk_impact.total,atk_impact.impactstr) + "<br/>Location: "
+			+ hitloc + "<br/>AV at Loc: " + avatloc
+			+ "<br/>Effective Impact: " + (atk_impact.total - avatloc);
+	if (atk_impact.total - avatloc > 0) {
+		var eff = gethiteff(hitloc, atk_impact.total - avatloc);
+		out += "<br/>Defender Injury: " + eff + " " + atk_impact.aspect
+		var unipenalty =  parseInt(eff.match(/\d/));
+		
+		if (deftoke.get('bar3_link')) {
+			var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', dcharid, 0));
+			deftoke.set('bar3_value', unipenalty);
+			addinjury(atk_impact.aspect+" "+hitloc, eff, dcharid)
+		} else if (deftoke.get('bar3_value')){
+			var unipenalty = unipenalty + parseInt(deftoke.get('bar3_value'));
+			deftoke.set('bar3_value', unipenalty);
+		} else {
+			var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', dcharid, 0));
+			deftoke.set('bar3_value', unipenalty);
+		}
+
+		out += rollshock(dcharid, deftoke, unipenalty)
+
+	}
+	return out;
+	
+}
+
+
+function defendTemplate(template, rolldesc, rollresult, rolltarget, rollsuccess, drollresult, drolltarget, drollsuccess, aresult, dresult, result) {
+
+	var out = `&{template:${template}} \
+{{rolldesc=${rolldesc}}} \
+{{rollresult=${rollresult}}} \
+{{rolltarget=${rolltarget}}} \
+{{rollsuccess=[[${rollsuccess}]]}} \
+{{aresult=${aresult}}} \
+{{dresult=${dresult}}} \
+{{result=${result}}}`;
+	if (drollsuccess<4) {
+		out += `{{drollresult=${drollresult}}} \
+{{drolltarget=${drolltarget}}} \
+{{drollsuccess=[[${drollsuccess}]]}} `;
+	}
+	return out;
+}
+
+
+
+
+
