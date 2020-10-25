@@ -1,6 +1,9 @@
 
+
+@import url('https://fonts.googleapis.com/css?family=Secular+One|Acme|Uncial+Antiqua|Berkshire+Swash|Creepster|Spirax&display=swap');
+
 .sheet-formula{
-    display;
+    display: float;
 }
 
 .sheet-arrow:checked + *.sheet-formula{
@@ -16,9 +19,10 @@ input.sheet-tab7:not(:checked) ~ .sheet-tab7 {
     display: none;
 }
 
+
 input.sheet-tab {
     width: calc(20% - 4px);
-    max-width: 40px;
+    max-width: 85px;
     height: 25px;
     
     outline: none !important;
@@ -190,6 +194,7 @@ input[type=number]::-webkit-inner-spin-button {
 .sheet-panel {
     text-align: center;
     padding: 3px;
+    border-radius: 5px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px; }
 
@@ -504,12 +509,16 @@ input[type=number]::-webkit-inner-spin-button {
     text-align: center;
     font-weight: bold;
 }
+
+
+
 .sheet-rolltemplate-harnroll table {
     width: 100%;
     border: 1px solid;
     color: black;
     font-size: 1em;
     font-family: "Helvetica Neue", Helvetica, sans-serif;
+    text-align: center;
 }
 
 
@@ -520,6 +529,7 @@ input[type=number]::-webkit-inner-spin-button {
     border-bottom: 1px solid black;
     line-height: 1.6em;
     font-size: 1.2em;
+    text-align: center;
 }
 
 .sheet-rolltemplate-harnroll .sheet-tcat {
@@ -613,3 +623,205 @@ input[type=number]::-webkit-inner-spin-button {
     text-align: center;
     font-weight: bold;
 }
+
+
+
+
+
+.sheet-rolltemplate-harn-defend table {
+    
+    font-family: "Acme";
+    text-align: center;
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/bg.gif");
+    width: 240px;
+    color: black;
+    border-style: none solid none solid;
+    border-width: 5;
+    border-color: black;
+
+}
+
+
+.sheet-rolltemplate-harn-defend th {
+
+    padding-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    text-align: center;
+    font-family: "Secular One";
+    font-size: large;
+}
+
+.sheet-rolltemplate-harn-defend .sheet-tcat {
+    font-weight: bold;
+}
+
+
+.sheet-rolltemplate-harn-defend td {
+    padding: 5px;
+
+}
+
+
+
+.sheet-rolltemplate-harn-defend .inlinerollresult  {
+    display: inline-block;
+    min-width: 1.5em;
+    text-align: center;
+    border: 2px solid rgba(167, 168, 170,1); /*Cool Gray 6 C*/
+}
+
+
+.sheet-rolltemplate-harn-defend .inlinerollresult.fullcrit {
+    border: 2px solid #3FB315;
+}
+
+
+.sheet-rolltemplate-harn-defend .inlinerollresult.fullfail {
+    border: 2px solid #B31515;
+}
+
+
+.sheet-rolltemplate-harn-defend .inlinerollresult.importantroll {
+    border: 2px solid #4A57ED;
+}
+
+
+.sheet-rolltemplate-harn-defend .sheet-note {
+    text-align: center;
+}
+
+.sheet-rolltemplate-harn-defend .sheet-note-bottom {
+    font-family: "Acme";
+    text-align: center;
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/bottomframe.png");
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: 243px;
+
+}
+
+.sheet-rolltemplate-harn-defend .sheet-infected {
+    text-align: center;
+    font-weight: bold;
+    font-style: oblique;
+}
+
+
+.sheet-rolltemplate-harn-defend .sheet-success {
+
+    color: #99FF99;
+    text-align: center;
+    font-family: "Secular One";
+    font-size: 1.5em;
+}
+
+
+.sheet-rolltemplate-harn-defend .sheet-failure {
+
+    color: #AA0000;
+    text-align: center;
+    font-family: "Creepster";
+    font-size: 1.5em;
+}
+
+
+.sheet-rolltemplate-harn-defend .sheet-crit-success {
+
+    color: #55FF55;
+    text-align: center;
+    font-family: "Secular One";
+    font-size: 2.5em;
+}
+
+
+.sheet-rolltemplate-harn-defend .sheet-crit-failure {
+
+    color: #FF0000;
+    text-align: center;
+    font-family: "Creepster";
+    font-size: 2.5em;
+}
+
+
+.sheet-rolltemplate-harn-fancy .sheet-harn-fancy-bg {
+    
+    font-family: "Acme";
+    text-align: center;
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/bg.gif");
+    width: 240px;
+    color: black;
+    
+    
+    
+}
+.sheet-rolltemplate-harn-fancy .sheet-harn-fancy-top {
+    
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/topframe.png");
+    background-repeat: no-repeat;
+    background-size: 240px 257px;
+
+}
+.sheet-rolltemplate-harn-fancy .sheet-harn-fancy-content {
+    
+    padding-left: 5px;
+    padding-right: 5px;
+    border-style: none solid none solid;
+    border-width: 4px;
+    
+    
+}
+.sheet-rolltemplate-harn-fancy .sheet-harn-fancy-header {
+
+    padding-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    text-align: center;
+    font-family: "Secular One";
+    font-size: large;
+    
+}
+
+
+
+.sheet-rolltemplate-harn-bottom .sheet-harn-bottom-bg {
+    
+    font-family: "Acme";
+    text-align: center;
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/bg.gif");
+    width: 240px;
+    color: black;
+    
+    
+    
+}
+.sheet-rolltemplate-harn-bottom .sheet-harn-bottom-top {
+    
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/topframe.png");
+    background-repeat: no-repeat;
+    background-size: 240px 257px;
+
+}
+.sheet-rolltemplate-harn-bottom .sheet-harn-bottom-content {
+    
+    padding-left: 5px;
+    padding-right: 5px;
+    border-style: none solid none solid;
+    border-width: 4;
+    
+    
+}
+.sheet-rolltemplate-harn-bottom .sheet-harn-bottom-header {
+
+    padding-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+    text-align: center;
+    font-family: "Secular One";
+    font-size: large;
+    
+}
+
+
+
+

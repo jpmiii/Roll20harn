@@ -27,6 +27,5 @@ Harnmaster roll20 API scripts and custom character sheet
 1. run ```campaign_publish.ps1 -email you@domain.com -campaign campaign_number -script script_number -password password``` on Windows
 1. After publishing, you will still need to restart the API sandbox.
 
-### [Help me stay on roll20](https://app.roll20.net/gift/forid/526995)
 
 [Columbia Games Harn](http://columbiagames.com/harn/index.html)

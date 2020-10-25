@@ -125,9 +125,130 @@ var autoskillsnames = ["Initiative","Unarmed","Dodge","Riding","Climbing","Condi
 //
 
 
-var prices = {"Axe, wood handle":{"price":12,"weight":3},
+var prices = {"Skull, bone":{"price":0,"weight":0},
+"Halfhelm, kurbul":{"price":20,"weight":1.0},
+"Halfhelm, ring":{"price":28,"weight":1.0},
+"Halfhelm, plate":{"price":100,"weight":3.2},
+"Three-quarter helm, plate":{"price":175,"weight":5.6},
+"Greathelm, plate":{"price":275,"weight":8.8},
+"Boots, knee, cloth":{"price":44,"weight":2.8},
+"Boots, knee, leather":{"price":76,"weight":3.8},
+"Boots, calf, cloth":{"price":38,"weight":2.2},
+"Boots, calf, leather":{"price":64,"weight":3.2},              
+"Breastplate, kurbul":{"price":60,"weight":3.0},
+"Backplate, kurbul":{"price":60,"weight":3.0},
+"Cuirass, kurbul":{"price":120,"weight":6.0},           
+"Breastplate, plate":{"price":300,"weight":9.6},
+"Backplate, plate":{"price":300,"weight":9.6},
+"Cuirass, plate":{"price":600,"weight":19.2},            
+"Byrnie, ring":{"price":308,"weight":17.6},
+"Byrnie, mail":{"price":660,"weight":22.0},
+"Byrnie, scale":{"price":440,"weight":30.8},
+"Byrnie(long), ring":{"price":365,"weight":19.6},
+"Byrnie(long), mail":{"price":760,"weight":26.0},
+"Byrnie(long), scale":{"price":500,"weight":34.8},
+"Cap, cloth":{"price":8,"weight":0.4},
+"Cap, leather":{"price":16,"weight":0.8},
+"Cap, quilt":{"price":16,"weight":1.2},
+"Cloak, cloth":{"price":100,"weight":6.6},
+"Cloak, leather":{"price":134,"weight":9},
+"Cloak, hood, cloth":{"price":115,"weight":8.6},
+"Cloak, hood, leather":{"price":140,"weight":11},
+"Cloak(long), cloth":{"price":120,"weight":8.8},
+"Cloak(long), leather":{"price":150,"weight":12.0},
+"Cloak(long), hood, cloth":{"price":140,"weight":10.8},
+"Cloak(long), hood, leather":{"price":170,"weight":14.0},
+"Cowl, cloth":{"price":10,"weight":0.8},
+"Cowl, leather":{"price":12,"weight":1.6},
+"Cowl, quilt":{"price":32,"weight":2.4},
+"Cowl, mail":{"price":120,"weight":4.0},
+"Cowl(long), cloth":{"price":15,"weight":1.2},
+"Cowl(long), leather":{"price":18,"weight":2.4},
+"Cowl(long), quilt":{"price":42,"weight":3.6},
+"Cowl(long), mail":{"price":180,"weight":6.0},              
+"Dress(shortsleeve), cloth":{"price":150,"weight":7.8},
+"Dress(longsleeve), cloth":{"price":160,"weight":8.2},
+"Gambeson, quilt":{"price":200,"weight":19.5},
+"Gloves, cloth":{"price":15,"weight":0.4},
+"Gauntlets, leather":{"price":16,"weight":0.8},
+"Gauntlets, ring":{"price":28,"weight":1.6},
+"Mittens, mail":{"price":60,"weight":2.0},              
+"Hat, cloth":{"price":16,"weight":0.5},
+"Hat, leather":{"price":28,"weight":1.2},
+"Hauberk, ring":{"price":420,"weight":26},
+"Hauberk, mail":{"price":900,"weight":27.0},
+"Hauberk, scale":{"price":600,"weight":50},
+"Hauberk(shortsleeve), ring":{"price":399,"weight":24},
+"Hauberk(shortsleeve), mail":{"price":855,"weight":26.0},
+"Hauberk(shortsleeve), scale":{"price":570,"weight":45.5},              
+"Hood, cloth":{"price":16,"weight":0.8},
+"Hood, leather":{"price":12,"weight":1.6},
+"Hood, quilt":{"price":32,"weight":2.4},
+"Leggings, cloth":{"price":88,"weight":4.4},
+"Leggings, leather":{"price":176,"weight":8.8},
+"Leggings, quilt":{"price":184,"weight":9.2},
+"Leggings, ring":{"price":308,"weight":17.6},
+"Leggings, mail":{"price":615,"weight":22.0},              
+"Loincloth, cloth":{"price":20,"weight":1.0},
+"Loincloth, leather":{"price":40,"weight":2.0},
+"Loincloth, fur":{"price":40,"weight":2.4},
+"Pants, cloth":{"price":100,"weight":4.0},
+"Pants, leather":{"price":165,"weight":7.0},
+"Pants, quilt":{"price":174,"weight":8.2},
+"Pants, ring":{"price":280,"weight":16.4},
+"Pants, mail":{"price":184,"weight":20.5},              
+"Robe, cloth":{"price":156,"weight":7.8},
+"Robe, hood, cloth":{"price":156,"weight":7.8},
+"Sandals, leather":{"price":8,"weight":1},              
+"Shirt, cloth":{"price":100,"weight":5.2},
+"Shirt, leather":{"price":120,"weight":9.8},
+"Shirt, quilt":{"price":200,"weight":15.0},
+"Shirt(long), cloth":{"price":100,"weight":6.8},
+"Shirt(long), leather":{"price":120,"weight":11.8},
+"Shirt(long), quilt":{"price":200,"weight":17.5},
+"Shoes, cloth ":{"price":12,"weight":1},
+"Shoes, leather":{"price":24,"weight":1.2},              
+"Shorts, cloth":{"price":40,"weight":2.0},
+"Shorts, leather":{"price":60,"weight":4.0},
+"Shorts, fur":{"price":60,"weight":4.8}, 
+"Skirt(mini), cloth":{"price":20,"weight":1.0},
+"Skirt(mini), leather":{"price":30,"weight":1.4},
+"Skirt(short), cloth":{"price":20,"weight":2.0},
+"Skirt(short), leather":{"price":30,"weight":2.8},
+"Skirt(mid), cloth":{"price":20,"weight":3.0},
+"Skirt(mid), leather":{"price":30,"weight":4.2},
+"Skirt(long), cloth":{"price":20,"weight":4.0},
+"Skirt(long), leather":{"price":30,"weight":5.6},              
+"Surcoat, cloth":{"price":104,"weight":5.2},
+"Surcoat, leather":{"price":208,"weight":10.4},
+"Tunic, cloth":{"price":88,"weight":4.4},
+"Tunic, leather":{"price":114,"weight":8.8},
+"Tunic, quilt":{"price":176,"weight":13.2},
+"Tunic(long), cloth":{"price":100,"weight":4.8},
+"Tunic(long), leather":{"price":125,"weight":9.2},
+"Tunic(long), quilt":{"price":200,"weight":15.6},
+"Vest, cloth":{"price":56,"weight":2.8},
+"Vest, leather":{"price":112,"weight":5.6},
+"Vest, fur":{"price":112,"weight":7.0},
+"Vest, quilt":{"price":112,"weight":7.0},
+"Vest, scale":{"price":280,"weight":19.6},
+"Ailettes, kurbul":{"price":20,"weight":1.0},
+"Ailettes, plate":{"price":100,"weight":3.2},
+"Coudes, kurbul":{"price":10,"weight":0.5},
+"Coudes, plate":{"price":50,"weight":1.6},               
+"Gorget, kurbul":{"price":5,"weight":0.5},
+"Gorget, plate":{"price":50,"weight":2.0},
+"Greaves, kurbul":{"price":50,"weight":2.5},
+"Greaves, plate":{"price":250,"weight":8.8},
+"Kneecops, kurbul":{"price":15,"weight":0.8},
+"Kneecops, plate":{"price":75,"weight":2.4},              
+"Rerebraces, kurbul":{"price":30,"weight":1.5},
+"Rerebraces, plate":{"price":150,"weight":4.8},
+"Vambraces, kurbul":{"price":25,"weight":1.3},
+"Vambraces, plate":{"price":125,"weight":4.0},
+"Axe, wood handle":{"price":12,"weight":3},
 "Hatchet":{"price":6,"weight":1},
-"Hoee":{"price":3,"weight":2},
+"Hoe":{"price":3,"weight":2},
 "Iron, branding":{"price":18,"weight":5},
 "Pick":{"price":8,"weight":5},
 "Pitchfork":{"price":6,"weight":3},
@@ -212,177 +333,14 @@ var prices = {"Axe, wood handle":{"price":12,"weight":3},
 "Harp":{"price":300,"weight":10},
 "Tabol":{"price":20,"weight":2},
 "Belt, leather":{"price":10,"weight":1},
-"Boots, calf, cloth":{"price":38,"weight":2.2},
-"Boots, knee, cloth":{"price":44,"weight":2.8},
-"Boots, calf, leather":{"price":64,"weight":3.2},
-"Boots, knee, leather":{"price":76,"weight":3.8},
 "Holy Symbol, brass":{"price":12,"weight":0.1},
 "Holy Symbol, iron":{"price":18,"weight":0.1},
 "Holy Symbol, wood":{"price":8,"weight":0.1},
 "Holy Symbol, silver":{"price":32,"weight":0.1},
 "Holy Symbol, gold":{"price":120,"weight":0.1},
-"Sandals, leather":{"price":8,"weight":1},
 "Scabbard, dagger":{"price":12,"weight":0.5},
 "Scabbard, sword":{"price":48,"weight":1},
 "Scabbard, battlesword":{"price":150,"weight":3},
-"Shoes, leather":{"price":24,"weight":1.2},
-"Shoes, cloth ":{"price":12,"weight":1},
-"Cowl/hood, worsted":{"price":28,"weight":0.8},
-"Cowl/hood, beaver":{"price":27,"weight":1.6},
-"Cowl/hood, buckram":{"price":9,"weight":0.8},
-"Cowl/hood, ermine":{"price":60,"weight":1.6},
-"Cowl/hood, leather":{"price":12,"weight":1.6},
-"Cowl/hood, canvas":{"price":4,"weight":0.8},
-"Cowl/hood, waxed canvas":{"price":9,"weight":0.8},
-"Cowl/hood, linen":{"price":6,"weight":0.8},
-"Cowl/hood, russet":{"price":18,"weight":0.8},
-"Cowl/hood, sealskin":{"price":30,"weight":2.4},
-"Cowl/hood, serge":{"price":7,"weight":0.8},
-"Cowl/hood, silk":{"price":55,"weight":0.8},
-"Cloak, worsted":{"price":312,"weight":6.6},
-"Cloak, beaver":{"price":302,"weight":10},
-"Cloak, buckram":{"price":101,"weight":6.6},
-"Cloak, ermine":{"price":670,"weight":10},
-"Cloak, leather":{"price":134,"weight":9},
-"Cloak, canvas":{"price":45,"weight":6.6},
-"Cloak, waxed canvas":{"price":90,"weight":6.6},
-"Cloak, linen":{"price":67,"weight":6.6},
-"Cloak, russet":{"price":201,"weight":6.6},
-"Cloak, sealskin":{"price":335,"weight":12},
-"Cloak, serge":{"price":78,"weight":6.6},
-"Cloak, silk":{"price":614,"weight":5.6},
-"Gloves, silk":{"price":46,"weight":0.3},
-"Gloves, buckram":{"price":8,"weight":0.4},
-"Gloves, russet":{"price":15,"weight":0.4},
-"Gloves, leather":{"price":10,"weight":0.6},
-"Hat/Cap, silk":{"price":36,"weight":0.4},
-"Hat/Cap, serge":{"price":5,"weight":0.4},
-"Hat/Cap, buckram":{"price":6,"weight":0.4},
-"Hat/Cap, russet":{"price":12,"weight":0.4},
-"Hat/Cap, worsted":{"price":19,"weight":0.4},
-"Hat/Cap, leather":{"price":8,"weight":0.8},
-"Hat/Cap, beaver":{"price":18,"weight":0.8},
-"Hat/Cap, sealskin":{"price":20,"weight":1.2},
-"Hat/Cap, ermine":{"price":40,"weight":0.8},
-"Leggings, silk":{"price":419,"weight":3.5},
-"Leggings, linen":{"price":46,"weight":4.4},
-"Leggings, worsted":{"price":200,"weight":4.4},
-"Leggings, canvas":{"price":15,"weight":4.4},
-"Leggings, waxed canvas":{"price":30,"weight":4.4},
-"Leggings, serge":{"price":54,"weight":4.4},
-"Leggings, buckram":{"price":69,"weight":4.4},
-"Leggings, russet":{"price":141,"weight":4.4},
-"Leggings, leather":{"price":92,"weight":8.8},
-"Leggings, beaver":{"price":207,"weight":8.8},
-"Leggings, sealskin":{"price":230,"weight":9.2},
-"Pants, cloth":{"price":100,"weight":4.0},
-"Dress, lightsilk":{"price":1719,"weight":1.5},
-"Dress, lightlinen":{"price":81,"weight":2.1},
-"Robe, silk":{"price":719,"weight":7},
-"Robe, linen":{"price":41,"weight":7.8},
-"Robe, lightlinen":{"price":41,"weight":2.4},
-"Robe, serge":{"price":93,"weight":7.8},
-"Robe, buckram":{"price":119,"weight":7.8},
-"Robe, russet":{"price":242,"weight":7.8},
-"Robe, worsted":{"price":373,"weight":7.8},
-"Robe, beaver":{"price":356,"weight":15.6},
-"Robe, sealskin":{"price":395,"weight":19},
-"Robe, ermine":{"price":786,"weight":15.6},
-"Shirt, silk":{"price":391,"weight":3.4},
-"Shirt, linen":{"price":43,"weight":3.6},
-"Shirt, serge":{"price":51,"weight":3.6},
-"Shirt, buckram":{"price":65,"weight":3.6},
-"Shirt, russet":{"price":132,"weight":3.6},
-"Shirt, worsted":{"price":203,"weight":3.6},
-"Shirt, leather":{"price":120,"weight":8},
-"Shirt, beaver":{"price":194,"weight":8},
-"Shirt, sealskin":{"price":215,"weight":11},
-"Shirt, ermine":{"price":428,"weight":8},
-"Shirt(Long), leather":{"price":300,"weight":13.4},
-"Surcoat, silk":{"price":491,"weight":5},
-"Surcoat, linen":{"price":51,"weight":5.2},
-"Surcoat, buckram":{"price":81,"weight":5.2},
-"Surcoat, leather":{"price":151,"weight":10.4},
-"Tunic, silk":{"price":519,"weight":4.2},
-"Tunic, linen":{"price":57,"weight":4.4},
-"Tunic, lightlinen":{"price":57,"weight":1.4},
-"Tunic, canvas":{"price":12,"weight":4.4},
-"Tunic, waxed canvas":{"price":24,"weight":4.4},
-"Tunic, serge":{"price":67,"weight":4.4},
-"Tunic, buckram":{"price":86,"weight":4.4},
-"Tunic, russet":{"price":174,"weight":4.4},
-"Tunic, worsted":{"price":269,"weight":4.4},
-"Tunic, leather":{"price":114,"weight":8.8},
-"Tunic, beaver":{"price":257,"weight":8.8},
-"Tunic, sealskin":{"price":285,"weight":13.2},
-"Tunic, ermine":{"price":567,"weight":8.8},
-"Vest, silk":{"price":246,"weight":2.5},
-"Vest, linen":{"price":27,"weight":2.8},
-"Vest, serge":{"price":32,"weight":2.8},
-"Vest, buckram":{"price":41,"weight":2.8},
-"Vest, russet":{"price":83,"weight":2.8},
-"Vest, worsted":{"price":127,"weight":2.8},
-"Vest, leather":{"price":54,"weight":5.6},
-"Vest, beaver":{"price":122,"weight":5.6},
-"Vest, sealskin":{"price":135,"weight":7},
-"Vest, ermine":{"price":269,"weight":5.6},
-"Cap, quilt":{"price":16,"weight":1.2},
-"Cowl, quilt":{"price":32,"weight":2.4},
-"Gambeson, quilt":{"price":200,"weight":19.5},
-"Leggings, quilt":{"price":184,"weight":9.2},
-"Pants, quilt":{"price":174,"weight":8.6},
-"Tunic, quilt":{"price":176,"weight":13.2},
-"Ailettes, kurbul":{"price":20,"weight":1.0},
-"Backplate, kurbul":{"price":60,"weight":3.0},
-"Breastplate, kurbul":{"price":60,"weight":3.0},
-"Breastplate-Backplate, kurbul":{"price":120,"weight":6.0},
-"Coudes, kurbul":{"price":10,"weight":0.5},
-"Greaves, kurbul":{"price":50,"weight":2.5},
-"Gorget, kurbul":{"price":5,"weight":0.5},
-"Halfhelm, kurbul":{"price":20,"weight":1.0},
-"Kneecops, kurbul":{"price":15,"weight":0.8},
-"Rerebraces, kurbul":{"price":30,"weight":1.5},
-"Vambraces, kurbul":{"price":25,"weight":1.3},
-"Cuirass, kurbul":{"price":120,"weight":6.0},
-"Byrnie, ring":{"price":308,"weight":17.6},
-"Shirt, ring":{"price":301,"weight":22.4},
-"Gauntlets, ring":{"price":28,"weight":1.6},
-"Halfhelm, ring":{"price":28,"weight":1.0},
-"Longshirt, ring":{"price":350,"weight":22.2},
-"Leggings, ring":{"price":308,"weight":17.6},
-"Pants, ring":{"price":280,"weight":16.4},
-"Vest, ring":{"price":196,"weight":14.0},
-"Cowl, long, ring":{"price":63,"weight":4.0},
-"Cowl, short, ring":{"price":42,"weight":3.6},
-"Hauberk, long, ring":{"price":420,"weight":26},
-"Hauberk, short, ring":{"price":399,"weight":24},
-"Byrnie, scale":{"price":440,"weight":30.8},
-"Vest, scale":{"price":280,"weight":19.6},
-"Habergeon, scale":{"price":430,"weight":41.2},
-"Hauberk, long, scale":{"price":600,"weight":50},
-"Hauberk, short, scale":{"price":570,"weight":45.5},
-"Byrnie, mail":{"price":660,"weight":22.0},
-"Cowl, short, mail":{"price":120,"weight":4.0},
-"Cowl, long, mail":{"price":135,"weight":6.0},
-"Leggings, mail":{"price":615,"weight":22.0},
-"Pants, mail":{"price":184,"weight":20.5},
-"Mittens, mail":{"price":60,"weight":2.0},
-"Habergeon, mail":{"price":345,"weight":25.0},
-"Hauberk, long, mail":{"price":900,"weight":27.0},
-"Hauberk, short, mail":{"price":855,"weight":26.0},
-"Hauberk, mail":{"price":855900,"weight":27.0},
-"Ailettes, plate":{"price":100,"weight":3.2},
-"Backplate, plate":{"price":300,"weight":9.6},
-"Breastplate, plate":{"price":300,"weight":9.6},
-"Coudes, plate":{"price":50,"weight":1.6},
-"Greathelm, plate":{"price":275,"weight":8.8},
-"Greaves, plate":{"price":250,"weight":8.8},
-"Halfhelm, plate":{"price":100,"weight":3.2},
-"Kneecops, plate":{"price":75,"weight":2.4},
-"Rerebraces, plate":{"price":150,"weight":4.8},
-"Three-quarter helm, plate":{"price":175,"weight":5.6},
-"Vambraces, plate":{"price":125,"weight":4.0},
-"Cuirass, plate":{"price":600,"weight":19.2},
 "Shield(Round)":{"price":42,"weight":6},
 "Shield(Kite)":{"price":72,"weight":7},
 "Shield(Knight)":{"price":60,"weight":5},
@@ -467,15 +425,10 @@ var prices = {"Axe, wood handle":{"price":12,"weight":3},
 "Polearm(Pike)":{"price":96,"weight":12},
 "Unarmed(Punch)":{"price":0,"weight":0},
 "Unarmed(Kick)":{"price":0,"weight":0,},
-"Body, nat1":{"price":0,"weight":0},
-"Body, fur":{"price":0,"weight":0},
-"Body, mail":{"price":0,"weight":0},
-"Body, plate ":{"price":0,"weight":0},
-"Hauberk, long, mail+2":{"price":9000,"weight":27.0},
-"Bow(Minicrossbow)":{"price":1800,"weight":2.5},
-"Skull":{"price":0,"weight":0}
+"Bow(Minicrossbow)":{"price":1800,"weight":2.5}
 
 }
+
 
 
 var attack_melee = {"block":[["BF","AF","DTA","DTA"],
@@ -578,60 +531,60 @@ var hit_loc_penalty = {"high":{"index":0,"penalty":10},
                         "groin":{"index":29,"penalty":35}}
                         
 
+
 var armor_coverage = {"Body":{"zone":"body","coverage":["Sk","Nk","Fa","Ft","Ha","Ua","Sh","Tx","Ab","Hp","Gr","Fo","El","Th","Kn","Ca"]},
 "Skull":{"zone":"head","coverage":["Sk","Fa"]},
 "Cap":{"zone":"head","coverage":["Sk"]},
-"Hat/Cap":{"zone":"head","coverage":["Sk"]},
-"Hood":{"zone":"head","coverage":["Sk","Nk"]},
-"Cowl/hood":{"zone":"head","coverage":["Sk","Nk"]},
-"Cowl, short":{"zone":"head","coverage":["Sk","Nk"]},
+"Hat":{"zone":"head","coverage":["Sk"]},
 "Cowl":{"zone":"head","coverage":["Sk","Nk"]},
-"Cowl, long":{"zone":"head","coverage":["Sk","Nk","Sh"]},
-"Gorget":{"zone":"head","coverage":["Nk"]},
-"Vest":{"zone":"body","coverage":["Sh","Tx","Ab"]},
-"Surcoat":{"zone":"robe","coverage":["Sh","Tx","Ab","Hp","Gr","Th"]},
-"Cloak":{"zone":"clok","coverage":["Sh","Tx","Hp","Ua","Gr"]},
-"Cloak(Long), hood":{"zone":"body","coverage":["Sk","Nk","Sh","Tx","Ab","Hp","Gr","Th","Kn","Ua"]},
-"Tunic":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr"]},
-"Tunic, long":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
-"Dress":{"zone":"robe","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th","Kn","Ca"]},
-"Robe":{"zone":"robe","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Fo","El","Th","Kn","Ca"]},
-"Leggings":{"zone":"legs","coverage":["Hp","Gr","Th","Kn","Ca","Ft"]},
-"Pants":{"zone":"legs","coverage":["Hp","Gr","Th","Kn","Ca"]},
-"Gambeson":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
-"Shoes":{"zone":"feet","coverage":["Ft"]},
-"Sandals":{"zone":"feet","coverage":["Ft"]},
-"Boots, calf":{"zone":"feet","coverage":["Ca","Ft"]},
-"Boots, knee":{"zone":"feet","coverage":["Kn","Ca","Ft"]},
-"Gauntlets":{"zone":"hand","coverage":["Ha"]},
-"Gloves":{"zone":"hand","coverage":["Ha"]},
-"Mittens":{"zone":"hand","coverage":["Ha"]},
-"Greathelm":{"zone":"head","coverage":["Sk","Fa","Nk"]},
+"Cowl(long)":{"zone":"head","coverage":["Sk","Nk","Sh"]},
+"Hood":{"zone":"head","coverage":["Sk","Nk"]},
 "Halfhelm":{"zone":"head","coverage":["Sk"]},
 "Three-quarter helm":{"zone":"head","coverage":["Sk","Fa"]},
+"Greathelm":{"zone":"head","coverage":["Sk","Fa","Nk"]},
+"Cloak":{"zone":"clok","coverage":["Sh","Tx","Hp","Ua","Gr"]},
+"Cloak, hood":{"zone":"clok","coverage":["SK","Nk","Sh","Tx","Hp","Ua","Gr"]},
+"Cloak(long), hood":{"zone":"body","coverage":["Sk","Nk","Sh","Tx","Ab","Hp","Gr","Th","Kn","Ua"]},
+"Robe":{"zone":"robe","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Fo","El","Th","Kn","Ca"]},
+"Robe, hood":{"zone":"robe","coverage":["Sk","Nk","Ua","Sh","Tx","Ab","Hp","Gr","Fo","El","Th","Kn","Ca"]},
+"Dress(shortsleeve)":{"zone":"robe","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th","Kn","Ca"]},
+"Dress(longsleeve)":{"zone":"robe","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th","Kn","Ca"]},
+"Surcoat":{"zone":"robe","coverage":["Sh","Tx","Ab","Hp","Gr","Th"]},
+"Tunic":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr"]},
+"Tunic(long)":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+"Shirt":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr"]},
+"Shirt(long)":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+"Vest":{"zone":"body","coverage":["Sh","Tx","Ab"]},
 "Breastplate":{"zone":"thor","coverage":["Tx","Ab"]},
 "Backplate":{"zone":"thor","coverage":["Tx","Ab"]},
-"Breastplate-Backplate":{"zone":"thor","coverage":["Tx","Ab"]},
-"Skirt, short":{"zone":"thor","coverage":["Hp","Gr"]},
-"Skirt, long":{"zone":"thor","coverage":["Hp", "Gr","Th"]},
-"Cuirass":{"zone":"thor","coverage":["Tx"]},
+"Cuirass":{"zone":"thor","coverage":["Tx","Ab"]},
+"Gambeson":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+"Byrnie":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr"]},
+"Byrnie(long)":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+"Hauberk":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+"Hauberk(shortsleeve)":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+"Gloves":{"zone":"hand","coverage":["Ha"]},
+"Gauntlets":{"zone":"hand","coverage":["Ha"]},
+"Mittens":{"zone":"hand","coverage":["Ha"]},
+"Shorts":{"zone":"thor","coverage":["Hp", "Gr","Th"]},
+"Loincloth":{"zone":"thor","coverage":["Hp","Gr"]},
+"Skirt(mini)":{"zone":"thor","coverage":["Hp","Gr"]},
+"Skirt(short)":{"zone":"thor","coverage":["Hp","Gr","Th"]},
+"Skirt(mid)":{"zone":"thor","coverage":["Hp","Gr","Th","Kn"]},
+"Skirt(long)":{"zone":"thor","coverage":["Hp","Gr","Th","Kn","Ca"]},
+"Pants":{"zone":"legs","coverage":["Hp","Gr","Th","Kn","Ca"]},
+"Leggings":{"zone":"legs","coverage":["Hp","Gr","Th","Kn","Ca","Ft"]},
+"Boots, calf":{"zone":"feet","coverage":["Ca","Ft"]},
+"Boots, knee":{"zone":"feet","coverage":["Kn","Ca","Ft"]},
+"Shoes":{"zone":"feet","coverage":["Ft"]},
+"Sandals":{"zone":"feet","coverage":["Ft"]},
+"Gorget":{"zone":"head","coverage":["Nk"]},
 "Ailettes":{"zone":"aile","coverage":["Sh"]},
 "Rerebraces":{"zone":"rere","coverage":["Ua"]},
-"Vambraces":{"zone":"vamb","coverage":["Fo"]},
 "Coudes":{"zone":"coud","coverage":["El"]},
+"Vambraces":{"zone":"vamb","coverage":["Fo"]},
 "Kneecops":{"zone":"knee","coverage":["Kn"]},
-"Greaves":{"zone":"grev","coverage":["Ca"]},
-"Hauberk, long":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th","Kn"]},
-"Hauberk":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
-"Hauberk, short":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
-"Haubergeon":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr"]},
-"Shirt":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr"]},
-"Shirt(Long)":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
-"ShortSleeveShirt":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr"]},
-"ShortSleeveShirt(long)":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
-"Byrnie, long":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
-"Byrnie":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr"]}}
-
+"Greaves":{"zone":"grev","coverage":["Ca"]}}
 
 var armor_prot = {"nat1":["nat1","1","1","1","1"],
 "nat2":["nat2","2","2","2","2"],
@@ -670,6 +623,9 @@ var armor_prot = {"nat1":["nat1","1","1","1","1"],
 "plate":["plate","6","10","6","2"],
 "plate+1":["plate+1","7","11","7","3"],
 "plate+2":["plate+2","8","12","8","4"],
+"bone":["bone","2","2","2","2"],
+"bone+1":["bone+1","3","3","3","3"],
+"bone+2":["bone+2","4","4","4","4"],
 "gargun":["nat","4","3","1","3"],
 "horse":["nat","4","3","1","3"],
 "dog":["nat","4","3","1","3"],
@@ -763,6 +719,8 @@ var months = [
 "Navek",
 "Morgat"
 ]
+
+
 
 var occupational_skills = {
     "Alchemist": [
@@ -1114,7 +1072,8 @@ var occupational_skills = {
         "Fishing/3",
         "Weatherlore/3",
         "Piloting/2",
-        "Shipwright/2"
+        "Shipwright/2",
+        "Packing/3"
     ],
     "Shaman": [
         "Ritual-Tribal/4",
@@ -1146,7 +1105,9 @@ var occupational_skills = {
         "RIDING/4",
         "Animalcraft/3",
         "Whip/3",
-        "Woodcraft/2"
+        "Woodcraft/2",
+        "Driving/4",
+        "Packing/3"
     ],
     "Tentmaker": [
         "Textilecraft/3",
@@ -1173,7 +1134,8 @@ var occupational_skills = {
         "Lockcraft/3",
         "Club/5",
         "Dagger/4",
-        "Acrobatics/2"
+        "Acrobatics/2",
+        "Searching/3"
     ],
     "Timberwright": [
         "Timbercraft/4",
@@ -1442,7 +1404,8 @@ var occupational_skills = {
         "Spear/5",
         "Sword(Shortsword)/4",
         "Dagger/4",
-        "Shield(Round)/4"
+        "Shield(Round)/4",
+        "Tactics/1"
     ],
     "Feudal Guardsman, Light": [
         "INITIATIVE/5",
@@ -1454,7 +1417,8 @@ var occupational_skills = {
         "Spear/6",
         "Sword(Shortsword)/5",
         "Dagger/5",
-        "Shield(Round)/5"
+        "Shield(Round)/5",
+        "Tactics/2"
     ],
     "Feudal Guardsman, Heavy": [
         "INITIATIVE/5",
@@ -1466,7 +1430,8 @@ var occupational_skills = {
         "Spear/6",
         "Sword(Falchion)/5",
         "Dagger/5",
-        "Shield(Round)/5"
+        "Shield(Round)/5",
+        "Tactics/2"
     ],
     "Feudal Yeoman, Shortbow": [
         "INITIATIVE/5",
@@ -1478,7 +1443,8 @@ var occupational_skills = {
         "Bow(Shortbow)/5",
         "Sword(Falchion)/5",
         "Dagger/5",
-        "Shield(Buckler)/5"
+        "Shield(Buckler)/5",
+        "Tactics/1"
     ],
     "Feudal Yeoman, Longbow": [
         "INITIATIVE/5",
@@ -1490,7 +1456,8 @@ var occupational_skills = {
         "Bow(Longbow)/5",
         "Sword(Falchion)/5",
         "Dagger/5",
-        "Shield(Buckler)/5"
+        "Shield(Buckler)/5",
+        "Tactics/1"
     ],
     "Feudal Knight, Medium": [
         "INITIATIVE/6",
@@ -1505,7 +1472,8 @@ var occupational_skills = {
         "Axe(Handaxe)/5",
         "Dagger/5",
         "Shield(Knight)/6",
-        "Dancing/3"
+        "Dancing/3",
+        "Tactics/3"
     ],
     "Feudal Knight, Heavy": [
         "INITIATIVE/6",
@@ -1520,7 +1488,8 @@ var occupational_skills = {
         "Axe(Handaxe)/5",
         "Dagger/5",
         "Shield(Kite)/6",
-        "Dancing/3"
+        "Dancing/3",
+        "Tactics/3"
     ],
     "Order Infantry, Light": [
         "INITIATIVE/5",
@@ -1532,7 +1501,8 @@ var occupational_skills = {
         "Spear/6",
         "Sword(Shortsword)/5",
         "Dagger/5",
-        "Shield(Round)/5"
+        "Shield(Round)/5",
+        "Tactics/2"
     ],
     "Order Infantry, Heavy": [
         "INITIATIVE/5",
@@ -1544,7 +1514,8 @@ var occupational_skills = {
         "Spear/6",
         "Sword(Falchion)/5",
         "Dagger/5",
-        "Shield(Round)/5"
+        "Shield(Round)/5",
+        "Tactics/2"
     ],
     "Order Archer": [
         "INITIATIVE/5",
@@ -1556,7 +1527,8 @@ var occupational_skills = {
         "Bow(Shortbow)/5",
         "Sword(Shortsword)/5",
         "Dagger/5",
-        "Shield(Buckler)/5"
+        "Shield(Buckler)/5",
+        "Tactics/2"
     ],
     "Order Knight, Medium": [
         "INITIATIVE/6",
@@ -1571,7 +1543,8 @@ var occupational_skills = {
         "Club(Mace)/5",
         "Dagger/5",
         "Shield(Knight)/6",
-        "Dancing/3"
+        "Dancing/3",
+        "Tactics/3"
     ],
     "Order Knight, Heavy": [
         "INITIATIVE/6",
@@ -1586,7 +1559,8 @@ var occupational_skills = {
         "Club(Mace)/5",
         "Dagger/5",
         "Shield(Kite)/6",
-        "Dancing/3"
+        "Dancing/3",
+        "Tactics/3"
     ],
     "Imperial Militia": [
         "INITIATIVE/5",
@@ -1596,7 +1570,7 @@ var occupational_skills = {
         "Physician/2",
         "Weaponcraft/2",
         "Spear/4",
-        "Shield(Round)/4"
+        "Shield(Round)/4"        
     ],
     "Imperial Legionnaire, Light": [
         "INITIATIVE/5",
@@ -1608,7 +1582,8 @@ var occupational_skills = {
         "Spear/5",
         "Sword(Shortsword)/4",
         "Dagger/4",
-        "Shield(Tower)/5"
+        "Shield(Tower)/5",
+        "Tactics/1"
     ],
     "Imperial Legionnaire, Medium": [
         "INITIATIVE/5",
@@ -1620,7 +1595,8 @@ var occupational_skills = {
         "Spear/6",
         "Sword(Shortsword)/5",
         "Dagger/4",
-        "Shield(Tower)/5"
+        "Shield(Tower)/5",
+        "Tactics/2"
     ],
     "Imperial Legionnaire, Shortbow": [
         "INITIATIVE/5",
@@ -1632,7 +1608,8 @@ var occupational_skills = {
         "Bow(Shortbow)/6",
         "Sword(Shortsword)/5",
         "Dagger/5",
-        "Shield(Buckler)/5"
+        "Shield(Buckler)/5",
+        "Tactics/2"
     ],
     "Patrician": [
         "INITIATIVE/6",
@@ -1647,7 +1624,8 @@ var occupational_skills = {
         "Axe(Handaxe)/5",
         "Dagger/5",
         "Shield(Kite)/6",
-        "Dancing/3"
+        "Dancing/3",
+        "Tactics/3"
     ],
     "Viking Clansman, Unarmored": [
         "INITIATIVE/5",
@@ -1672,7 +1650,8 @@ var occupational_skills = {
         "Shield(Round)/6",
         "Bow((Shortbow))/5",
         "Dagger(Keltan)/5",
-        "Seamanship/3"
+        "Seamanship/3",
+        "Tactics/1"
     ],
     "Viking Huscarl, Medium Foot": [
         "INITIATIVE/6",
@@ -1686,7 +1665,8 @@ var occupational_skills = {
         "Dagger(Keltan)/5",
         "Shield(Round)/5",
         "Seamanship/3",
-        "Piloting/2"
+        "Piloting/2",
+        "Tactics/2"
     ],
     "Viking Huscarl, Light Horse": [
         "INITIATIVE/6",
@@ -1700,7 +1680,8 @@ var occupational_skills = {
         "Sword(Broadsword)/5",
         "Shield(Round)/5",
         "Seamanship/3",
-        "Piloting/2"
+        "Piloting/2",
+        "Tactics/2"
     ],
     "Khuzdul Clansman": [
         "INITIATIVE/5",
@@ -1711,7 +1692,8 @@ var occupational_skills = {
         "Weaponcraft/2",
         "Spear/6",
         "Axe(Handaxe)/5",
-        "Shield(Round)/5"
+        "Shield(Round)/5",
+        "Tactics/1"
     ],
     "Khuzdul Low Guard": [
         "INITIATIVE/5",
@@ -1723,7 +1705,8 @@ var occupational_skills = {
         "Spear/6",
         "Axe(Battleaxe)/5",
         "Dagger/5",
-        "Shield(Round)/5"
+        "Shield(Round)/5",
+        "Tactics/2"
     ],
     "Khuzdul High Guard": [
         "INITIATIVE/6",
@@ -1735,7 +1718,8 @@ var occupational_skills = {
         "Polearm(Poleaxe)/6",
         "Club(Mace)/5",
         "Dagger/5",
-        "Shield(Round)/5"
+        "Shield(Round)/5",
+        "Tactics/3"
     ],
     "Sindarin Ranger, Unarmored": [
         "INITIATIVE/5",
@@ -1747,7 +1731,8 @@ var occupational_skills = {
         "Bow(Hartbow)/6",
         "Sword(Longknife)/5",
         "Dagger/5",
-        "Shield(Buckler)/5"
+        "Shield(Buckler)/5",
+        "Tactics/2"
     ],
     "Sindarin Ranger, Light": [
         "INITIATIVE/5",
@@ -1759,7 +1744,8 @@ var occupational_skills = {
         "Bow(Hartbow)/6",
         "Sword(Longknife)/5",
         "Dagger/5",
-        "Shield(Buckler)/5"
+        "Shield(Buckler)/5",
+        "Tactics/2"
     ],
     "Sindarin Guardian": [
         "INITIATIVE/5",
@@ -1771,7 +1757,8 @@ var occupational_skills = {
         "Spear/7",
         "Sword(Longknife)/6",
         "Dagger/5",
-        "Shield(Round)/6"
+        "Shield(Round)/6",
+        "Tactics/3"
     ],
     "Sindarin Horsebow": [
         "INITIATIVE/5",
@@ -1786,7 +1773,8 @@ var occupational_skills = {
         "Sword(Longknife)/5",
         "Shield(Knight)/6",
         "Dancing/3",
-        "Musician/2"
+        "Musician/2",
+        "Tactics/2"
     ],
     "Sindarin Knight": [
         "INITIATIVE/6",
@@ -1800,7 +1788,8 @@ var occupational_skills = {
         "Sword(Longknife)/6",
         "Shield(Knight)/6",
         "Dancing/3",
-        "Musician/2"
+        "Musician/2",
+        "Tactics/3"
     ],
     "Shek-Pvar/Lyahvi*": [
         "Lyahvi/2",
@@ -2298,4 +2287,3 @@ var occupation_time = {
     "Shek-Pvar/Savorya****": "7",
     "Shek-Pvar/Savorya*****": "7"
 }
-
