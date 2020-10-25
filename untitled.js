@@ -101,7 +101,7 @@ function getDodgeEML(toke, charid, mod = 0, bow = false) {
 	var tot = parseInt(myGet(`DODGE_ML`, charid, 0));
 	var targstr = `<div style='width:180px;'>Mastery Level: ${tot}<br>`;
 	if (bow)  {
-		x = (tot/-2)
+		x = Math.round(tot/-2);
 		tot += x;
 		targstr = `${targstr}Bow Mod: ${x}<br>`;
 	} 
@@ -2178,12 +2178,13 @@ function doHit(base,atkrepwep,acharid,dcharid,aspect,missi,loc,atktoke,deftoke) 
 
 	var avatloc = myGet(hitloc + "_" + atk_impact.aspect, dcharid,0);
 
-	var out = "<br/>Attacker "+atktoke.get('name')+" Impact: " + labelMaker(atk_impact.total,atk_impact.impactstr) + "<br/>Location: "
+	var out = "<br/>"+atktoke.get('name')+" damages "+deftoke.get('name')+"<br>Impact: " 
+			+ labelMaker(atk_impact.total,atk_impact.impactstr) + "<br/>Location: "
 			+ hitloc + "<br/>AV at Loc: " + avatloc
 			+ "<br/>Effective Impact: " + (atk_impact.total - avatloc);
 	if (atk_impact.total - avatloc > 0) {
 		var eff = gethiteff(hitloc, atk_impact.total - avatloc);
-		out += "<br/>Defender Injury: " + eff + " " + atk_impact.aspect
+		out += "<br/>"+deftoke.get('name')+" Injury: " + eff + " " + atk_impact.aspect
 		var unipenalty =  parseInt(eff.match(/\d/));
 		
 		if (deftoke.get('bar3_link')) {

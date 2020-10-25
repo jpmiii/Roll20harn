@@ -22,15 +22,11 @@ function handle_defend(def, msg) {
     }
 ///////////////////////////////////////////////////////////////////////
 
-	var wep = findWeapon(charid, wepname);
-
-	if (!wep[0]) {
+	var aojn = findWeapon(charid, wepname)[0].get('name');
+	if (!aojn) {
 	    sendChat(msg.who, "Weapon " + wepname + " not found");
 	    return;
 	}
-	
-
-	var aojn = wep[0].get('name');
 
 	var aeml = getMeleeEML(atoke, aojn.slice(0, -4), charid, atk[5], atk[2]);
 	var app = 0;
@@ -58,11 +54,9 @@ function handle_defend(def, msg) {
 
     var deml = {'total':0,'targstr':''};
 
-
 	if (def[1] == "dodge") {
-
-		var deml = getDodgeEML(toke, defcharid, parseInt(def[2]), ((atk[4] == "missile") && (wepname.indexOf("Bow") !== -1)));
-
+		var deml = getDodgeEML(toke, defcharid, parseInt(def[2]), 
+			((atk[4] == "missile") && (wepname.indexOf("Bow") !== -1)));
 	}
 
 	if ((def[1] == "block") || (def[1] == "counterstrike")) {
@@ -98,12 +92,7 @@ function handle_defend(def, msg) {
 	        droll = 101 - droll;
 	    }
 	    log("Cheat Def roll: " + droll);
-
 	}
-
-	
-
-	
 
 	if (state.MainGameNS["cheat"] > 0) {
 	    if (state.MainGameNS["cheat"] >100) {
@@ -112,7 +101,6 @@ function handle_defend(def, msg) {
 	        droll = state.MainGameNS["cheat"]
 	        state.MainGameNS["cheat"] = 0;
 	    }
-
 	}
 
 	if (deml.total > emlmax) {deml.total = emlmax;};
@@ -127,15 +115,11 @@ function handle_defend(def, msg) {
 	}
 
 	if (atk[4] == "missile") {
-
 		var r = attack_missile[def[1]][ais][dis];
-
 	} else {
 		var r = attack_melee[def[1]][ais][dis];
 	}
 
-
-	var res =  r;
 	var ares = "";
 	var dres = "";
 
@@ -159,23 +143,16 @@ function handle_defend(def, msg) {
 		var rolldesc = `${toke.get('name')} ${def[1]}s with a ${defwepname}`
 	}
 	
-	
-	
 	//log crits
 	
-
 	if (asuc == "CS") {
-
 		charLog(charid, ": Attack CS " + wepname,realtime,gametime)
 	} else if (asuc == "CF") {
-
 		charLog(charid, ": Attack CF " + wepname,realtime,gametime)
 	} 
 	if (dsuc == "CS") {
-
 		charLog(defcharid, ": Defend CS " + defwepname,realtime,gametime)
 	} else if (dsuc == "CF") {
-
 		charLog(defcharid, ": Defend CF " + defwepname,realtime,gametime)
 	} 
 
@@ -186,9 +163,7 @@ function handle_defend(def, msg) {
 			ais,
 			labelMaker(`Roll d100: ${droll}`,null,null,1.3),
 			labelMaker(`Target: ${deml.total}`,deml.targstr,null,1.3),
-			dis,ares,dres,res));
-
-
+			dis,ares,dres,r));
 }
 
 

@@ -11,11 +11,11 @@ var realtime = true; //character sheet log shows real time
 var gametime = true; //character sheet log shows game time 
 var attack_template = "harn-fancy"; // sets the roll template (harn-fancy or harnroll) for the attack function
 var defend_template = "harn-defend"; // sets the roll template (harn-defend or harnroll) for the defend function
-var emlmax = 95; // canon
-var emlmin = 5;
+var emlmax = 97; // canon 95
+var emlmin = 4; // canon 5
 //
 // House rules
 //
 
-var missle_close_range_mod = 0; // house rule close range mod (0 is canon) adds an extra range column for close vs short range
-var randomize_init_roll = false; // adds 3d6 to the init for randomness
+var missle_close_range_mod = -15; // house rule close range mod (0 is canon) adds an extra range column for close vs short range
+var randomize_init_roll = true; // adds 3d6 to the init for randomness
