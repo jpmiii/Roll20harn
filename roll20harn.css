@@ -400,7 +400,6 @@ input[type=number]::-webkit-inner-spin-button {
 /* ROLL TEMPLATES */
 .sheet-rolltemplate-check-lt table,
 .sheet-rolltemplate-rollcheck table {
-    background-image: url("https://jpmiii.com/bg.gif");
     width: 100%;
     border: 1px solid;
     color: black;
@@ -633,7 +632,7 @@ input[type=number]::-webkit-inner-spin-button {
     
     font-family: "Acme";
     text-align: center;
-    background-image: url("https://i.imgur.com/Nnc3ddt.gif");
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/bg.gif");
     width: 240px;
     color: black;
     border-style: none solid none solid;
@@ -695,7 +694,7 @@ input[type=number]::-webkit-inner-spin-button {
 .sheet-rolltemplate-harn-defend .sheet-note-bottom {
     font-family: "Acme";
     text-align: center;
-    background-image: url("https://i.imgur.com/Ofv9yd0.png");
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/bottomframe.png");
     background-repeat: no-repeat;
     background-position: center bottom;
     background-size: 243px;
@@ -749,7 +748,7 @@ input[type=number]::-webkit-inner-spin-button {
     
     font-family: "Acme";
     text-align: center;
-    background-image: url("https://i.imgur.com/Nnc3ddt.gif");
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/bg.gif");
     width: 240px;
     color: black;
     
@@ -758,7 +757,7 @@ input[type=number]::-webkit-inner-spin-button {
 }
 .sheet-rolltemplate-harn-fancy .sheet-harn-fancy-top {
     
-    background-image: url("https://i.imgur.com/A1rm545.png");
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/topframe.png");
     background-repeat: no-repeat;
     background-size: 240px 257px;
 
@@ -789,7 +788,7 @@ input[type=number]::-webkit-inner-spin-button {
     
     font-family: "Acme";
     text-align: center;
-    background-image: url("https://i.imgur.com/Nnc3ddt.gif");
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/bg.gif");
     width: 240px;
     color: black;
     
@@ -798,7 +797,7 @@ input[type=number]::-webkit-inner-spin-button {
 }
 .sheet-rolltemplate-harn-bottom .sheet-harn-bottom-top {
     
-    background-image: url("https://i.imgur.com/Ofv9yd0.png");
+    background-image: url("https://jpmiii.github.io/Roll20harn/harnfancy/topframe.png");
     background-repeat: no-repeat;
     background-size: 240px 257px;
 
