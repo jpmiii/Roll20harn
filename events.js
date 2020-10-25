@@ -118,4 +118,3 @@ on("change:campaign:turnorder", function(obj, prev) {
 
 });
 
-

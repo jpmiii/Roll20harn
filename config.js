@@ -20,3 +20,5 @@ var missle_close_range_mod = -15; // house rule close range mod (0 is canon) add
 var randomize_init_roll = true; // adds 3d6 to the init for randomness
 var emlmax = 97; // canon 95
 var emlmin = 4; // canon 5
+
+
