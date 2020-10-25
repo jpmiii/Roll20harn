@@ -11,7 +11,8 @@ var realtime = true; //character sheet log shows real time
 var gametime = true; //character sheet log shows game time 
 var attack_template = "harn-fancy"; // sets the roll template (harn-fancy or harnroll) for the attack function
 var defend_template = "harn-defend"; // sets the roll template (harn-defend or harnroll) for the defend function
-
+var emlmax = 95; // canon
+var emlmin = 5;
 //
 // House rules
 //

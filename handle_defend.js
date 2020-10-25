@@ -51,11 +51,12 @@ function handle_defend(def, msg) {
 	appstr = `${aeml.targstr} ${appstr}`;
 	
 	
-    if (atkml >95) {atkml=95;}
+    if (atkml > emlmax) {atkml = emlmax;};
+    if (atkml < emlmin) {atkml = emlmin;};
 	var { asuc, ais } = determineSuccess(atkml,state.MainGameNS.aroll);
 ///////////////////////////////////////////////////////////////////////
 
-    var deml = {'total':-1000,'targstr':''};
+    var deml = {'total':0,'targstr':''};
 
 
 	if (def[1] == "dodge") {
@@ -114,8 +115,10 @@ function handle_defend(def, msg) {
 
 	}
 
-	if (deml.total >95) {deml.total=95;}
-	log("deml.total: "+deml.total)
+	if (deml.total > emlmax) {deml.total = emlmax;};
+	if (deml.total < emlmin) {deml.total = emlmin;};
+
+	log("DefML: "+deml.total)
 	
 	var { dsuc, dis } = determineDefSuccess(deml.total, droll);
 
@@ -170,10 +173,10 @@ function handle_defend(def, msg) {
 	} 
 	if (dsuc == "CS") {
 
-		charLog(charid, ": Defend CS " + defwepname,realtime,gametime)
+		charLog(defcharid, ": Defend CS " + defwepname,realtime,gametime)
 	} else if (dsuc == "CF") {
 
-		charLog(charid, ": Defend CF " + defwepname,realtime,gametime)
+		charLog(defcharid, ": Defend CF " + defwepname,realtime,gametime)
 	} 
 
 	sendChat(msg.who, defendTemplate(defend_template,
