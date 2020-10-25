@@ -876,14 +876,20 @@ function initializeTables(playerid) {
 
 	var chars = findObjs({ _type: "character", });
 
+	if (trace) log("Creating default character macros");
 	chars.forEach(function(c) {
+		if (trace) log(`Character ${c.name}`);
+		setWeaponsList(c.id);
+		setSkillList(c.id);
 		_.each(_.keys(default_abilities), function(obj) {
+			if (trace) log(`Macro ${obj}`)
 			var mac = findObjs({
 				type: 'ability',
 				_characterid: c.id,
 				name: obj
 			})[0];
 			if (!mac) {
+				if (trace) log('registering');
 				var out = default_abilities[obj];
 				createObj('ability', {
 					name: obj,
@@ -915,7 +921,7 @@ function getWep(charid) {
 }
 
 function setWeaponsList(charid) {
-
+	if (trace) log("Macro helper-Weapons");
 	var out2 = "";
 	getWep(charid).forEach(function(w) {
 		out2 += "|" + myGet(w.get('name'), charid, "");
@@ -943,6 +949,7 @@ function setWeaponsList(charid) {
 }
 
 function setSkillList(charid) {
+	if (trace) log("Macro helper-Skilllist");
 	var out = "";
 	var sl = skillList(charid);
 
