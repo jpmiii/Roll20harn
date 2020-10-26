@@ -3,30 +3,6 @@
 @import url('https://fonts.googleapis.com/css?family=Secular+One|Acme|Uncial+Antiqua|Berkshire+Swash|Creepster|Spirax&display=swap');
 
 
-
-/*Configure the tab buttons*/
-.sheet-character,
-.sheet-skills,
-.sheet-combat,
-.sheet-inventory,
-.sheet-armor,
-.sheet-supernatural,
-.sheet-notes {
-	display: none;
-}
-
-/* show the selected tab */
-.sheet-tabstoggle[value="character"] ~ div.sheet-character,
-.sheet-tabstoggle[value="skills"] ~ div.sheet-skills,
-.sheet-tabstoggle[value="combat"] ~ div.sheet-combat,
-.sheet-tabstoggle[value="inventory"] ~ div.sheet-inventory,
-.sheet-tabstoggle[value="armor"] ~ div.sheet-armor,
-.sheet-tabstoggle[value="supernatural"] ~ div.sheet-supernatural,
-.sheet-tabstoggle[value="notes"] ~ div.sheet-notes {
-	display: block;
-}
-
-
 .hline { width:100%; height:1px; background: #000 }
 
 
