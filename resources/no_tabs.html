@@ -1,22 +1,6 @@
 <div class="sheet">
 
 
-
-<div>
-    <button type="action" name="act_character" >Character</button>
-    <button type="action" name="act_skills" >Skills</button>
-    <button type="action" name="act_combat" >Combat</button>
-    <button type="action" name="act_armor" >Armor</button>
-    <button type="action" name="act_inventory" >Inventory</button>
-    <button type="action" name="act_supernatural" >Supernatural</button>
-    <button type="action" name="act_notes" >Notes</button>
-
-</div>
-
-<input type='hidden' class='sheet-tabstoggle' name='attr_sheetTab'  value='character'  />
-
-<div class='sheet-character'>
-
 <div class="sheet-row">
     <div class="sheet-info-col">
         <h4 class="sheet-section-head">Personal</h4>
@@ -183,8 +167,8 @@
     </div>
 </div>
 
-</div><div class='sheet-skills'>
-
+    
+    
 <hr class="sheet-hr">
 <div class="sheet-3colrow sheet-row">
 
@@ -360,8 +344,6 @@
     </div>
 </div>
 
-
-
 <div class="sheet-3colrow">
     <div class="sheet-col">
         <h4 class="sheet-section-head">Craft/Lore</h4>
@@ -433,7 +415,7 @@
 
         <button type='roll' value='!pickskill @{character_id} @{character_name}' name='pickskill'>Skill Improvement Roll</button>
 
-</div><div class='sheet-combat'>
+
 
 <div class="sheet-row">
 
@@ -610,7 +592,6 @@
 
 </div>
 
-</div><div class='sheet-armor'>
 
 <div class="sheet-row">
     <h4 class="sheet-section-head">Armor Protection</h4>
@@ -788,8 +769,6 @@
     </div>
 </div>
 
-</div><div class='sheet-inventory'>
-
 <div class="sheet-row">
     <div class="sheet-row">
         <h4 class="sheet-section-head">Inventory</h4>
@@ -823,7 +802,37 @@
     </div>
 </div>
 
-</div><div class='sheet-supernatural'>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <div class="sheet-row">
 
@@ -901,17 +910,13 @@
     </div>
 </div>
 
-</div><div class='sheet-notes'>
 
 
 <textarea name="attr_TEXTAREA_NOTE"></textarea>
 <br/>Log<br/>
 <textarea name="attr_TEXTAREA_LOG"></textarea>
 </div>
-</div>
-
-
-</div>
+</div></div>
 <!-- ROLL TEMPLATES/-->
 
 <!--
@@ -1531,17 +1536,3 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
 });
 
 </script>
-
-<script type="text/worker">
-    const buttonlist = ["character","skills","combat","inventory","armor","supernatural","notes"];
-    buttonlist.forEach(button => {
-        on(`clicked:${button}`, function() {
-            setAttrs({
-                sheetTab: button
-            });
-        });
-    });
-</script>
-
-
-
