@@ -2183,7 +2183,7 @@ function doHit(base, atkrepwep, acharid, dcharid, aspect, missi, loc, atktoke, d
 	var out = "<br/>" + atktoke.get('name') + " damages " + deftoke.get('name') + "<br>Impact: "
 		+ labelMaker(atk_impact.total, atk_impact.impactstr) + "<br/>Location: "
 		+ hitloc + "<br/>AV at Loc: " + avatloc
-		+ "<br/>Effective Impact: " + (atk_impact.total - avatloc);
+		+ "<br/>Effective Impact: " + max(atk_impact.total - avatloc,0);
 	if (atk_impact.total - avatloc > 0) {
 		var eff = gethiteff(hitloc, atk_impact.total - avatloc);
 		out += "<br/>" + deftoke.get('name') + " Injury: " + eff + " " + atk_impact.aspect
