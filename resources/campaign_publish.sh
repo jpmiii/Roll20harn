@@ -30,15 +30,20 @@ credfile="campaign.txt"
 while getopts ":l:c:s:u:p:f:d:vh" opt; do
   case ${opt} in
     d ) # what directory the files are in
-        echo "Looking in $OPTAG for all .js files"
         dir=$OPTARG
+        if [[ -d $dir ]]; then 
+                echo "Looking in $dir for all .js files"
+        else
+                echo "Unable to locate $dir. Try specifying the full path."
+                exit 1
+        fi
         ;;
     f ) # config.js file
         config=$OPTARG
         if [[ -f $config ]]; then
                 echo "Using $config instead of config.js"
         else
-                echo "Unable to locate ${config}"
+                echo "Unable to locate ${config}. Try specifying the full path."
                 exit 1
         fi
         ;;
@@ -49,8 +54,13 @@ while getopts ":l:c:s:u:p:f:d:vh" opt; do
         script=$OPTARG
         ;;
     l ) # login credentials file
-        echo "Reading credentials from ${OPTARG}"
-        source $OPTARG
+        if [[ -f $OPTARG ]]; then
+                echo "Reading credentials from ${OPTARG}"
+                source $OPTARG
+        else
+                echo "Unable to read file ${OPTARG}. Try specifying the full path."
+                exit 1
+        fi
         ;;
     u ) # username
         email=$OPTARG
@@ -78,7 +88,7 @@ done
 shift $((OPTIND -1))
 
 # read in the variables defined in $credfile
-echo "Using email: ${email}, campaign: ${campaign}, script: ${script}"
+echo "Using email: ${email}, campaign: ${campaign}, script: ${script}, config: ${config}"
 # delete the cookies from last time
 rm roll20*.cookies 2>/dev/null
 
