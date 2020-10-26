@@ -88,7 +88,6 @@ var skilllist = {"Acrobatics": {"type":"PHYSICAL","sba":["STR","AGL","AGL"],"ssm
 "Metalcraft": {"type":"LORE","sba":["STR","DEX","WIL"],"ssm":{"Fen":"3","Ahn":"1","Ang":"1"},"oml":"1","notes":"Different metal types (Tinsmith, Coppersmith, etc.)."},
 "Milling": {"type":"LORE","sba":["STR","DEX","SML"],"ssm":{"Ula":"1"},"oml":"2","notes":"Baking, Milling."},
 "Mining": {"type":"LORE","sba":["STR","EYE","INT"],"ssm":{"Ula":"2","Ara":"2","Fen":"1"},"oml":"1","notes":"Different mineral/metal types."},
-"Needlework": {"type":"LORE","sba":["DEX","EYE","WIL"],"ssm":{"Ula":"0"},"oml":"1","notes":""},
 "Packing": {"type":"LORE","sba":["DEX","EYE","INT"],"ssm":{"Fen":"1","Ula":"2","Ara":"2"},"oml":"1","notes":"Pack to maximize available space and knot tying."},
 "Perfumery": {"type":"LORE","sba":["SML","SML","INT"],"ssm":{"Hir":"1","Sko":"1","Tar":"1"},"oml":"1","notes":"Incense, Scented Oils, Soap, etc."},
 "Physician": {"type":"LORE","sba":["DEX","EYE","INT"],"ssm":{"Mas":"2","Sko":"1","Tai":"1"},"oml":"1","notes":"Homeopathy, Surgery, etc."},
@@ -114,7 +113,9 @@ var skilllist = {"Acrobatics": {"type":"PHYSICAL","sba":["STR","AGL","AGL"],"ssm
 "Savorya": {"type":"MAGIC","sba":["AUR","AUR","INT"],"ssm":{"Ula":"-1","Ara":"-2","Fen":"-3","Ahn":"-2","Ang":"-1","Hir":"1","Tar":"2","Tai":"3","Sko":"2","Mas":"1"},"oml":"1","notes":"none"},
 "Neutral": {"type":"MAGIC","sba":["AUR","AUR","WIL"],"ssm":{"Ula":"0"},"oml":"1","notes":"none"}}
 
-
+if (house_rule_skilllist != null) {
+    house_rule_skilllist.forEach((v,k)=>skilllist.set(k,v));
+}
 
 
 
@@ -127,7 +128,7 @@ var autoskillsnames = ["Initiative","Unarmed","Dodge","Riding","Climbing","Condi
 
 var prices = {"Axe, wood handle":{"price":12,"weight":3},
 "Hatchet":{"price":6,"weight":1},
-"Hoee":{"price":3,"weight":2},
+"Hoe":{"price":3,"weight":2},
 "Iron, branding":{"price":18,"weight":5},
 "Pick":{"price":8,"weight":5},
 "Pitchfork":{"price":6,"weight":3},
@@ -461,7 +462,6 @@ var prices = {"Axe, wood handle":{"price":12,"weight":3},
 "q1":{"price":1,"weight":1.0},
 "Gold Crown":{"price":320,"weight":.06},
 "Pence":{"price":1,"weight":.004},
-"Lightsabre":{"price":9600000,"weight":0.2},
 "Sword(StarSteel)":{"price":150,"weight":2},
 "Bow(Crossbow)":{"price":600,"weight":5.0},
 "Polearm(Pike)":{"price":96,"weight":12},
@@ -472,9 +472,10 @@ var prices = {"Axe, wood handle":{"price":12,"weight":3},
 "Body, mail":{"price":0,"weight":0},
 "Body, plate ":{"price":0,"weight":0},
 "Hauberk, long, mail+2":{"price":9000,"weight":27.0},
-"Bow(Minicrossbow)":{"price":1800,"weight":2.5},
 "Skull":{"price":0,"weight":0}
-
+}
+if (house_rule_prices != null) {
+    house_rule_prices.forEach((v,k)=>prices.set(k,v));
 }
 
 
@@ -2153,6 +2154,9 @@ var occupational_skills = {
         "Tarotry/3"
     ]
 }
+if (house_rule_occupational_skills != null) {
+    house_rule_occupational_skills.forEach((v,k)=>occupational_skills.set(k,v));
+}
 
 ////////////////////////////////////////////////////////////
 
@@ -2297,5 +2301,9 @@ var occupation_time = {
     "Shek-Pvar/Savorya***": "7",
     "Shek-Pvar/Savorya****": "7",
     "Shek-Pvar/Savorya*****": "7"
+}
+
+if (house_rule_occupation_time != null) {
+    house_rule_occupation_time.forEach((v,k)=>occupation_time.set(k,v));
 }
 

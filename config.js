@@ -22,4 +22,20 @@ var emlmax = 97; // canon 95
 var emlmin = 4; // canon 5
 var additional_target_locations = false; //add additional target locations e.g. neck for faster combat resolution
 
-
+// house rule tables - comment out to remove. Any entry listed here which is also in the canon table will override the canon table.
+var house_rule_skilllist = {
+    "Needlework": {"type":"LORE","sba":["DEX","EYE","WIL"],"ssm":{"Ula":"0"},"oml":"1","notes":""}
+};
+var house_rule_prices = {
+    "Bow(Minicrossbow)":{"price":1800,"weight":2.5},
+    "Lightsabre":{"price":9600000,"weight":0.2}
+};
+var hosue_rule_occupations = {
+    "Archeologist": [
+        "Gun/3",
+        "Whip/3"
+    ]
+}
+var house_rule_occupation_time = {
+    "Archeologist": "14"
+}
