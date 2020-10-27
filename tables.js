@@ -117,11 +117,6 @@ var skilllist = {"Acrobatics": {"type":"PHYSICAL","sba":["STR","AGL","AGL"],"ssm
 "Savorya": {"type":"MAGIC","sba":["AUR","AUR","INT"],"ssm":{"Ula":"-1","Ara":"-2","Fen":"-3","Ahn":"-2","Ang":"-1","Hir":"1","Tar":"2","Tai":"3","Sko":"2","Mas":"1"},"oml":"1","notes":"none"},
 "Neutral": {"type":"MAGIC","sba":["AUR","AUR","WIL"],"ssm":{"Ula":"0"},"oml":"1","notes":"none"}}
 
-Object.keys(config.additional_skills).forEach((k)=>{
-    skilllist[k]=config.additional_skills[k];
-    if (trace) log(`Adding house rule skill ${k}`)
-});
-
 
 
 var autoskills = {"CLIMBING":"ML","CONDITION":"ML","DODGE":"ML","JUMPING":"ML","STEALTH":"ML","INITIATIVE":"ML","UNARMED":"ML","THROWING":"ML","RIDING":"ML","AWARENESS":"ML","INTRIGUE":"ML","ORATORY":"ML","RHETORIC":"ML","SINGING":"ML","PHYSICIAN":"ML"}
@@ -131,7 +126,8 @@ var autoskillsnames = ["Initiative","Unarmed","Dodge","Riding","Climbing","Condi
 //
 
 
-var prices = {"Axe, wood handle":{"price":12,"weight":3},
+var prices = {
+    "Axe, wood handle":{"price":12,"weight":3},
 "Hatchet":{"price":6,"weight":1},
 "Hoe":{"price":3,"weight":2},
 "Iron, branding":{"price":18,"weight":5},
@@ -479,11 +475,6 @@ var prices = {"Axe, wood handle":{"price":12,"weight":3},
 "Hauberk, long, mail+2":{"price":9000,"weight":27.0},
 "Skull":{"price":0,"weight":0}
 }
-
-Object.keys(config.additional_items).forEach((k)=> {
-    prices[k]=config.additional_items[k];
-    if (trace) log(`Adding house rule item ${k}`);
-});
 
 
 var attack_melee = {"block":[["BF","AF","DTA","DTA"],
@@ -2162,11 +2153,6 @@ var occupational_skills = {
     ]
 }
 
-Object.keys(config.additional_occupational_skills).forEach((k)=>{
-    occupational_skills[k]=config.additional_occupational_skills[k];
-    if (trace) log(`Adding house rule occupational skill ${k}`);
-});
-
 ////////////////////////////////////////////////////////////
 
 
@@ -2311,9 +2297,4 @@ var occupation_time = {
     "Shek-Pvar/Savorya****": "7",
     "Shek-Pvar/Savorya*****": "7"
 }
-
-Object.keys(config.house_rule_occupation_time).forEach((k)=>{
-    occupation_time[k]=config.house_rule_occupation_time[k]
-    if (trace) log(`Adding house rule occupation time ${k}`);
-});
 

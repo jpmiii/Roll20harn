@@ -13,6 +13,23 @@ on("ready", function() {
 	log(getHarnTimeStr(state.MainGameNS.GameTime));
 	log("loaded. trace: " + trace);
 	initializeTables(0);
+	Object.keys(config.additional_skills).forEach((k)=>{
+		skilllist[k]=config.additional_skills[k];
+		if (trace) log(`Adding house rule skill ${k}`)
+	});
+	Object.keys(config.additional_items).forEach((k)=> {
+		prices[k]=config.additional_items[k];
+		if (trace) log(`Adding house rule item ${k}`);
+	});
+	Object.keys(config.additional_occupational_skills).forEach((k)=>{
+		occupational_skills[k]=config.additional_occupational_skills[k];
+		if (trace) log(`Adding house rule occupational skill ${k}`);
+	});
+	Object.keys(config.house_rule_occupation_time).forEach((k)=>{
+		occupation_time[k]=config.house_rule_occupation_time[k]
+		if (trace) log(`Adding house rule occupation time ${k}`);
+	});
+				
 	started = true;
 });
 
