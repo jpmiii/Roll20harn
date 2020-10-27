@@ -7,8 +7,12 @@
 
 var default_macros = {"helper-Physician-roll":"?{Treatment Bonus|Minor cut - Clean & Dress,30|Serious cut - Surgery,20|Grevious cut - Surgery,10|Minor stab - Clean & Dress,25|Serious stab - Clean & Dress,15|Grevious stab - Surgery,5|Minor bruise - Compress,30|Serious blunt fracture - Splint,20|Grevious blunt crush -Surgery/Splint,10|Bleeding wound - Tourniquet,50|No Bonus,0}",
 			"Random-Char":"!rand"};
-var default_abilities = {"Atk":`!attack @{selected|token_id} ?{aim zone|mid|high|low${additional_target_locations?"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin":""}} ?{Aspect|H|B|E|P|F} ?{Attack Type|melee|missle} ?{Mod|0} @{target|token_id} %{@{character_name}|helper-Weapons}`,
-			"ImproveSkill":"!improveskill @{character_id} %{@{character_name}|helper-SkillList}"};
+var default_abilities = {
+    "Atk":`!attack @{selected|token_id} ?{aim zone|mid|high|low${config.additional_target_locations?"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin":""}} ?{Aspect|H|B|E|P|F} ?{Attack Type|melee|missle} ?{Mod|0} @{target|token_id} %{@{character_name}|helper-Weapons}`,
+    "Fumble":"&{template:check-lt} {{character_name=@{selected|token_name}}} {{rolldesc=rolls Fumble}} {{rolltarget=[[@{COMBAT_DEX}]]}} {{rollresult=[[[[3d6]] + @{selected|bar3} + @{ENCUMBRANCE}]]}} {{base=@{COMBAT_DEX}}} {{rolltype=3d6+[[@{selected|bar3} + @{ENCUMBRANCE}]]}} {{penalty=[[0]]}}",
+    "Stumble":"&{template:check-lt} {{character_name=@{selected|token_name}}} {{rolldesc=rolls Stumble}} {{rolltarget=[[@{COMBAT_AGL}]]}} {{rollresult=[[[[3d6]] + @{selected|bar3} + @{ENCUMBRANCE}]]}} {{base=@{COMBAT_AGL}}} {{rolltype=3d6+[[@{selected|bar3} + @{ENCUMBRANCE}]]}} {{penalty=[[0]]}}",
+    "ImproveSkill":"!improveskill @{character_id} %{@{character_name}|helper-SkillList}"
+};
 
 var skilllist = {"Acrobatics": {"type":"PHYSICAL","sba":["STR","AGL","AGL"],"ssm":{"Nad":"2","Hir":"1"},"oml":"2","notes":"Trapeze, Tumbling, Vaulting, etc."},
 "CLIMBING": {"type":"PHYSICAL","sba":["STR","DEX","AGL"],"ssm":{"Ula":"2","Ara":"2"},"oml":"4","notes":"None."},
@@ -113,9 +117,10 @@ var skilllist = {"Acrobatics": {"type":"PHYSICAL","sba":["STR","AGL","AGL"],"ssm
 "Savorya": {"type":"MAGIC","sba":["AUR","AUR","INT"],"ssm":{"Ula":"-1","Ara":"-2","Fen":"-3","Ahn":"-2","Ang":"-1","Hir":"1","Tar":"2","Tai":"3","Sko":"2","Mas":"1"},"oml":"1","notes":"none"},
 "Neutral": {"type":"MAGIC","sba":["AUR","AUR","WIL"],"ssm":{"Ula":"0"},"oml":"1","notes":"none"}}
 
-if (house_rule_skilllist != null) {
-    house_rule_skilllist.forEach((v,k)=>skilllist.set(k,v));
-}
+Object.keys(config.additional_skills).forEach((k)=>{
+    skilllist[k]=config.additional_skills[k];
+    if (trace) log(`Adding house rule skill ${k}`)
+});
 
 
 
@@ -474,9 +479,11 @@ var prices = {"Axe, wood handle":{"price":12,"weight":3},
 "Hauberk, long, mail+2":{"price":9000,"weight":27.0},
 "Skull":{"price":0,"weight":0}
 }
-if (house_rule_prices != null) {
-    house_rule_prices.forEach((v,k)=>prices.set(k,v));
-}
+
+Object.keys(config.additional_items).forEach((k)=> {
+    prices[k]=config.additional_items[k];
+    if (trace) log(`Adding house rule item ${k}`);
+});
 
 
 var attack_melee = {"block":[["BF","AF","DTA","DTA"],
@@ -2154,9 +2161,11 @@ var occupational_skills = {
         "Tarotry/3"
     ]
 }
-if (house_rule_occupational_skills != null) {
-    house_rule_occupational_skills.forEach((v,k)=>occupational_skills.set(k,v));
-}
+
+Object.keys(config.additional_occupational_skills).forEach((k)=>{
+    occupational_skills[k]=config.additional_occupational_skills[k];
+    if (trace) log(`Adding house rule occupational skill ${k}`);
+});
 
 ////////////////////////////////////////////////////////////
 
@@ -2303,7 +2312,8 @@ var occupation_time = {
     "Shek-Pvar/Savorya*****": "7"
 }
 
-if (house_rule_occupation_time != null) {
-    house_rule_occupation_time.forEach((v,k)=>occupation_time.set(k,v));
-}
+Object.keys(config.house_rule_occupation_time).forEach((k)=>{
+    occupation_time[k]=config.house_rule_occupation_time[k]
+    if (trace) log(`Adding house rule occupation time ${k}`);
+});
 

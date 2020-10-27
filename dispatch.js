@@ -13,7 +13,7 @@
 // Number: [-+]?[0-9]+
 // one of the following: (high|mid|low|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin)
 
-var target_locations="(high|mid|low"+(additional_target_locations?"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin":"")+")"
+var target_locations="(high|mid|low"+(config.additional_target_locations?"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin":"")+")"
 
 var dispatch_table = {
     "!calcsb": {

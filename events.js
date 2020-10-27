@@ -6,6 +6,10 @@ on("ready", function() {
 	if (!state.MainGameNS) {
 		state.MainGameNS = { index: 0, dis: 0 };
 	}
+	expectedSerial = 1;
+	if (config.serial != expectedSerial) {
+		sendChat("API", `Unexpected config serial number. Expected ${expectedSerial} but got ${config.serial}`);
+	}
 	log(getHarnTimeStr(state.MainGameNS.GameTime));
 	log("loaded. trace: " + trace);
 	initializeTables(0);
