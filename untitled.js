@@ -777,7 +777,7 @@ function initializeTables(playerid) {
 		gmId = gms[0].id;
 	} else {
 		log("error - no gm found")
-		if (playerId != 0) {
+		if (playerid != 0) {
 			gmId = playerid
 		} else {
 			return;

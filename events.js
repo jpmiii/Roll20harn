@@ -11,25 +11,16 @@ on("ready", function() {
 		sendChat("API", `Unexpected config serial number. Expected ${expectedSerial} but got ${config.serial}`);
 	}
 	log(getHarnTimeStr(state.MainGameNS.GameTime));
-	log("loaded. trace: " + trace);
+	log("trace: " + trace);
+	house_remove(config.remove_items, prices, "inventory");
+	house_remove(config.remove_armor_coverage, armor_coverage, "armor coverage");
+	house_add(config.add_skills, skilllist, "skill");
+	house_add(config.add_items, prices, "inventory");
+	house_add(config.add_armor_coverage, armor_coverage, "skill");
+	house_add(config.add_armor_prot, armor_prot, "skill");
+	house_add(config.add_occupational_skills, occupational_skills, "occupation skill");
+	house_add(config.add_occupation_time, occupation_time, "occupation time");
 	initializeTables(0);
-	Object.keys(config.additional_skills).forEach((k)=>{
-		skilllist[k]=config.additional_skills[k];
-		if (trace) log(`Adding house rule skill ${k}`)
-	});
-	Object.keys(config.additional_items).forEach((k)=> {
-		prices[k]=config.additional_items[k];
-		if (trace) log(`Adding house rule item ${k}`);
-	});
-	Object.keys(config.additional_occupational_skills).forEach((k)=>{
-		occupational_skills[k]=config.additional_occupational_skills[k];
-		if (trace) log(`Adding house rule occupational skill ${k}`);
-	});
-	Object.keys(config.house_rule_occupation_time).forEach((k)=>{
-		occupation_time[k]=config.house_rule_occupation_time[k]
-		if (trace) log(`Adding house rule occupation time ${k}`);
-	});
-				
 	started = true;
 });
 
@@ -138,4 +129,20 @@ on("change:campaign:turnorder", function(obj, prev) {
 	}
 
 });
+
+function house_remove(house_remove, canon, description) {
+	house_remove.forEach((k) => {
+		if (trace)
+			log(`Removing ${description} ${k}`);
+		delete canon[k];
+	});
+}
+
+function house_add(house_add, canon, description) {
+	Object.keys(house_add).forEach((k) => {
+		canon[k] = house_add[k];
+		if (trace)
+			log(`Adding house rule ${description}: ${k}`);
+	});
+}
 
