@@ -54,7 +54,7 @@ while getopts ":l:c:s:u:p:f:d:vh" opt; do
         script=$OPTARG
         ;;
     l ) # login credentials file
-        if [ -f $OPTARG ]; then
+        if [ -l $OPTARG ]; then
                 echo "Reading credentials from ${OPTARG}"
                 source $OPTARG
         else
@@ -107,12 +107,12 @@ outfile=$(mktemp -t curlout.XXX)
 echo "// Published on $(date "+%Y%m%d %H:%M")" > $harnJS
 echo "// Git branch: $(git branch --show-current)" >> $harnJS
 echo "Publishing..."
-for i in ${config} *[^config].js; do
+for i in ${config} ${dir}*[^config].js; do
         echo "$i"
 done
 cat ${config} >> $harnJS
 # combine all the remaining JS files into a single JS file
-cat *[^config].js >> $harnJS
+cat ${dir}*[^config].js >> $harnJS
 
 # Post that one JS file to Roll20.
 ACCEPT='Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
