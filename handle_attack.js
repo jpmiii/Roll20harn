@@ -74,7 +74,7 @@ function handle_attack(atk, msg) {
 
 	var wep = getWep(defcharid);
 
-	var atkstr = `&{template:${attack_template}} \
+	var atkstr = `&{template:${config.attack_template}} \
 		{{rolldesc=${atoke.get('name')} ${atk[4]} attacks ${toke.get('name')} with a ${wepname}}} \
 		{{info=${res}}} \
 		{{def=${buttonMaker("!defend dodge ?{Mod|0} WeaponName:Dodge", "Dodge", null, null, 1.2)}${buttonMaker("!defend ignore #zero WeaponName:", "Ignore", null, null, 1.2)}`;

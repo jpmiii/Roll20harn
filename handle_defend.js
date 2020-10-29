@@ -47,8 +47,8 @@ function handle_defend(def, msg) {
 	appstr = `${aeml.targstr} ${appstr}`;
 
 
-	if (atkml > emlmax) { atkml = emlmax; };
-	if (atkml < emlmin) { atkml = emlmin; };
+	if (atkml > config.emlmax) { atkml = config.emlmax; };
+	if (atkml < config.emlmin) { atkml = config.emlmin; };
 	var { asuc, ais } = determineSuccess(atkml, state.MainGameNS.aroll);
 	///////////////////////////////////////////////////////////////////////
 
@@ -103,8 +103,8 @@ function handle_defend(def, msg) {
 		}
 	}
 
-	if (deml.total > emlmax) { deml.total = emlmax; };
-	if (deml.total < emlmin) { deml.total = emlmin; };
+	if (deml.total > config.emlmax) { deml.total = config.emlmax; };
+	if (deml.total < config.emlmin) { deml.total = config.emlmin; };
 
 	log("DefML: " + deml.total)
 
@@ -146,17 +146,17 @@ function handle_defend(def, msg) {
 	//log crits
 
 	if (asuc == "CS") {
-		charLog(charid, ": Attack CS " + wepname, realtime, gametime)
+		charLog(charid, ": Attack CS " + wepname, config.realtime, config.gametime)
 	} else if (asuc == "CF") {
-		charLog(charid, ": Attack CF " + wepname, realtime, gametime)
+		charLog(charid, ": Attack CF " + wepname, config.realtime, config.gametime)
 	}
 	if (dsuc == "CS") {
-		charLog(defcharid, ": Defend CS " + defwepname, realtime, gametime)
+		charLog(defcharid, ": Defend CS " + defwepname, config.realtime, config.gametime)
 	} else if (dsuc == "CF") {
-		charLog(defcharid, ": Defend CF " + defwepname, realtime, gametime)
+		charLog(defcharid, ": Defend CF " + defwepname, config.realtime, config.gametime)
 	}
 
-	sendChat(msg.who, defendTemplate(defend_template,
+	sendChat(msg.who, defendTemplate(config.defend_template,
 		rolldesc,
 		labelMaker(`Roll d100: ${state.MainGameNS.aroll}`, null, null, 1.3),
 		labelMaker(`Target: ${atkml}`, appstr, null, 1.3),
