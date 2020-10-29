@@ -54,7 +54,7 @@ while getopts ":l:c:s:u:p:f:d:vh" opt; do
         script=$OPTARG
         ;;
     l ) # login credentials file
-        if [ -l $OPTARG ]; then
+        if [ -f $OPTARG ]; then
                 echo "Reading credentials from ${OPTARG}"
                 source $OPTARG
         else
