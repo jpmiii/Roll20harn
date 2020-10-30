@@ -1139,6 +1139,7 @@ function addItem(charid, item) {
 	if (trace) { log("addItem(" + charid + ", " + item + ")") }
 	if (item in weapons_table) {
 		addWeapon(charid, item);
+		setWeaponsList(charid);
 	} else {
 		var mid = makeid();
 		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_NAME", charid, item);
