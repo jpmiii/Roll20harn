@@ -16,7 +16,7 @@ const sendGMPing = (left, top, pageid, playerid = null, moveAll = false) => {
 };
 
 function initRoll() {
-	if (randomize_init_roll) {
+	if (config.randomize_init_roll) {
 		return randomInteger(6) + randomInteger(6) + randomInteger(6);
 	} else {
 		return 0; // canon
@@ -383,12 +383,12 @@ function handle_improveskill(args, msg) {
 		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>"
 			+ "<br>" + " roll " + roll + ": SUCCESS<br>" + args[2] + " ML increases to " + (ml + 1));
 		charLog(char.id, ": Skill Improvement Roll: " + args[2] + " "
-			+ roll + ": SUCCESS: ML = " + (ml + 1), realtime, gametime);
+			+ roll + ": SUCCESS: ML = " + (ml + 1), config.realtime, config.gametime);
 	} else {
 		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>" + args[2]
 			+ "<br>" + " roll " + roll + ": FAIL<br> " + args[2] + " ML stays at " + ml);
 		charLog(char.id, ": Skill Improvement Roll: " + args[2] + " "
-			+ roll + ": FAIL: ML = " + ml, realtime, gametime);
+			+ roll + ": FAIL: ML = " + ml, config.realtime, config.gametime);
 	}
 }
 
@@ -765,8 +765,14 @@ function handle_sheetattack(args, msg) {
  */
 function handle_tokendis(args, msg) {
 	if (trace) { log(`handle_tokendis(${args},${msg.content})`) }
-	dis = tokendistance(getObj("graphic", args[1]), getObj("graphic", args[2]));
-	sendChat("Token Distance", dis[0] + " " + dis[1] + "<br/>");
+	const startToken = getObj("graphic", args[1]);
+	const endToken = getObj("graphic", args[2]);
+	if (startToken != null && endToken != null) {
+		dis = tokendistance(startToken, endToken);
+		sendChat("Token Distance", dis[0] + " " + dis[1] + "<br/>");
+	} else {
+		sendChat("API", `unable to resolve ${args[1]} or ${args[2]}`);
+	}
 }
 
 function initializeTables(playerid) {
@@ -777,13 +783,13 @@ function initializeTables(playerid) {
 		gmId = gms[0].id;
 	} else {
 		log("error - no gm found")
-		if (playerId != 0) {
+		if (playerid != 0) {
 			gmId = playerid
 		} else {
 			return;
 		}
 	}
-	if (generate_item_list) {
+	if (config.generate_item_list) {
 
 
 		var out = "";
@@ -878,7 +884,7 @@ function initializeTables(playerid) {
 
 	if (trace) log("Creating default character macros");
 	chars.forEach(function(c) {
-		if (trace) log(`Character ${c.name}`);
+		if (trace) log(`Character ${c.get("name")}`);
 		setWeaponsList(c.id);
 		setSkillList(c.id);
 		_.each(_.keys(default_abilities), function(obj) {
@@ -894,7 +900,8 @@ function initializeTables(playerid) {
 				createObj('ability', {
 					name: obj,
 					action: out,
-					_characterid: c.id
+					_characterid: c.id,
+					istokenaction: true
 				});
 			}
 		});
@@ -1004,7 +1011,7 @@ function getrange(weapname, dist) {
 	for (var i = 4; i >= 0; i--) {
 		if ((missile_range[weapname][i][0] * 5) > dist) {
 			if (i == 0) {
-				var penalty = missle_close_range_mod;
+				var penalty = config.missle_close_range_mod;
 			} else {
 				var penalty = (i - 1) * 20;
 			}
@@ -2138,11 +2145,11 @@ function chatParser(msg) {
 				if (msg.inlinerolls[1].results.total >= msg.inlinerolls[3].results.total) {
 					charLog(char.id, ": CS "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), realtime, gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
 				} else {
 					charLog(char.id, ": CF "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), realtime, gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
 				}
 			}
 		} else if (msg.content.includes("rolldesc=performs ")) {
@@ -2152,11 +2159,11 @@ function chatParser(msg) {
 				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
 					charLog(char.id, ": CS "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), realtime, gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
 				} else {
 					charLog(char.id, ": CF "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), realtime, gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
 				}
 			}
 		} else if (msg.content.includes("rolldesc=casts ")) {
@@ -2166,11 +2173,11 @@ function chatParser(msg) {
 				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
 					charLog(char.id, ": CS "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), realtime, gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
 				} else {
 					charLog(char.id, ": CF "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), realtime, gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
 				}
 			}
 		}
@@ -2190,7 +2197,7 @@ function doHit(base, atkrepwep, acharid, dcharid, aspect, missi, loc, atktoke, d
 	var out = "<br/>" + atktoke.get('name') + " damages " + deftoke.get('name') + "<br>Impact: "
 		+ labelMaker(atk_impact.total, atk_impact.impactstr) + "<br/>Location: "
 		+ hitloc + "<br/>AV at Loc: " + avatloc
-		+ "<br/>Effective Impact: " + max(atk_impact.total - avatloc,0);
+		+ "<br/>Effective Impact: " + Math.max(atk_impact.total - avatloc,0);
 	if (atk_impact.total - avatloc > 0) {
 		var eff = gethiteff(hitloc, atk_impact.total - avatloc);
 		out += "<br/>" + deftoke.get('name') + " Injury: " + eff + " " + atk_impact.aspect

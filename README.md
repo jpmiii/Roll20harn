@@ -23,9 +23,11 @@ Harnmaster roll20 API scripts and custom character sheet
     campaign=campaign number
     script=script number
     ```
-1. run ```campaign_publish.sh``` on Mac or Linux.
+1. run ```campaign_publish.sh -l campaign.txt``` on Mac or Linux.
 1. run ```campaign_publish.ps1 -email you@domain.com -campaign campaign_number -script script_number -password password``` on Windows
 1. After publishing, you will still need to restart the API sandbox.
+1. If you want to have your own house rule settings, copy config.js to campaign_config.js and publish with
+   ```campaign_publish.sh -l campaign.txt -f campaign_config.js```
 
 
 [Columbia Games Harn](http://columbiagames.com/harn/index.html)
