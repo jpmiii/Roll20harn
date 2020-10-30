@@ -35,12 +35,5 @@ If you don't have them, then default values will be used.
 publicaccess=(true|false)
 bgimage=(none|magic|matrix|field)
 allowcharacterimport=(true|false)
-scale_units=(ft|m.|km.|mi.|in.|cm.|un.|hex|sq.|custom)
-grid_type=(square|hex|hexr)
-diagonaltype=(foure|threefive|pythagorean|manhattan|hex)
-bar_location=(above|overlap_top|overlap_bottom|below)
-barStyle=(standard|compact)
-sharecompendiums=(true|false)
 ```
-
 [Columbia Games Harn](http://columbiagames.com/harn/index.html)
