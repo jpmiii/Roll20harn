@@ -104,10 +104,10 @@ on("change:attribute:current", function(obj, prev) {
 		setWeaponsList(obj.get("_characterid"));
 	} else if (obj.get('name').includes("SKILL_NAME") && config.skill_list_on) {
 		setSkillList(obj.get("_characterid"));
-	} else if (obj.get('name') == "tab") {
-		if (obj.get('current') == 2 && config.skill_list_on) {
+	} else if (obj.get('name') == "sheetTab") {
+		if (obj.get('current') == "skills" && config.skill_list_on) {
 			setSkillList(obj.get("_characterid"));
-		} else if (obj.get('current') == 3 && config.weapon_list_on) {
+		} else if (obj.get('current') == "combat" && config.weapon_list_on) {
 			setWeaponsList(obj.get("_characterid"));
 		}
 	}
