@@ -69,6 +69,7 @@ while getopts ":l:c:s:u:p:f:d:vh" opt; do
         password=$OPTARG
         ;;
     v ) # process option t
+        set -x
         CURL_ARGS="--verbose"
       ;;
     h ) echo "Usage: $(basename $0) [-h] [-t]"
@@ -108,8 +109,10 @@ echo "// Published on $(date "+%Y%m%d %H:%M")" > $harnJS
 echo "// Git branch: $(git branch --show-current)" >> $harnJS
 echo "Publishing..."
 for i in ${config} ${dir}*[^config].js; do
-        echo "$i"
+        echo "${dir}$i"
 done
+echo ${dir}roll20harn.html
+echo ${dir}roll20harn.css
 cat ${config} >> $harnJS
 # combine all the remaining JS files into a single JS file
 cat ${dir}*[^config].js >> $harnJS
@@ -140,11 +143,33 @@ curl \
         --data-urlencode 'name=roll20harn.js' \
         --data-urlencode content@$harnJS \
         -o roll20_post.respose \
-        https://app.roll20.net/campaigns/save_script/${campaign}/${script} > $outfile
+        https://app.roll20.net/campaigns/save_script/${campaign}/${script} \
+--next \
+        $CURL_ARGS \
+        -s -L \
+        --cookie -c $cookiejar \
+        -H "$ACCEPT" -H "$AGENT" -H "$ENCODING" -H "$HOST" -H "$LANGUAGE" \
+        -H 'Referer: https://app.roll20.net/sessions/create' \
+        --write-out '\nstatus_code=%{http_code}\n' \
+        -d "publicaccess=${publicaccess:-false}" \
+        -d "bgimage=${bgimage:-magic}" \
+        -d "allowcharacterimport=${allowcharacterimport:-false}" \
+        -d "scale_units=${scale_units:-ft}" \
+        -d "grid_type=${grid_type:-square}" \
+        -d "diagonaltype=${diagonaltype:-pythagorean}" \
+        -d "bar_location=${bar_location:-above}" \
+        -d "barStyle=${barStyle:-standard}" \
+        -d "sharecompendiums=${sharecompendiums:-false}" \
+        --data-urlencode 'charsheettype=custom' \
+        --data-urlencode customcharsheet_layout@${dir}roll20harn.html \
+        --data-urlencode customcharsheet_style@${dir}roll20harn.css \
+        -o roll20_html.respose \
+        https://app.roll20.net/campaigns/savesettings/${campaign} \
+         > $outfile
 code=$(grep -a status_code $outfile|tail -1|awk -F"=" '{print $2}')
 echo
 if test "$code" != "200"; then
-        echo "An error occurred while publishing. Please check the login credentials. Try -v for more information"
+        echo "An error occurred while publishing: ${bold}${code}${normal}. Please check the login credentials. Try -v for more information"
 else
         echo "${bold}You now have to manually restart the API sandbox.${normal}"
 fi
