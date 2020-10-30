@@ -4,7 +4,7 @@
 
 on("ready", function() {
 	if (!state.MainGameNS) {
-		state.MainGameNS = { index: 0, dis: 0 };
+		state.MainGameNS = { GameTime: 0 };
 	}
 	expectedSerial = 1;
 	if (config.serial != expectedSerial) {
