@@ -765,8 +765,14 @@ function handle_sheetattack(args, msg) {
  */
 function handle_tokendis(args, msg) {
 	if (trace) { log(`handle_tokendis(${args},${msg.content})`) }
-	dis = tokendistance(getObj("graphic", args[1]), getObj("graphic", args[2]));
-	sendChat("Token Distance", dis[0] + " " + dis[1] + "<br/>");
+	const startToken = getObj("graphic", args[1]);
+	const endToken = getObj("graphic", args[2]);
+	if (startToken != null && endToken != null) {
+		dis = tokendistance(startToken, endToken);
+		sendChat("Token Distance", dis[0] + " " + dis[1] + "<br/>");
+	} else {
+		sendChat("API", `unable to resolve ${args[1]} or ${args[2]}`);
+	}
 }
 
 function initializeTables(playerid) {

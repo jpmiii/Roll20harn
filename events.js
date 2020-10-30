@@ -102,12 +102,12 @@ on("change:attribute:current", function(obj, prev) {
 		}
 	} else if (obj.get('name').includes("WEAPON_NAME") && weapon_list_on) {
 		setWeaponsList(obj.get("_characterid"));
-	} else if (obj.get('name').includes("SKILL_NAME") && skill_list_on) {
+	} else if (obj.get('name').includes("SKILL_NAME") && config.skill_list_on) {
 		setSkillList(obj.get("_characterid"));
 	} else if (obj.get('name') == "tab") {
-		if (obj.get('current') == 2 && skill_list_on) {
+		if (obj.get('current') == 2 && config.skill_list_on) {
 			setSkillList(obj.get("_characterid"));
-		} else if (obj.get('current') == 3 && weapon_list_on) {
+		} else if (obj.get('current') == 3 && config.weapon_list_on) {
 			setWeaponsList(obj.get("_characterid"));
 		}
 	}
