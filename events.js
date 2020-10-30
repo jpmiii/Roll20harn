@@ -100,7 +100,7 @@ on("change:attribute:current", function(obj, prev) {
 
 			}
 		}
-	} else if (obj.get('name').includes("WEAPON_NAME") && weapon_list_on) {
+	} else if (obj.get('name').includes("WEAPON_NAME") && config.weapon_list_on) {
 		setWeaponsList(obj.get("_characterid"));
 	} else if (obj.get('name').includes("SKILL_NAME") && config.skill_list_on) {
 		setSkillList(obj.get("_characterid"));
