@@ -25,7 +25,7 @@ Harnmaster roll20 API scripts and custom character sheet
 1. Create two new scripts. It doesn't matter what they are named.
 1. Save both of them.
 1. Move you mouse over the tabs so the link text will show in the status bar on the bottom left of you browser, the number at the end is the script number for that tab.
-1. open a power shell in the rescouces folder that has the publish.ps1 in it.
+1. open a power shell in the resources folder that has the publish.ps1 in it.
 1. run ```.\publish.ps1 -email you@domain.com -password password -campaign campaign_number -script script_number_1 -confignum script_number_2```
 1. If you use the same tab number for script_number_1 and script_number_2 the config and the other .js files will all be uploaded to the one tab.
 1. If you don't use the -confignum option no config will be uploaded.
