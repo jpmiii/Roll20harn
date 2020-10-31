@@ -906,6 +906,8 @@ function initializeTables(playerid) {
 			}
 		});
 	});
+	
+	sendChat("Restart", getHarnTimeStr(state.MainGameNS.GameTime));
 
 	if (trace) { log("<initializeTables()") }
 	return;

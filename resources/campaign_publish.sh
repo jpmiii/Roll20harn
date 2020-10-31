@@ -109,7 +109,7 @@ echo "// Published on $(date "+%Y%m%d %H:%M")" > $harnJS
 echo "// Git branch: $(git branch --show-current)" >> $harnJS
 echo "Publishing..."
 for i in ${config} ${dir}*[^config].js; do
-        echo "${dir}$i"
+        echo "$i"
 done
 echo ${dir}roll20harn.html
 echo ${dir}roll20harn.css
