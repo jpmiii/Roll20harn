@@ -113,6 +113,13 @@ on("change:attribute:current", function(obj, prev) {
 	}
 });
 
+//on("destroy:attribute", function(obj) {
+//	if (obj.get('name').includes("WEAPON_NAME") && config.weapon_list_on) {
+//		setWeaponsList(obj.get("_characterid"));
+//	} else if (obj.get('name').includes("SKILL_NAME") && config.skill_list_on) {
+//		setSkillList(obj.get("_characterid"));
+//	}
+//});
 on("change:campaign:turnorder", function(obj, prev) {
 
 	if (Campaign().get("turnorder") !== "") {
