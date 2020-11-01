@@ -164,6 +164,11 @@ var dispatch_table = {
         "re_syntax": /^!pickskill [-_a-zA-Z0-9]{20}.*$/,
         "hr_syntax": "!pickskill character_id prompt title<br/>Prompts the user to pick a valid skill to improve"
 
-    }
+    },
+    "!help": {
+        "action": (args, msg) => { handle_help(args, msg); },
+        "re_syntax": /^!help.*$/,
+        "hr_syntax": "!help command<br/>Show help strings."
+    },
 }
 

@@ -490,6 +490,32 @@ function getCharByNameAtt(charname) {
 	})[0];
 	return getObj("character", attr.get('_characterid'));
 }
+
+/**
+ * Show help.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_help(args, msg) {
+	if (trace) { log(`handle_help(${args},${msg.content})`) }
+	if (args.length == 1) {
+		var out = "<br/>";
+		_.each(_.keys(dispatch_table), function(obj) {
+			//out = `${out}${dispatch_table[obj]["hr_syntax"]}<br/>`;
+			out = `${out}${obj}, `;
+		});
+		sendChat("API Commands",out,null,{noarchive:true});
+	}
+	if (args.length == 2) {
+		if (args[1] in dispatch_table) {
+			var out = dispatch_table[args[1]]["hr_syntax"].replace(/\)/g, '&#41;').replace(/\]/g, '&#93;')
+			sendChat(`Command ${args[1]}`,`  ${out}  `,null,{noarchive:true});
+		} else {
+			sendChat(args[1],"Not Found",null,{noarchive:true});
+		}
+	}
+}
+
+
 /**
  * Update the skill bonues of the active sheet.
  * @param {Message} msg the message representing the command, with arguments separated by spaces

@@ -38,7 +38,7 @@ on("chat:message", function(msg) {
 			try {
 				// First, test the syntax regular expression if it has one
 				if (commandMap.hasOwnProperty("re_syntax")) {
-					log(`comparing syntax to ${commandMap.re_syntax}`)
+					log(`comparing syntax to ${commandMap.re_syntax}`);
 					if (!commandMap.re_syntax.test(msg.content)) {
 						var errorMessage = `&{template:default} {{name=Syntax error}} {{Received=${msg.content}}}`;
 						if (commandMap.hasOwnProperty("hr_syntax")) {
