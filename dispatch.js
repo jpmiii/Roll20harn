@@ -170,6 +170,11 @@ var dispatch_table = {
         "re_syntax": /^!toggleconfig trace|house_rule_additional_target_locations|house_rule_occupations|house_rule_items|house_rule_skills|generate_item_list|skill_list_on|skill_list_on|weapon_list_on|realtime|gametime$/,
         "hr_syntax": "!toggleconfig config_option<br/>Change a configurable option of the Harn rules to leverage certain house rules."
     },
+    "!set-config": {
+	    "action": (args, msg) => { handle_set_config(args, msg); },
+        "re_syntax": /^!set-config (house_rule_missle_close_range_mod|house_rule_emlmax|house_rule_emlmin [0-9]+)|(attack_template Fancy|Plain)$/,
+        "hr_syntax": "!set-config config_option config_value<br/>Change a configurable option, setting it to the provided value."
+    },
     "!config": {
 	    "action": (args, msg) => { handle_get_config(args, msg); },
         "re_syntax": /^!config$/,

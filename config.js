@@ -28,34 +28,92 @@ function handle_toggle_config(args, msg) {
             break;
         default:
             sendChat('H&acirc;rn API', `/w "${who}" Unkown config option ${args[1]} `)
-            break;
         }
 }
 function handle_get_config(args, msg) {
     let who=(getObj('player',msg.playerid)||{get:()=>'API'}).get('_displayname');
     sendChat('H&acirc;rn API', `/w "${who}"
-    ${_h.outer(
-        _h.title("H&acirc;rn Config v", config.version),
-        _h.group(
-            _h.subhead('House Rules'),
-            getConfigOption_house_rule_additional_target_locations(),
-            getConfigOption_house_rule_occupations(),
-            getConfigOption_house_rule_items(),
-            getConfigOption_house_rule_skills()
-        ),
-        _h.group(
-            _h.subhead('UI Tweaks'),
-            getConfigOption_realtime(),
-            getConfigOption_gametime()
-        ),
-        _h.group(
-            _h.subhead('API Optimization'),
-            getConfigOption_trace(),
-            getConfigOption_generate_item_list(),
-            getConfigOption_skill_list_on(),
-            getConfigOption_weapon_list_on()
-        )
+        ${_h.outer(
+            _h.title("H&acirc;rn Config v", config.version),
+            _h.group(
+                _h.subhead('House Rules'),
+                getConfigOption_house_rule_emlmax(),
+                getConfigOption_house_rule_emlmin(),
+                getConfigOption_house_rule_additional_target_locations(),
+                getConfigOption_house_rule_occupations(),
+                getConfigOption_house_rule_items(),
+                getConfigOption_house_rule_skills(),
+                getConfigOption_house_rule_randomize_init_roll(),
+                getConfigOption_house_rule_missle_close_range_mod()
+            ),
+            _h.group(
+                _h.subhead('UI Tweaks'),
+                getConfigOption_realtime(),
+                getConfigOption_gametime()
+            ),
+            _h.group(
+                _h.subhead('API Optimization'),
+                getConfigOption_trace(),
+                getConfigOption_attack_template(),
+                getConfigOption_generate_item_list(),
+                getConfigOption_skill_list_on(),
+                getConfigOption_weapon_list_on()
+            )
     )}`)
+}
+
+function handle_set_config(args, msg) {
+    let who=(getObj('player',msg.playerid)||{get:()=>'API'}).get('_displayname');
+    switch(args[1]) {
+        case 'house_rule_missle_close_range_mod':
+        case 'house_rule_emlmax':
+        case 'house_rule_emlmin':
+                    state.Harn.config[args[1]]=parseInt(args[2]);
+            break;
+        case 'attack_template':
+            if (args[2] == 'Fancy') {
+                state.Harn.config.attack_template='harn-fancy';
+                state.Harn.config.defend_template='harn-defend';
+            } else {
+                state.Harn.config.attack_template='harnroll';
+                state.Harn.config.defend_template='harnroll';
+            }
+            break;
+        default:
+            sendChat('H&acirc;rn API', `/w "${who}" Unkown config option ${args[1]} `)
+        }
+}
+
+function getConfigOption_attack_template(){
+    return makeConfigOptionNum(
+        state.Harn.config.house_rule_emlmax,
+        `!set-config attack_template ?{Template to use for attack rolls?|Fancy|Plain}`,
+        `${_h.bold('Attack template')} The template to use for attacks. Select plain if the API server is slow. Current Value ${_h.bold(state.Harn.config.attack_template=='harn-fancy'?"Fancy":"Plain")}`
+    );
+}
+
+function getConfigOption_house_rule_emlmax(){
+    return makeConfigOptionNum(
+        state.Harn.config.house_rule_emlmax,
+        `!set-config house_rule_emlmax ?{Maximum value for EML after all modifications (default: 95)?|${state.Harn.config.house_rule_emlmax}}`,
+        `${_h.bold('Max EML')} The maximum value an EML can have after all modifications. Current value: ${_h.bold(state.Harn.config.house_rule_emlmax)}`
+    );
+}
+
+function getConfigOption_house_rule_emlmin(){
+    return makeConfigOptionNum(
+        state.Harn.config.house_rule_emlmin,
+        `!set-config house_rule_emlmin ?{Minimum value for EML after all modifications (default: 5)?|${state.Harn.config.house_rule_emlmin}}`,
+        `${_h.bold('Min EML')} The minimum value an EML can have after all modifications. Current value: ${_h.bold(state.Harn.config.house_rule_emlmin)}`
+    );
+}
+
+function getConfigOption_house_rule_missle_close_range_mod(){
+    return makeConfigOptionNum(
+        state.Harn.config.house_rule_missle_close_range_mod,
+        `!set-config house_rule_missle_close_range_mod ?{Bonus for very close range for missiles?|${state.Harn.config.house_rule_missle_close_range_mod}}`,
+        `${_h.bold('Close Range Mod')} bonus granted to EML for missile attacks at very close range. Current value: ${_h.bold(state.Harn.config.house_rule_missle_close_range_mod)}`
+    );
 }
 
 function getConfigOption_trace() {
@@ -63,6 +121,14 @@ function getConfigOption_trace() {
         trace,
         `!toggleconfig trace`,
         `${_h.bold('trace')} If true enables API tracing for debugging.`
+  );
+}
+
+function getConfigOption_house_rule_randomize_init_roll() {
+    return makeConfigOption(
+        state.Harn.config.house_rule_randomize_init_roll,
+        `!toggleconfig house_rule_randomize_init_roll`,
+        `${_h.bold('Add 3d6 to initiative')} If true, adds a random element to initiative turn order.`
   );
 }
 
@@ -134,7 +200,7 @@ function getConfigOption_gametime() {
     return makeConfigOption(
         state.Harn.config.gametime,
         `!toggleconfig gametime`,
-        `${_h.bold('Log real time')} Log the H&acirc;rn-world time in the character log, e.g. for critical successes and failures.`
+        `${_h.bold('Log H&acirc;rn time')} Log the H&acirc;rn-world time in the character log, e.g. for critical successes and failures.`
   );
 }
 
@@ -150,8 +216,7 @@ function makeConfigOption(option,command,text) {
       );
 };
 
-const makeConfigOptionNum = (config,command,text) => {
-
+function makeConfigOptionNum(config,command,text) {
     return _h.configRow(
         _h.floatRight( _h.makeButton(command,"Set")),
         text,
@@ -179,7 +244,13 @@ function checkInstall() {
                 version: config.schemaVersion,
                 trace: false,
                 config: {
-                    house_rule_additional_target_locations: false, //add additional target locations e.g. neck for faster combat resolution
+                    attack_template: "harn-fancy",
+                    defend_template: "harn-defend",
+                    house_rule_emlmax: 95,
+                    house_rule_emlmin: 5,
+                    house_rule_missle_close_range_mod: 0,
+                    house_rule_randomize_init_roll: false,
+                    house_rule_additional_target_locations: false,
                     house_rule_occupations: false,
                     house_rule_items: false,
                     house_rule_skills: false,
@@ -198,15 +269,6 @@ const config = {
     version: '0.1.0',
     lastUpdate: '8-Nov-2020',
     schemaVersion: 0.1,
-    attack_template: "harn-fancy", // sets the roll template (harn-fancy or harnroll) for the attack function
-    defend_template: "harn-defend", // sets the roll template (harn-defend or harnroll) for the defend function
-    //
-    // House rules - default should always be canon rules
-    //
-    missle_close_range_mod: 0, // house rule close range mod (0 is canon) adds an extra range column for close vs short range
-    randomize_init_roll: false, // adds 3d6 to the init for randomness
-    emlmax: 95, // canon 95, house rule 97
-    emlmin: 5, // canon 5, house rule 4
 
     // house rule tables - add additional entries to tables. Any entry listed here which is also in the canon table will override the canon table.
     add_skills: {            //additional skills for characters

@@ -16,7 +16,7 @@ const sendGMPing = (left, top, pageid, playerid = null, moveAll = false) => {
 };
 
 function initRoll() {
-	if (config.randomize_init_roll) {
+	if (state.Harn.config.house_rule_randomize_init_roll) {
 		return randomInteger(6) + randomInteger(6) + randomInteger(6);
 	} else {
 		return 0; // canon
@@ -1013,7 +1013,7 @@ function getrange(weapname, dist) {
 	for (var i = 4; i >= 0; i--) {
 		if ((missile_range[weapname][i][0] * 5) > dist) {
 			if (i == 0) {
-				var penalty = config.missle_close_range_mod;
+				var penalty = state.Harn.config.house_rule_missle_close_range_mod;
 			} else {
 				var penalty = (i - 1) * 20;
 			}

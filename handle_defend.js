@@ -156,7 +156,7 @@ function handle_defend(def, msg) {
 		charLog(defcharid, ": Defend CF " + defwepname, state.Harn.config.realtime, state.Harn.config.gametime)
 	}
 
-	sendChat(msg.who, defendTemplate(config.defend_template,
+	sendChat(msg.who, defendTemplate(state.Harn.config.defend_template,
 		rolldesc,
 		labelMaker(`Roll d100: ${state.MainGameNS.aroll}`, null, null, 1.3),
 		labelMaker(`Target: ${atkml}`, appstr, null, 1.3),
