@@ -146,14 +146,14 @@ function handle_defend(def, msg) {
 	//log crits
 
 	if (asuc == "CS") {
-		charLog(charid, ": Attack CS " + wepname, config.realtime, config.gametime)
+		charLog(charid, ": Attack CS " + wepname, state.Harn.config.realtime, state.Harn.config.gametime)
 	} else if (asuc == "CF") {
-		charLog(charid, ": Attack CF " + wepname, config.realtime, config.gametime)
+		charLog(charid, ": Attack CF " + wepname, state.Harn.config.realtime, state.Harn.config.gametime)
 	}
 	if (dsuc == "CS") {
-		charLog(defcharid, ": Defend CS " + defwepname, config.realtime, config.gametime)
+		charLog(defcharid, ": Defend CS " + defwepname, state.Harn.config.realtime, state.Harn.config.gametime)
 	} else if (dsuc == "CF") {
-		charLog(defcharid, ": Defend CF " + defwepname, config.realtime, config.gametime)
+		charLog(defcharid, ": Defend CF " + defwepname, state.Harn.config.realtime, state.Harn.config.gametime)
 	}
 
 	sendChat(msg.who, defendTemplate(config.defend_template,

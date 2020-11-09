@@ -383,12 +383,12 @@ function handle_improveskill(args, msg) {
 		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>"
 			+ "<br>" + " roll " + roll + ": SUCCESS<br>" + args[2] + " ML increases to " + (ml + 1));
 		charLog(char.id, ": Skill Improvement Roll: " + args[2] + " "
-			+ roll + ": SUCCESS: ML = " + (ml + 1), config.realtime, config.gametime);
+			+ roll + ": SUCCESS: ML = " + (ml + 1), state.Harn.config.realtime, state.Harn.config.gametime);
 	} else {
 		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>" + args[2]
 			+ "<br>" + " roll " + roll + ": FAIL<br> " + args[2] + " ML stays at " + ml);
 		charLog(char.id, ": Skill Improvement Roll: " + args[2] + " "
-			+ roll + ": FAIL: ML = " + ml, config.realtime, config.gametime);
+			+ roll + ": FAIL: ML = " + ml, state.Harn.config.realtime, state.Harn.config.gametime);
 	}
 }
 
@@ -771,7 +771,7 @@ function handle_tokendis(args, msg) {
 		dis = tokendistance(startToken, endToken);
 		sendChat("Token Distance", dis[0] + " " + dis[1] + "<br/>");
 	} else {
-		sendChat("API", `unable to resolve ${args[1]} or ${args[2]}`);
+		sendChat('H&acirc;rn API', `unable to resolve ${args[1]} or ${args[2]}`);
 	}
 }
 
@@ -789,7 +789,7 @@ function initializeTables(playerid) {
 			return;
 		}
 	}
-	if (config.generate_item_list) {
+	if (state.Harn.config.generate_item_list) {
 
 
 		var out = "";
@@ -907,7 +907,7 @@ function initializeTables(playerid) {
 		});
 	});
 	
-	sendChat("Restart", getHarnTimeStr(state.MainGameNS.GameTime));
+	sendChat('H&acirc;rn API', getHarnTimeStr(state.MainGameNS.GameTime));
 
 	if (trace) { log("<initializeTables()") }
 	return;
@@ -1643,7 +1643,7 @@ function calcSB(char, msg) {
 		}
 
 	});
-	sendChat("API", "/w gm done calc SB");
+	sendChat('H&acirc;rn API', "/w gm done calc SB");
 }
 
 
@@ -2147,11 +2147,11 @@ function chatParser(msg) {
 				if (msg.inlinerolls[1].results.total >= msg.inlinerolls[3].results.total) {
 					charLog(char.id, ": CS "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), state.Harn.config.realtime, state.Harn.config.gametime)
 				} else {
 					charLog(char.id, ": CF "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), state.Harn.config.realtime, state.Harn.config.gametime)
 				}
 			}
 		} else if (msg.content.includes("rolldesc=performs ")) {
@@ -2161,11 +2161,11 @@ function chatParser(msg) {
 				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
 					charLog(char.id, ": CS "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), state.Harn.config.realtime, state.Harn.config.gametime)
 				} else {
 					charLog(char.id, ": CF "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), state.Harn.config.realtime, state.Harn.config.gametime)
 				}
 			}
 		} else if (msg.content.includes("rolldesc=casts ")) {
@@ -2175,11 +2175,11 @@ function chatParser(msg) {
 				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
 					charLog(char.id, ": CS "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), state.Harn.config.realtime, state.Harn.config.gametime)
 				} else {
 					charLog(char.id, ": CF "
 						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
+							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), state.Harn.config.realtime, state.Harn.config.gametime)
 				}
 			}
 		}

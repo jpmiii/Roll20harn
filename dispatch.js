@@ -13,7 +13,7 @@
 // Number: [-+]?[0-9]+
 // one of the following: (high|mid|low|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin)
 
-var target_locations="(high|mid|low"+(config.additional_target_locations?"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin":"")+")"
+var target_locations="(high|mid|low"+(state.Harn.config.house_rule_additional_target_locations?"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin":"")+")"
 
 var dispatch_table = {
     "!calcsb": {
@@ -164,6 +164,16 @@ var dispatch_table = {
         "re_syntax": /^!pickskill [-_a-zA-Z0-9]{20}.*$/,
         "hr_syntax": "!pickskill character_id prompt title<br/>Prompts the user to pick a valid skill to improve"
 
+    },
+    "!toggleconfig": {
+	    "action": (args, msg) => { handle_toggle_config(args, msg); },
+        "re_syntax": /^!toggleconfig trace|house_rule_additional_target_locations|house_rule_occupations|house_rule_items|house_rule_skills|generate_item_list|skill_list_on|skill_list_on|weapon_list_on|realtime|gametime$/,
+        "hr_syntax": "!toggleconfig config_option<br/>Change a configurable option of the Harn rules to leverage certain house rules."
+    },
+    "!config": {
+	    "action": (args, msg) => { handle_get_config(args, msg); },
+        "re_syntax": /^!config$/,
+        "hr_syntax": "!config<br/>Display current configuration options and allow you to change them."
     }
 }
 

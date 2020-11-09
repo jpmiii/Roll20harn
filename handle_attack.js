@@ -11,7 +11,7 @@ function handle_attack(atk, msg) {
 			_type: "graphic",
 		});
 		if (tokelist == null || tokelist.length < 1) {
-			sendChat(msg.who, "Move the player banner to this page.");
+			sendChat('H&acirc;rn API', "Move the player banner to this page.");
 			return;
 		}
 		atk[1] = tokelist[0].id;
@@ -20,7 +20,7 @@ function handle_attack(atk, msg) {
 	var atoke = getObj("graphic", atk[1]);
 	var charid = atoke.get("represents")
 	var toke = getObj("graphic", atk[6]);
-	if (!toke.get("represents")) { sendChat(msg.who, "No defender"); return; }
+	if (!toke.get("represents")) { sendChat('H&acirc;rn API', "No defender"); return; }
 	var defcharid = toke.get("represents");
 
 
