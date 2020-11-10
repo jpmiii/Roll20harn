@@ -47,7 +47,7 @@ function handle_defend(def, msg) {
 	appstr = `${aeml.targstr} ${appstr}`;
 
 
-	atkml = max(min(atkml, state.Harn.config.house_rule_elmmax), state.Harn.config.house_rule_elmmin);
+	atkml = Math.max(Math.min(atkml, state.Harn.config.house_rule_emlmax), state.Harn.config.house_rule_emlmin);
 	var { asuc, ais } = determineSuccess(atkml, state.MainGameNS.aroll);
 	///////////////////////////////////////////////////////////////////////
 
@@ -102,7 +102,7 @@ function handle_defend(def, msg) {
 		}
 	}
 
-	deml.total = max(min(deml.total, state.Harn.config.house_rule_elmmax), state.Harn.config.house_rule_elmmin);
+	deml.total = Math.max(Math.min(deml.total, state.Harn.config.house_rule_emlmax), state.Harn.config.house_rule_emlmin);
 
 	log("DefML: " + deml.total)
 
