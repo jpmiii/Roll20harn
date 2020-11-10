@@ -34,7 +34,7 @@ function handle_get_config(args, msg) {
     let who=(getObj('player',msg.playerid)||{get:()=>'API'}).get('_displayname');
     sendChat('H&acirc;rn API', `/w "${who}"
         ${_h.outer(
-            _h.title("H&acirc;rn Config v", config.version),
+            _h.title("H&acirc;rn Config v", Roll20HarnAPI.version),
             _h.group(
                 _h.subhead('House Rules'),
                 getConfigOption_house_rule_emlmax(),
@@ -226,22 +226,22 @@ function makeConfigOptionNum(config,command,text) {
 
 
 function checkInstall() {
-	log(`-=> Harn v${config.version} <=-  [${config.lastUpdate}]`);
+	log(`-=> Harn v${Roll20HarnAPI.version} <=-  [${Roll20HarnAPI.lastUpdate}]`);
 
-	if( ! _.has(state,'Harn') || state.Harn.version !== config.schemaVersion) {
-		log('  > Updating Schema to v'+config.schemaVersion+' <');
+	if( ! _.has(state,'Harn') || state.Harn.version !== Roll20HarnAPI.schemaVersion) {
+		log('  > Updating Schema to v'+Roll20HarnAPI.schemaVersion+' <');
         switch(state.Harn && state.Harn.version) {
 
             case 0.1:
               /* break; // intentional dropthrough */ /* falls through */
     
             case 'UpdateSchemaVersion':
-              state.Harn.version = config.schemaVersion;
+              state.Harn.version = Roll20HarnAPI.schemaVersion;
               break;
     
             default:
                 state.Harn = {
-                version: config.schemaVersion,
+                version: Roll20HarnAPI.schemaVersion,
                 trace: false,
                 config: {
                     attack_template: "harn-fancy",
@@ -265,7 +265,7 @@ function checkInstall() {
 	}
 };
 
-const config = {
+const Roll20HarnAPI = {
     version: '0.1.0',
     lastUpdate: '8-Nov-2020',
     schemaVersion: 0.1,

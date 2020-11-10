@@ -47,8 +47,7 @@ function handle_defend(def, msg) {
 	appstr = `${aeml.targstr} ${appstr}`;
 
 
-	if (atkml > config.emlmax) { atkml = config.emlmax; };
-	if (atkml < config.emlmin) { atkml = config.emlmin; };
+	atkml = max(min(atkml, state.Harn.config.house_rule_elmmax), state.Harn.config.house_rule_elmmin);
 	var { asuc, ais } = determineSuccess(atkml, state.MainGameNS.aroll);
 	///////////////////////////////////////////////////////////////////////
 
@@ -103,8 +102,7 @@ function handle_defend(def, msg) {
 		}
 	}
 
-	if (deml.total > config.emlmax) { deml.total = config.emlmax; };
-	if (deml.total < config.emlmin) { deml.total = config.emlmin; };
+	deml.total = max(min(deml.total, state.Harn.config.house_rule_elmmax), state.Harn.config.house_rule_elmmin);
 
 	log("DefML: " + deml.total)
 
