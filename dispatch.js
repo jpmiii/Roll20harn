@@ -172,7 +172,7 @@ var dispatch_table = {
     },
     "!toggleconfig": {
 	    "action": (args, msg) => { handle_toggle_config(args, msg); },
-        "re_syntax": /^!toggleconfig trace|house_rule_additional_target_locations|house_rule_occupations|house_rule_items|house_rule_skills|generate_item_list|skill_list_on|skill_list_on|weapon_list_on|realtime|gametime$/,
+        "re_syntax": /^!toggleconfig trace|house_rule_additional_target_locations|house_rule_occupations|house_rule_items|house_rule_skills|slow_api|realtime|gametime$/,
         "hr_syntax": "!toggleconfig config_option<br/>Change a configurable option of the Harn rules to leverage certain house rules."
     },
     "!set-config": {

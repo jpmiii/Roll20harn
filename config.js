@@ -12,9 +12,7 @@ function handle_toggle_config(args, msg) {
         case 'house_rule_occupations':
         case 'house_rule_items':
         case 'house_rule_skills':
-        case 'generate_item_list':
-        case 'skill_list_on':
-        case 'weapon_list_on':
+        case 'slow_api':
         case 'realtime':
         case 'gametime':
             state.Harn.config[args[1]]=!state.Harn.config[args[1]];
@@ -55,9 +53,7 @@ function handle_get_config(args, msg) {
                 _h.subhead('API Optimization'),
                 getConfigOption_trace(),
                 getConfigOption_attack_template(),
-                getConfigOption_generate_item_list(),
-                getConfigOption_skill_list_on(),
-                getConfigOption_weapon_list_on()
+                getConfigOption_slow_api(),
             )
     )}`)
 }
@@ -164,27 +160,11 @@ function getConfigOption_house_rule_skills() {
   );
 }
 
-function getConfigOption_skill_list_on() {
+function getConfigOption_slow_api() {
     return makeConfigOption(
-        state.Harn.config.skill_list_on,
-        `!toggleconfig skill_list_on`,
-        `${_h.bold('Update skill list on change')} If true, will update the list of skills for a player anytime anything changes on the skills tab. Set to false if the API server is slow.`
-  );
-}
-
-function getConfigOption_weapon_list_on() {
-    return makeConfigOption(
-        state.Harn.config.weapon_list_on,
-        `!toggleconfig weapon_list_on`,
-        `${_h.bold('Update weapon list on change')} If true, will update the list of weapon list for a player anytime anything changes on the inventory tab. Set to false if the API server is slow.`
-  );
-}
-
-function getConfigOption_generate_item_list() {
-    return makeConfigOption(
-        state.Harn.config.generate_item_list,
-        `!toggleconfig generate_item_list`,
-        `${_h.bold('Generate Item List on startup')} Controls if you want the Item list used in e.g. dropdowns to be re-calculated on startup. Set to true if you are developing the module. Set to false if the API server is slow.`
+        state.Harn.config.slow_api,
+        `!toggleconfig slow_api`,
+        `${_h.bold('Optimize for a slow API')} Set to true if the api engine is slow and you want to try some optimizations/heavier caching.`
   );
 }
 
@@ -254,9 +234,7 @@ function checkInstall() {
                     house_rule_occupations: false,
                     house_rule_items: false,
                     house_rule_skills: false,
-                    generate_item_list: true, 
-                    skill_list_on: true, 
-                    weapon_list_on: true, 
+                    slow_api: false,
                     realtime: true, 
                     gametime: true, 
                     },

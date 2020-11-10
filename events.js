@@ -94,14 +94,14 @@ on("change:attribute:current", function(obj, prev) {
 
 			}
 		}
-	} else if (obj.get('name').includes("WEAPON_NAME") && state.Harn.config.weapon_list_on) {
+	} else if (obj.get('name').includes("WEAPON_NAME") && !state.Harn.config.slow_api) {
 		setWeaponsList(obj.get("_characterid"));
-	} else if (obj.get('name').includes("SKILL_NAME") && state.Harn.config.skill_list_on) {
+	} else if (obj.get('name').includes("SKILL_NAME") && !state.Harn.config.slow_api) {
 		setSkillList(obj.get("_characterid"));
 	} else if (obj.get('name') == "sheetTab") {
-		if (obj.get('current') == "skills" && state.Harn.config.skill_list_on) {
+		if (obj.get('current') == "skills" && !state.Harn.config.slow_api) {
 			setSkillList(obj.get("_characterid"));
-		} else if (obj.get('current') == "combat" && state.Harn.config.weapon_list_on) {
+		} else if (obj.get('current') == "combat" && !state.Harn.config.slow_api) {
 			setWeaponsList(obj.get("_characterid"));
 		}
 	}

@@ -789,7 +789,7 @@ function initializeTables(playerid) {
 			return;
 		}
 	}
-	if (state.Harn.config.generate_item_list) {
+	if (!state.Harn.config.slow_api) {
 		generateItemListMacros(gmId);
 	} else { if (trace) { log(`no item list`) } }
 	defineGlobalMacros(gmId);
