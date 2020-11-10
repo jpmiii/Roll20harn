@@ -13,7 +13,12 @@
 // Number: [-+]?[0-9]+
 // one of the following: (high|mid|low|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin)
 
-var target_locations="(high|mid|low"+(state.Harn.config.house_rule_additional_target_locations?"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin":"")+")"
+const canon_target_locations = "mid|high|low";
+const house_rule_target_locations = canon_target_locations+"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin";
+const target_locations = state.hasOwnProperty('Harn') ?
+        (state.Harn.config.house_rule_additional_target_locations?house_rule_target_locations:canon_target_locations)
+        : canon_target_locations;
+
 
 var dispatch_table = {
     "!calcsb": {

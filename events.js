@@ -1,7 +1,3 @@
-
-
-
-
 on("ready", function() {
 	if (!state.MainGameNS) {
 		state.MainGameNS = { GameTime: 0 };

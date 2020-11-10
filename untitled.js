@@ -859,25 +859,18 @@ function initializeTables(playerid) {
 			});
 		}
 	} else { if (trace) { log(`no item list`) } }
-	_.each(_.keys(default_macros), function(obj) {
-		if (trace) { log("macro: " + obj) }
-
-		var out = default_macros[obj];
-		var mac = findObjs({
+	_.each(default_macros, function(macro, macroName) {
+		if (trace) { log("macro: " + macroName) }
+		findObjs({
 			type: 'macro',
 			playerid: gmId,
-			name: obj
-		})[0];
-		if (mac) {
-			mac.set('action', out);
-		} else {
-			createObj('macro', {
-				name: obj,
-				visibleto: "all",
-				action: out,
-				playerid: gmId
-			});
-		}
+			name: macroName}).forEach((existingMacro)=>{existingMacro.remove()});
+		createObj('macro', {
+			name: macroName,
+			visibleto: "all",
+			action: macro,
+			playerid: gmId
+		});
 	});
 
 	var chars = findObjs({ _type: "character", });
@@ -887,23 +880,19 @@ function initializeTables(playerid) {
 		if (trace) log(`Character ${c.get("name")}`);
 		setWeaponsList(c.id);
 		setSkillList(c.id);
-		_.each(_.keys(default_abilities), function(obj) {
-			if (trace) log(`Macro ${obj}`)
-			var mac = findObjs({
+		_.each(default_abilities, function(ability, abilityName) {
+			if (trace) log(`Macro ${abilityName}`)
+			findObjs({
 				type: 'ability',
 				_characterid: c.id,
-				name: obj
-			})[0];
-			if (!mac) {
-				if (trace) log('registering');
-				var out = default_abilities[obj];
-				createObj('ability', {
-					name: obj,
-					action: out,
-					_characterid: c.id,
-					istokenaction: true
-				});
-			}
+				name: abilityName}).forEach((existingAbility)=>{existingAbility.remove()});
+			if (trace) log('registering');
+			createObj('ability', {
+				name: abilityName,
+				action: ability,
+				_characterid: c.id,
+				istokenaction: true
+			});
 		});
 	});
 	

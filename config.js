@@ -3,7 +3,7 @@
 // CONFIGURATION
 //
 // eslint-disable-line no-unused-vars
-var trace = state.Harn.trace; // API debug logging
+var trace = state.hasOwnProperty('Harn')?state.Harn.trace:true; // API debug logging
 
 function handle_toggle_config(args, msg) {
     let who=(getObj('player',msg.playerid)||{get:()=>'API'}).get('_displayname');
@@ -226,7 +226,7 @@ function makeConfigOptionNum(config,command,text) {
 
 
 function checkInstall() {
-	log(`-=> H&acirc;rn v${config.version} <=-  [${config.lastUpdate}]`);
+	log(`-=> Harn v${config.version} <=-  [${config.lastUpdate}]`);
 
 	if( ! _.has(state,'Harn') || state.Harn.version !== config.schemaVersion) {
 		log('  > Updating Schema to v'+config.schemaVersion+' <');
