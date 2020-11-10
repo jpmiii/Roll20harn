@@ -790,103 +790,94 @@ function initializeTables(playerid) {
 		}
 	}
 	if (state.Harn.config.generate_item_list) {
-
-
-		var out = "";
-		var outarmor = "";
-		var outweap = "";
-		Object.keys(prices).sort().forEach(function(k) {
-			if (k in weapons_table) {
-				outweap += "|" + k;
-			} else if (k.substr(0, k.lastIndexOf(",")) in armor_coverage) {
-				outarmor += "|" + k;
-			} else {
-				out += "|" + k;
-			}
-		});
-		//log(out+"\n\n");
-		out = out.replace(/,/g, "&#44;");
-		out = "?{Item" + out + "}";
-		var mac = findObjs({
-			type: 'macro',
-			playerid: gmId,
-			name: 'helper-ItemList'
-		})[0];
-		if (mac) {
-			mac.set('action', out);
-		} else {
-			createObj('macro', {
-				name: 'helper-ItemList',
-				visibleto: "all",
-				action: out,
-				playerid: gmId
-			});
-		}
-		outweap = outweap.replace(/,/g, "&#44;");
-		outweap = "?{Item" + outweap + "}";
-		var mac = findObjs({
-			type: 'macro',
-			playerid: gmId,
-			name: 'helper-WeaponList'
-		})[0];
-		if (mac) {
-			log("registering #WeaponList");
-			mac.set('action', outweap);
-		} else {
-			log("creating #WeaponList");
-			createObj('macro', {
-				name: 'helper-WeaponList',
-				visibleto: "all",
-				action: outweap,
-				playerid: gmId
-			});
-		}
-		outarmor = outarmor.replace(/,/g, "&#44;");
-		outarmor = "?{Item" + outarmor + "}";
-		var mac = findObjs({
-			type: 'macro',
-			playerid: gmId,
-			name: 'helper-ArmorList'
-		})[0];
-		if (mac) {
-			mac.set('action', outarmor);
-		} else {
-			createObj('macro', {
-				name: 'helper-ArmorList',
-				visibleto: "all",
-				action: outarmor,
-				playerid: gmId
-			});
-		}
+		generateItemListMacros(gmId);
 	} else { if (trace) { log(`no item list`) } }
-	_.each(default_macros, function(macro, macroName) {
-		if (trace) { log("macro: " + macroName) }
-		findObjs({
-			type: 'macro',
-			playerid: gmId,
-			name: macroName}).forEach((existingMacro)=>{existingMacro.remove()});
-		createObj('macro', {
-			name: macroName,
-			visibleto: "all",
-			action: macro,
-			playerid: gmId
-		});
+	defineGlobalMacros(gmId);
+	defineCharacterAbilities();
+	
+	sendChat('H&acirc;rn API', getHarnTimeStr(state.MainGameNS.GameTime));
+
+	if (trace) { log("<initializeTables()") }
+	return;
+}
+
+function generateItemListMacros(gmId) {
+	const items = Object.keys(prices).sort();
+	createWeaponListMacro(items, gmId);
+	createArmorListMacro(items, gmId);
+	createItemListMacro(items, gmId);
+}
+
+function createArmorListMacro(items, gmId) {
+	const outarmor = items
+						.filter((item) => (item.substr(0, item.lastIndexOf(",")) in armor_coverage))
+						.reduce((out, item) => { return `${out}|${item.replace(/,/g, "&#44;")}`}, "?{Item") + "}";
+	findObjs({
+		type: 'macro',
+		playerid: gmId,
+		name: 'helper-ArmorList'
+	}).forEach((macro)=>{macro.remove()});
+	if (trace) log(`#helper-ArmorList=${outarmor}`);
+	createObj('macro', {
+		name: 'helper-ArmorList',
+		visibleto: "all",
+		action: outarmor,
+		playerid: gmId
 	});
+}
 
+function createWeaponListMacro(items, gmId) {
+	log(`createWeaponListMacro(${items},${gmId})`);
+	const outweap = _.filter(items,
+							(item) => (item in weapons_table))
+						.reduce((out, item) => { return `${out}|${item.replace(/,/g, "&#44;")}`}, "?{Item") + '}';
+	findObjs({
+		type: 'macro',
+		playerid: gmId,
+		name: 'helper-WeaponList'
+	}).forEach((macro)=>{macro.remove()});
+	if (trace) log(`#helper-WeaponList=${outweap}`);
+	createObj('macro', {
+		name: 'helper-WeaponList',
+		visibleto: "all",
+		action: outweap,
+		playerid: gmId
+	});
+}
+
+function createItemListMacro(items, gmId) {
+	const out = items
+					.filter((item) => (!(item in weapons_table || item.substr(0, item.lastIndexOf(",")) in armor_coverage)))
+					.reduce((out, item) => { return `${out}|${item.replace(/,/g, "&#44;")}`}, "?{Item") + '}';
+	findObjs({
+		type: 'macro',
+		playerid: gmId,
+		name: 'helper-ItemList'
+	}).forEach((macro)=>{macro.remove()});
+	if (trace) log(`#helper-ItemList=${out}`);
+	createObj('macro', {
+		name: 'helper-ItemList',
+		visibleto: "all",
+		action: out,
+		playerid: gmId
+	});
+}
+
+function defineCharacterAbilities() {
+	if (trace)
+		log("Creating default character abilities");
 	var chars = findObjs({ _type: "character", });
-
-	if (trace) log("Creating default character macros");
-	chars.forEach(function(c) {
-		if (trace) log(`Character ${c.get("name")}`);
+	chars.forEach(function (c) {
+		const char_name = c.get("name");
 		setWeaponsList(c.id);
 		setSkillList(c.id);
-		_.each(default_abilities, function(ability, abilityName) {
-			if (trace) log(`Macro ${abilityName}`)
+		_.each(default_abilities, function (ability, abilityName) {
+			if (trace) log(`Ability ${char_name}#${abilityName}=${ability}`);
 			findObjs({
 				type: 'ability',
 				_characterid: c.id,
-				name: abilityName}).forEach((existingAbility)=>{existingAbility.remove()});
-			if (trace) log('registering');
+				name: abilityName
+			}).forEach((existingAbility) => { existingAbility.remove(); });
 			createObj('ability', {
 				name: abilityName,
 				action: ability,
@@ -895,11 +886,25 @@ function initializeTables(playerid) {
 			});
 		});
 	});
-	
-	sendChat('H&acirc;rn API', getHarnTimeStr(state.MainGameNS.GameTime));
+}
 
-	if (trace) { log("<initializeTables()") }
-	return;
+function defineGlobalMacros(gmId) {
+	if (trace)
+		log("Creating default macros");
+	_.each(default_macros, function (macro, macroName) {
+		if (trace) { log("macro: " + macroName); }
+		findObjs({
+			type: 'macro',
+			playerid: gmId,
+			name: macroName
+		}).forEach((existingMacro) => { existingMacro.remove(); });
+		createObj('macro', {
+			name: macroName,
+			visibleto: "all",
+			action: macro,
+			playerid: gmId
+		});
+	});
 }
 
 function getWep(charid) {
@@ -919,7 +924,7 @@ function getWep(charid) {
 }
 
 function setWeaponsList(charid) {
-	if (trace) log("Macro helper-Weapons");
+	if (trace) log("Ability helper-Weapons");
 	var out2 = "";
 	getWep(charid).forEach(function(w) {
 		out2 += "|" + myGet(w.get('name'), charid, "");
@@ -955,23 +960,18 @@ function setSkillList(charid) {
 		out += "|" + sl[i];
 	}
 
-	//log(out+"\n\n");
 	out = out.replace(/,/g, "&#44;").replace(/\)/g, '&#41;');
 	out = "?{Skills" + out + "}";
 	var mac = findObjs({
 		type: 'ability',
 		_characterid: charid,
 		name: 'helper-SkillList'
-	})[0];
-	if (mac) {
-		mac.set('action', out);
-	} else {
-		createObj('ability', {
-			name: 'helper-SkillList',
-			action: out,
-			_characterid: charid
-		});
-	}
+	}).forEach((macro)=>{macro.remove()});
+	createObj('ability', {
+		name: 'helper-SkillList',
+		action: out,
+		_characterid: charid
+	});
 }
 
 
