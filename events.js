@@ -5,17 +5,17 @@ on("ready", function() {
 	checkInstall();
 	log(getHarnTimeStr(state.MainGameNS.GameTime));
 	log("trace: " + trace);
-	if (state.Harn.config.house_rule_skills) house_add(config.add_skills, skilllist, "skill");
+	if (state.Harn.config.house_rule_skills) house_add(house_rules.add_skills, skilllist, "skill");
 	if (state.Harn.config.house_rule_items) {
-		house_remove(config.remove_items, prices, "inventory");
-		house_remove(config.remove_armor_coverage, armor_coverage, "armor coverage");
-		house_add(config.add_items, prices, "inventory");
-		house_add(config.add_armor_coverage, armor_coverage, "skill");
-		house_add(config.add_armor_prot, armor_prot, "skill");
+		house_remove(house_rules.remove_items, prices, "inventory");
+		house_remove(house_rules.remove_armor_coverage, armor_coverage, "armor coverage");
+		house_add(house_rules.add_items, prices, "inventory");
+		house_add(house_rules.add_armor_coverage, armor_coverage, "skill");
+		house_add(house_rules.add_armor_prot, armor_prot, "skill");
 	}
 	if (state.Harn.config.house_rule_occupations) {
-		house_add(config.add_occupational_skills, occupational_skills, "occupation skill");
-		house_add(config.add_occupation_time, occupation_time, "occupation time");
+		house_add(house_rules.add_occupational_skills, occupational_skills, "occupation skill");
+		house_add(house_rules.add_occupation_time, occupation_time, "occupation time");
 	}
 	initializeTables(0);
 	started = true;
