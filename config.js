@@ -9,6 +9,7 @@ function handle_toggle_config(args, msg) {
     let who=(getObj('player',msg.playerid)||{get:()=>'API'}).get('_displayname');
     switch(args[1]) {
         case 'house_rule_additional_target_locations':
+        case 'house_rule_randomize_init_roll':
         case 'house_rule_occupations':
         case 'house_rule_items':
         case 'house_rule_skills':
