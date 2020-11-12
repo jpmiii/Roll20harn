@@ -1002,7 +1002,7 @@ function getrange(weapname, dist) {
 	for (var i = 4; i >= 0; i--) {
 		if ((missile_range[weapname][i][0] * 5) > dist) {
 			if (i == 0) {
-				var penalty = state.Harn.config.house_rule_missle_close_range_mod;
+				var penalty = -1*state.Harn.config.house_rule_missle_close_range_mod; //the mod is a bonus. invert it for "penalty"
 			} else {
 				var penalty = (i - 1) * 20;
 			}

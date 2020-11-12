@@ -52,14 +52,14 @@ function handle_defend(def, msg) {
 	///////////////////////////////////////////////////////////////////////
 
 	var deml = { 'total': 0, 'targstr': '' };
+	var defwepname = "ignore";
 
 	if (def[1] == "dodge") {
 		var deml = getDodgeEML(toke, defcharid, parseInt(def[2]),
 			((atk[4] == "missile") && (wepname.indexOf("Bow") !== -1)));
-	}
-
-	if ((def[1] == "block") || (def[1] == "counterstrike")) {
-		var defwepname = msg.content.slice((msg.content.indexOf("WeaponName:") + 11));
+		defwepname="DODGE";
+	} else if ((def[1] == "block") || (def[1] == "counterstrike")) {
+		defwepname = msg.content.slice((msg.content.indexOf("WeaponName:") + 11));
 
 		if (defwepname.length > 3) {
 
@@ -142,16 +142,17 @@ function handle_defend(def, msg) {
 	}
 
 	//log crits
-
 	if (asuc == "CS") {
 		charLog(charid, ": Attack CS " + wepname, state.Harn.config.realtime, state.Harn.config.gametime)
 	} else if (asuc == "CF") {
 		charLog(charid, ": Attack CF " + wepname, state.Harn.config.realtime, state.Harn.config.gametime)
 	}
-	if (dsuc == "CS") {
-		charLog(defcharid, ": Defend CS " + defwepname, state.Harn.config.realtime, state.Harn.config.gametime)
-	} else if (dsuc == "CF") {
-		charLog(defcharid, ": Defend CF " + defwepname, state.Harn.config.realtime, state.Harn.config.gametime)
+	if (defwepname != "ignore") {  // you cannot improve your ignore roll, no matter how hard you don't try.
+		if (dsuc == "CS") {
+			charLog(defcharid, ": Defend CS " + defwepname, state.Harn.config.realtime, state.Harn.config.gametime)
+		} else if (dsuc == "CF") {
+			charLog(defcharid, ": Defend CF " + defwepname, state.Harn.config.realtime, state.Harn.config.gametime)
+		}	
 	}
 
 	sendChat(msg.who, defendTemplate(state.Harn.config.defend_template,
