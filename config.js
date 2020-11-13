@@ -13,6 +13,10 @@ function handle_toggle_config(args, msg) {
         case 'house_rule_occupations':
         case 'house_rule_items':
         case 'house_rule_skills':
+            state.Harn.config[args[1]]=!state.Harn.config[args[1]];
+            initializeTables(0);
+            sendChat('H&acirc;rn API', `/w "${who}" ${args[1]} set to ${state.Harn.config[args[1]]}`);
+            break;
         case 'slow_api':
         case 'realtime':
         case 'gametime':
@@ -141,7 +145,7 @@ function getConfigOption_house_rule_occupations() {
     return makeConfigOption(
         state.Harn.config.house_rule_occupations,
         `!toggleconfig house_rule_occupations`,
-        `${_h.bold('Use additional occupations')} If true, will add ${Object.keys(house_rules.add_occupational_skills).length} occupations.`
+        `${_h.bold('Use additional occupations')} If true, will use a list of house rule occupations instead of cannon.`
   );
 }
 
@@ -149,7 +153,7 @@ function getConfigOption_house_rule_items() {
     return makeConfigOption(
         state.Harn.config.house_rule_items,
         `!toggleconfig house_rule_items`,
-        `${_h.bold('Use additional items')} If true, will add ${Object.keys(house_rules.add_items).length} items and remove ${Object.keys(house_rules.remove_items).length} items.`
+        `${_h.bold('Use additional items')} If true, use a list of house rule items instead of cannon.`
   );
 }
 
@@ -157,7 +161,7 @@ function getConfigOption_house_rule_skills() {
     return makeConfigOption(
         state.Harn.config.house_rule_skills,
         `!toggleconfig house_rule_skills`,
-        `${_h.bold('Use additional skills')} If true, will add ${Object.keys(house_rules.add_skills).length} skills.`
+        `${_h.bold('Use additional skills')} If true, use the list of houserule skills instead of cannon skills.`
   );
 }
 

@@ -775,8 +775,10 @@ function handle_tokendis(args, msg) {
 	}
 }
 
+
 function initializeTables(playerid) {
 	if (trace) { log(`>initializeTables(${playerid})`) }
+	setupHouseruleTables();
 	var gms = findObjs({ type: 'player' }).filter((p) => playerIsGM(p.id));
 	var gmId;
 	if (gms.length > 0) {

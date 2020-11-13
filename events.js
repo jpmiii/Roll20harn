@@ -5,18 +5,6 @@ on("ready", function() {
 	checkInstall();
 	log(getHarnTimeStr(state.MainGameNS.GameTime));
 	log("trace: " + trace);
-	if (state.Harn.config.house_rule_skills) house_add(house_rules.add_skills, skilllist, "skill");
-	if (state.Harn.config.house_rule_items) {
-		house_remove(house_rules.remove_items, prices, "inventory");
-		house_remove(house_rules.remove_armor_coverage, armor_coverage, "armor coverage");
-		house_add(house_rules.add_items, prices, "inventory");
-		house_add(house_rules.add_armor_coverage, armor_coverage, "skill");
-		house_add(house_rules.add_armor_prot, armor_prot, "skill");
-	}
-	if (state.Harn.config.house_rule_occupations) {
-		house_add(house_rules.add_occupational_skills, occupational_skills, "occupation skill");
-		house_add(house_rules.add_occupation_time, occupation_time, "occupation time");
-	}
 	initializeTables(0);
 	started = true;
 });
@@ -123,20 +111,3 @@ on("change:campaign:turnorder", function(obj, prev) {
 	}
 
 });
-
-function house_remove(house_remove, canon, description) {
-	house_remove.forEach((k) => {
-		if (trace)
-			log(`Removing ${description} ${k}`);
-		delete canon[k];
-	});
-}
-
-function house_add(house_add, canon, description) {
-	Object.keys(house_add).forEach((k) => {
-		canon[k] = house_add[k];
-		if (trace)
-			log(`Adding house rule ${description}: ${k}`);
-	});
-}
-

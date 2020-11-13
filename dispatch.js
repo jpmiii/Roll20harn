@@ -68,13 +68,13 @@ var dispatch_table = {
     },
     "!sheetattack": {
         "action": (args, msg) => { handle_sheetattack(args, msg); },
-        "re_syntax": new RegExp(`^(!sheetattack|!attack) [-_a-zA-Z0-9]{20} ${target_locations} (H|B|E|P|F) (melee|missile) [-+]?[0-9]+ [-_a-zA-Z0-9]{20} .+$`),
-        "hr_syntax": `![sheet]attack attacker_id ${target_locations} (H|B|E|P|F) (missile|melee) modifier defender_id weapon`
+        "re_syntax": new RegExp(`^(!sheetattack|!attack) [-_a-zA-Z0-9]{20} NONE (H|B|E|P|F) (melee|missile) [-+]?[0-9]+ [-_a-zA-Z0-9]{20} .+$`),
+        "hr_syntax": `![sheet]attack attacker_id NONE (H|B|E|P|F) (missile|melee) modifier defender_id weapon`
     },
     "!attack": {
         "action": (args, msg) => { handle_attack(args, msg); },
-        "re_syntax": new RegExp(`^(!sheetattack|!attack) [-_a-zA-Z0-9]{20} ${target_locations} (H|B|E|P|F) (melee|missile) [-+]?[0-9]+ [-_a-zA-Z0-9]{20} .+$`),
-        "hr_syntax": `![sheet]attack attacker_id ${target_locations} (H|B|E|P|F) (missile|melee) modifier defender_id weapon`
+        "re_syntax": new RegExp(`^(!sheetattack|!attack) [-_a-zA-Z0-9]{20} NONE (H|B|E|P|F) (melee|missile) [-+]?[0-9]+ [-_a-zA-Z0-9]{20} .+$`),
+        "hr_syntax": `![sheet]attack attacker_id NONE (H|B|E|P|F) (missile|melee) modifier defender_id weapon`
     },
     "!defend": {
         "action": (args, msg) => { handle_defend(args, msg); },
