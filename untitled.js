@@ -76,7 +76,7 @@ function getMeleeEML(toke, repeating_weapon_name, charid, mod = 0, loc = "mid", 
 		tot += x;
 		targstr = `${targstr}Encumbrance: ${x}<br>`;
 	}
-	x = -1 * hit_loc_penalty[loc]["penalty"];
+	x = -1 * tables.hit_loc_penalty[loc]["penalty"];
 	if (x !== 0) {
 		tot += x;
 		targstr = `${targstr}Location ${loc}: ${x}<br>`;
@@ -257,7 +257,7 @@ function getWeaponImpact(repeating_weapon_name, charid, aspect = "H", missi = nu
 	}
 
 	if (missi) {
-		if (myGet(`${repeating_weapon_name}NAME`, charid, "") in missile_range) {
+		if (myGet(`${repeating_weapon_name}NAME`, charid, "") in tables.missile_range) {
 			out.impact = missi[1];
 		} else {
 			out.impact = Math.round(out.impact * parseFloat(missi[1]))
@@ -366,7 +366,7 @@ function charLog(character_id, text, rtime = false, gtime = false) {
 
 function handle_pickskill(args, msg) {
 	sendChat("Skill Improvement Roll", msg.content.slice(msg.content.indexOf(args[1]) + 21) + "<br>[Pick Skill](!improveskill " + args[1]
-		+ " %{" + msg.content.slice(msg.content.indexOf(args[1]) + 21) + "|helper-SkillList})")
+		+ " %{" + msg.content.slice(msg.content.indexOf(args[1]) + 21) + "|helper-tables.skilllist})")
 }
 
 
@@ -429,11 +429,8 @@ function handle_rollatts(args, msg) {
 			mySet(attname, char.id, r);
 		}
 	});
-	var autoskills = ["CLIMBING_SB", "CONDITION_SB", "DODGE_SB", "JUMPING_SB",
-		"STEALTH_SB", "THROWING_SB", "AWARENESS_SB", "INTRIGUE_SB",
-		"ORATORY_SB", "RHETORIC_SB", "SINGING_SB", "INITIATIVE_SB",
-		"UNARMED_SB"]
-	_.each(autoskills, function(skillname) {
+
+	_.each(tables.autoskills, function(skillname) {
 		myGet(skillname, char.id, 1);
 
 	});
@@ -455,7 +452,7 @@ function gethiteff(loc, effImp) {
 	if (effImp > 16) {
 		var col = 8;
 	}
-	_.each(hit_location_table, function(row) {
+	_.each(tables.hit_location_table, function(row) {
 		if (row[3] == loc) {
 			lr = row[col];
 		}
@@ -467,7 +464,7 @@ function gethiteff(loc, effImp) {
 
 function gethitloc(roll, aim) {
 	var lr;
-	_.each(hit_location_table, function(row) {
+	_.each(tables.hit_location_table, function(row) {
 		if (row[aim] !== "-") {
 			if (parseInt(row[aim].slice(0, 2)) <= roll) {
 				lr = row[3];
@@ -565,8 +562,8 @@ function handle_occupation(args, msg) {
 	if (char) {
 		log(msg.content.slice(33));
 		var occ = myGet('OCCUPATION', char.id, "Farmer");
-		if (occ in occupational_skills) {
-			_.each(occupational_skills[occ], function(skl) {
+		if (occ in tables.occupational_skills) {
+			_.each(tables.occupational_skills[occ], function(skl) {
 				sk = skl.split("/");
 				skn = findSkill(char, sk[0]).slice(0, -4);
 				log(skn);
@@ -615,6 +612,8 @@ function handle_settime(args, msg) {
 function handle_time(args, msg) {
 	if (trace) { log(`handle_time(${args},${msg.content})`) }
 	log(getHarnTimeStr(state.MainGameNS.GameTime));
+	initializeTables(0);
+	if (trace) { log(`API table  : ${JSON.stringify(tables,null,4)}`) }
 	sendChat("Timekeeper", getHarnTimeStr(state.MainGameNS.GameTime));
 }
 
@@ -625,7 +624,7 @@ function handle_loc(args, msg) {
 
 function handle_attack_melee_table(args, msg) {
 	if (trace) { log(`handle_attack_melee_table(${args},${msg.content})`) }
-	sendChat(msg.who, "Melee Attack Result<br/>" + attack_melee[args[1]][args[2]][args[3]] + "<br/>");
+	sendChat(msg.who, "Melee Attack Result<br/>" + tables.attack_melee[args[1]][args[2]][args[3]] + "<br/>");
 }
 
 function handle_out(args, msg) {
@@ -795,10 +794,10 @@ function initializeTables(playerid) {
 		var out = "";
 		var outarmor = "";
 		var outweap = "";
-		Object.keys(prices).sort().forEach(function(k) {
-			if (k in weapons_table) {
+		Object.keys(tables.prices).sort().forEach(function(k) {
+			if (k in tables.weapons_table) {
 				outweap += "|" + k;
-			} else if (k.substr(0, k.lastIndexOf(",")) in armor_coverage) {
+			} else if (k.substr(0, k.lastIndexOf(",")) in tables.armor_coverage) {
 				outarmor += "|" + k;
 			} else {
 				out += "|" + k;
@@ -859,10 +858,10 @@ function initializeTables(playerid) {
 			});
 		}
 	} else { if (trace) { log(`no item list`) } }
-	_.each(_.keys(default_macros), function(obj) {
+	_.each(_.keys(tables.default_macros), function(obj) {
 		if (trace) { log("macro: " + obj) }
 
-		var out = default_macros[obj];
+		var out = tables.default_macros[obj];
 		var mac = findObjs({
 			type: 'macro',
 			playerid: gmId,
@@ -886,8 +885,8 @@ function initializeTables(playerid) {
 	chars.forEach(function(c) {
 		if (trace) log(`Character ${c.get("name")}`);
 		setWeaponsList(c.id);
-		setSkillList(c.id);
-		_.each(_.keys(default_abilities), function(obj) {
+		setSkilllist(c.id);
+		_.each(_.keys(tables.default_abilities), function(obj) {
 			if (trace) log(`Macro ${obj}`)
 			var mac = findObjs({
 				type: 'ability',
@@ -896,7 +895,7 @@ function initializeTables(playerid) {
 			})[0];
 			if (!mac) {
 				if (trace) log('registering');
-				var out = default_abilities[obj];
+				var out = tables.default_abilities[obj];
 				createObj('ability', {
 					name: obj,
 					action: out,
@@ -957,7 +956,7 @@ function setWeaponsList(charid) {
 
 }
 
-function setSkillList(charid) {
+function setSkilllist(charid) {
 	if (trace) log("Macro helper-Skilllist");
 	var out = "";
 	var sl = skillList(charid);
@@ -1009,15 +1008,15 @@ function addinjury(loc, injstr, charid) {
 
 
 function getrange(weapname, dist) {
-	if (!(weapname in missile_range)) { weapname = "Melee"; }
+	if (!(weapname in tables.missile_range)) { weapname = "Melee"; }
 	for (var i = 4; i >= 0; i--) {
-		if ((missile_range[weapname][i][0] * 5) > dist) {
+		if ((tables.missile_range[weapname][i][0] * 5) > dist) {
 			if (i == 0) {
 				var penalty = config.missle_close_range_mod;
 			} else {
 				var penalty = (i - 1) * 20;
 			}
-			var impact = missile_range[weapname][i][1];
+			var impact = tables.missile_range[weapname][i][1];
 		}
 	}
 	return [penalty, impact]
@@ -1081,20 +1080,20 @@ function turnPush(obj) {
 
 function addWeapon(charid, weapon_name) {
 	if (trace) { log("addWeapon(" + charid + ", " + weapon_name + ")") }
-	if (weapon_name in weapons_table) {
+	if (weapon_name in tables.weapons_table) {
 
 		var mid = makeid();
 		mySet("repeating_weapon_" + mid + "_WEAPON_NAME", charid, weapon_name);
-		if (weapon_name in prices) { mySet("repeating_weapon_" + mid + "_WEAPON_WGT", charid, prices[weapon_name]["weight"]); } else {
+		if (weapon_name in tables.prices) { mySet("repeating_weapon_" + mid + "_WEAPON_WGT", charid, tables.prices[weapon_name]["weight"]); } else {
 			mySet("repeating_weapon_" + mid + "_WEAPON_WGT", charid, 0);
 		}
-		mySet("repeating_weapon_" + mid + "_WEAPON_WQ", charid, weapons_table[weapon_name][0]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_ATK", charid, weapons_table[weapon_name][1]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_DEF", charid, weapons_table[weapon_name][2]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_HM", charid, weapons_table[weapon_name][3]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_B", charid, weapons_table[weapon_name][4]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_E", charid, weapons_table[weapon_name][5]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_P", charid, weapons_table[weapon_name][6]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_WQ", charid, tables.weapons_table[weapon_name][0]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_ATK", charid, tables.weapons_table[weapon_name][1]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_DEF", charid, tables.weapons_table[weapon_name][2]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_HM", charid, tables.weapons_table[weapon_name][3]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_B", charid, tables.weapons_table[weapon_name][4]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_E", charid, tables.weapons_table[weapon_name][5]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_P", charid, tables.weapons_table[weapon_name][6]);
 
 		if (weapon_name.indexOf("Unarmed") == 0) {
 			mySet("repeating_weapon_" + mid + "_WEAPON_ML", charid, myGet("UNARMED_ML", charid, 0));
@@ -1125,9 +1124,9 @@ function addWeapon(charid, weapon_name) {
 	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WORN", charid, "on");
 
 
-	if (weapon_name in prices) {
-		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, prices[weapon_name]["weight"]);
-		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, prices[weapon_name]["price"]);
+	if (weapon_name in tables.prices) {
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, tables.prices[weapon_name]["weight"]);
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, tables.prices[weapon_name]["price"]);
 	} else {
 		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, 0);
 		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, 0)
@@ -1137,12 +1136,12 @@ function addWeapon(charid, weapon_name) {
 
 function addItem(charid, item) {
 	if (trace) { log("addItem(" + charid + ", " + item + ")") }
-	if (item in weapons_table) {
+	if (item in tables.weapons_table) {
 		addWeapon(charid, item);
 	} else {
 		var mid = makeid();
 		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_NAME", charid, item);
-		if (item.substr(0, item.lastIndexOf(",")) in armor_coverage) {
+		if (item.substr(0, item.lastIndexOf(",")) in tables.armor_coverage) {
 			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_TYPE", charid, "Armor");
 		} else {
 			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_TYPE", charid, "Item");
@@ -1155,9 +1154,9 @@ function addItem(charid, item) {
 		log(item)
 
 
-		if (item in prices) {
-			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, prices[item]["weight"]);
-			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, prices[item]["price"]);
+		if (item in tables.prices) {
+			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, tables.prices[item]["weight"]);
+			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, tables.prices[item]["price"]);
 		} else {
 			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, 0);
 			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, 0)
@@ -1176,9 +1175,9 @@ function addArmor(charid, item) {
 	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WORN", charid, "on");
 
 
-	if (item in prices) {
-		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, prices[item]["weight"]);
-		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, prices[item]["price"]);
+	if (item in tables.prices) {
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, tables.prices[item]["weight"]);
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, tables.prices[item]["price"]);
 	} else {
 		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, 0);
 		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, 0)
@@ -1198,7 +1197,7 @@ function calcArmor(charid) {
 
 
 
-	var newa = coverage2loc
+	var newa = tables.coverage2loc
 	_.each(newa, function(ob1) {
 		ob1["COV"] = "";
 		ob1["AQ"] = 0;
@@ -1217,12 +1216,12 @@ function calcArmor(charid) {
 		if (myGet(ojn.slice(0, -4) + "TYPE", charid, 0) == "Armor") {
 			if (myGet(ojn.slice(0, -4) + "WORN", charid, 0) == "on") {
 				ojv = ob1.get('current');
-				if (ojv.slice(ojv.lastIndexOf(",") + 2) in armor_prot) {
+				if (ojv.slice(ojv.lastIndexOf(",") + 2) in tables.armor_prot) {
 
-					var art = armor_prot[ojv.slice(ojv.lastIndexOf(",") + 2)];
+					var art = tables.armor_prot[ojv.slice(ojv.lastIndexOf(",") + 2)];
 
-					if (ojv.slice(0, ojv.lastIndexOf(",")) in armor_coverage) {
-						var arl = armor_coverage[ojv.slice(0, ojv.lastIndexOf(","))]["coverage"];
+					if (ojv.slice(0, ojv.lastIndexOf(",")) in tables.armor_coverage) {
+						var arl = tables.armor_coverage[ojv.slice(0, ojv.lastIndexOf(","))]["coverage"];
 						for (var i = 0; i < arl.length; i++) {
 							newa[arl[i]]["COV"] += " " + art[0];
 							aq = parseInt(myGet(ojn.slice(0, -4) + "Q", charid, 0))
@@ -1262,7 +1261,7 @@ function getHarnTimeStr(timef) {
 	var hour = Math.floor((timef - (year * 31104000) - (day * 86400)) / 3600);
 	var minute = Math.floor((timef - (year * 31104000) - (day * 86400) - (hour * 3600)) / 60);
 	var sec = Math.floor(timef - (year * 31104000) - (day * 86400) - (hour * 3600) - (minute * 60));
-	return (year + 720).toString() + '-' + month.toString() + '(' + months[(month - 1)] + ')-' + mday.toString() + ' ' + opad(hour.toString()) + ':' + opad(minute.toString()) + ':' + opad(sec.toString());
+	return (year + 720).toString() + '-' + month.toString() + '(' + tables.months[(month - 1)] + ')-' + mday.toString() + ' ' + opad(hour.toString()) + ':' + opad(minute.toString()) + ':' + opad(sec.toString());
 
 }
 function setHarnTime(args) {
@@ -1419,7 +1418,7 @@ function skillList(charid) {
 
 	var slist = [];
 
-	slist.push.apply(slist, autoskillsnames);
+	slist.push.apply(slist, tables.autoskillsnames);
 
 	var atts = findObjs({
 		_characterid: charid,
@@ -1432,7 +1431,7 @@ function skillList(charid) {
 		ojv = ob1.get('current')
 
 		if ((ojv) && (ojn.indexOf("SKILL_NAME") !== -1)) {
-			_.each(_.keys(skilllist), function(obj) {
+			_.each(_.keys(tables.skilllist), function(obj) {
 				if (ojv.indexOf(obj) !== -1) {
 					slist.push(ojv);
 				}
@@ -1448,7 +1447,7 @@ function skillList(charid) {
 function findSkill(char, skillname) {
 
 	var nameout = "False"
-	if (skillname.toUpperCase() in autoskills) {
+	if (skillname.toUpperCase() in tables.autoskills) {
 		nameout = skillname.toUpperCase() + "_NAME"
 	} else {
 		var atts = findObjs({
@@ -1463,7 +1462,7 @@ function findSkill(char, skillname) {
 			ojv = ob1.get('current')
 
 			if (ojn.indexOf("SKILL_NAME") !== -1) {
-				_.each(_.keys(skilllist), function(obj) {
+				_.each(_.keys(tables.skilllist), function(obj) {
 					if ((ojv.indexOf(obj) !== -1) && (skillname.indexOf(obj) !== -1)) {
 						nameout = ojn;
 					}
@@ -1473,36 +1472,36 @@ function findSkill(char, skillname) {
 	}
 	if (nameout == "False") {
 
-		_.each(_.keys(skilllist), function(obj) {
+		_.each(_.keys(tables.skilllist), function(obj) {
 			if (skillname.indexOf(obj) !== -1) {
 				var mid = makeid();
 
-				if (skilllist[obj]["type"] == "PHYSICAL") {
+				if (tables.skilllist[obj]["type"] == "PHYSICAL") {
 					mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_NAME", char.id, obj);
 					mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_SB", char.id, 0);
 					mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_ML", char.id, 0);
 					nameout = "repeating_physicalskill_" + mid + "_PHYSICALSKILL_NAME";
-				} else if (skilllist[obj]["type"] == "LORE") {
+				} else if (tables.skilllist[obj]["type"] == "LORE") {
 					mySet("repeating_loreskill_" + mid + "_LORESKILL_NAME", char.id, obj);
 					mySet("repeating_loreskill_" + mid + "_LORESKILL_SB", char.id, 0);
 					mySet("repeating_loreskill_" + mid + "_LORESKILL_ML", char.id, 0);
 					nameout = "repeating_loreskill_" + mid + "_LORESKILL_NAME";
-				} else if (skilllist[obj]["type"] == "MAGIC") {
+				} else if (tables.skilllist[obj]["type"] == "MAGIC") {
 					mySet("repeating_magicskill_" + mid + "_MAGICSKILL_NAME", char.id, obj);
 					mySet("repeating_magicskill_" + mid + "_MAGICSKILL_SB", char.id, 0);
 					mySet("repeating_magicskill_" + mid + "_MAGICSKILL_ML", char.id, 0);
 					nameout = "repeating_magicskill_" + mid + "_MAGICSKILL_NAME";
-				} else if (skilllist[obj]["type"] == "COMBAT") {
+				} else if (tables.skilllist[obj]["type"] == "COMBAT") {
 					mySet("repeating_combatskill_" + mid + "_COMBATSKILL_NAME", char.id, obj);
 					mySet("repeating_combatskill_" + mid + "_COMBATSKILL_SB", char.id, 0);
 					mySet("repeating_combatskill_" + mid + "_COMBATSKILL_ML", char.id, 0);
 					nameout = "repeating_combatskill_" + mid + "_COMBATSKILL_NAME";
-				} else if (skilllist[obj]["type"] == "COMMUNICATION") {
+				} else if (tables.skilllist[obj]["type"] == "COMMUNICATION") {
 					mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_NAME", char.id, obj);
 					mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_SB", char.id, 0);
 					mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_ML", char.id, 0);
 					nameout = "repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_NAME";
-				} else if (skilllist[obj]["type"] == "RITUAL") {
+				} else if (tables.skilllist[obj]["type"] == "RITUAL") {
 					mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_NAME", char.id, obj);
 					mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_SB", char.id, 0);
 					mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_ML", char.id, 0);
@@ -1526,7 +1525,7 @@ function calcSB(char, msg) {
 		myGet(attname, char.id, r);
 	});
 
-	_.each(_.keys(autoskills), function(skillname) {
+	_.each(_.keys(tables.autoskills), function(skillname) {
 
 		myGet(skillname + "_SB", char.id, 1);
 	});
@@ -1547,18 +1546,18 @@ function calcSB(char, msg) {
 
 		if (ojn.indexOf("SKILL_NAME") !== -1) {
 
-			_.each(_.keys(skilllist), function(obj) {
+			_.each(_.keys(tables["skilllist"]), function(obj) {
 				if (ojv.indexOf(obj) !== -1) {
-					var sb = Math.round(((Number(myGet(skilllist[obj]["sba"][0], char.id)) + Number(myGet(skilllist[obj]["sba"][1], char.id)) + Number(myGet(skilllist[obj]["sba"][2], char.id))) / 3));
+					var sb = Math.round(((Number(myGet(tables.skilllist[obj]["sba"][0], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][1], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][2], char.id))) / 3));
 					var sb1 = 0;
 					var sb2 = 0;
 					if (sss.length == 2) {
 
-						if (sss[0].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb1 = Number(skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb1 = Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
 						}
-						if (sss[1].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb2 = Number(skilllist[obj]["ssm"][sss[1].slice(0, 3)])
+						if (sss[1].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb2 = Number(tables.skilllist[obj]["ssm"][sss[1].slice(0, 3)])
 						}
 						if (sb1 > sb2) {
 							sb += sb1;
@@ -1567,8 +1566,8 @@ function calcSB(char, msg) {
 						}
 
 					} else {
-						if (sss[0].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb = sb + Number(skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb = sb + Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
 						}
 					}
 
@@ -1582,11 +1581,11 @@ function calcSB(char, msg) {
 					var ml = parseInt(myGet(ojn.slice(0, -4) + "ML", char.id, 0));
 
 					if ((!ml) || (ml == 0)) {
-						if (skilllist[obj]["oml"]) {
-							mySet(ojn.slice(0, -4) + "ML", char.id, (sb * parseInt(skilllist[obj]["oml"])))
+						if (tables.skilllist[obj]["oml"]) {
+							mySet(ojn.slice(0, -4) + "ML", char.id, (sb * parseInt(tables.skilllist[obj]["oml"])))
 						}
 					} else if ((parseInt(ml) > 0) && (parseInt(ml) < sb)) {
-						if (skilllist[obj]["oml"]) {
+						if (tables.skilllist[obj]["oml"]) {
 							mySet(ojn.slice(0, -4) + "ML", char.id, (sb * parseInt(ml)))
 						}
 					}
@@ -1595,18 +1594,18 @@ function calcSB(char, msg) {
 		}
 		if (ojn.indexOf("_SB") !== -1) {
 
-			_.each(_.keys(skilllist), function(obj) {
+			_.each(_.keys(tables.skilllist), function(obj) {
 				if (ojn.indexOf(obj) !== -1) {
-					var sb = Math.round(((Number(myGet(skilllist[obj]["sba"][0], char.id)) + Number(myGet(skilllist[obj]["sba"][1], char.id)) + Number(myGet(skilllist[obj]["sba"][2], char.id))) / 3));
+					var sb = Math.round(((Number(myGet(tables.skilllist[obj]["sba"][0], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][1], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][2], char.id))) / 3));
 					var sb1 = 0;
 					var sb2 = 0;
 
 					if (sss.length == 2) {
-						if (sss[0].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb1 = Number(skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb1 = Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
 						}
-						if (sss[1].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb2 = Number(skilllist[obj]["ssm"][sss[1].slice(0, 3)])
+						if (sss[1].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb2 = Number(tables.skilllist[obj]["ssm"][sss[1].slice(0, 3)])
 						}
 						if (sb1 > sb2) {
 							sb += sb1
@@ -1614,8 +1613,8 @@ function calcSB(char, msg) {
 							sb += sb2
 						}
 					} else {
-						if (sss[0].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb = sb + Number(skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb = sb + Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
 						}
 					}
 					if (msg.content.indexOf("?") !== -1) {
@@ -1627,11 +1626,11 @@ function calcSB(char, msg) {
 					var ml = parseInt(myGet(ojn.slice(0, -2) + "ML", char.id, 0));
 
 					if ((!ml) || (ml == 0)) {
-						if (skilllist[obj]["oml"]) {
-							mySet(ojn.slice(0, -2) + "ML", char.id, (sb * parseInt(skilllist[obj]["oml"])))
+						if (tables.skilllist[obj]["oml"]) {
+							mySet(ojn.slice(0, -2) + "ML", char.id, (sb * parseInt(tables.skilllist[obj]["oml"])))
 						}
 					} else if ((parseInt(ml) > 0) && (parseInt(ml) < sb)) {
-						if (skilllist[obj]["oml"]) {
+						if (tables.skilllist[obj]["oml"]) {
 							mySet(ojn.slice(0, -2) + "ML", char.id, (sb * parseInt(ml)))
 						}
 					}
@@ -1821,7 +1820,7 @@ function xin(charid) {
 				while (lns[xi] !== "Communications Skills:") {
 					tv = lns[xi].replace(/ /g, "").split("/");
 					if (tv.length > 1) {
-						if (tv[0] in autoskills) {
+						if (tv[0] in tables.autoskills) {
 							tv2 = tv[1].split("(SB:");
 							tv3 = tv2[1].split(")OML:");
 							mySet(tv[0] + "_SB", charid, tv3[0])
@@ -1846,7 +1845,7 @@ function xin(charid) {
 					var stv = lns[xi].replace(/ /g, "")
 					var tv = stv.split("/");
 					if (tv.length > 1) {
-						if (tv[0] in autoskills) {
+						if (tv[0] in tables.autoskills) {
 							var tv2 = tv[1].split("(SB:");
 							var tv3 = tv2[1].split(")OML:");
 							mySet(tv[0] + "_SB", charid, tv3[0])
@@ -1868,7 +1867,7 @@ function xin(charid) {
 				while (lns[xi] !== "Crafts & Lore Skills:") {
 					tv = lns[xi].replace(/ /g, "").split("/");
 					if (tv.length > 1) {
-						if (tv[0] in autoskills) {
+						if (tv[0] in tables.autoskills) {
 							tv2 = tv[1].split("(SB:");
 							tv3 = tv2[1].split(")OML:");
 							mySet(tv[0] + "_SB", charid, tv3[0])
@@ -2192,7 +2191,7 @@ function doHit(base, atkrepwep, acharid, dcharid, aspect, missi, loc, atktoke, d
 	var atk_impact = getImpact(base, atkrepwep, acharid, aspect, missi);
 
 
-	var hitloc = gethitloc(randomInteger(100), hit_loc_penalty[loc]["index"]);
+	var hitloc = gethitloc(randomInteger(100), tables.hit_loc_penalty[loc]["index"]);
 
 	var avatloc = myGet(hitloc + "_" + atk_impact.aspect, dcharid, 0);
 

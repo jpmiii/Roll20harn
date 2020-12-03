@@ -118,10 +118,10 @@ var dispatch_table = {
         "re_syntax": /^!out.*$/,
         "hr_syntax": "Does something"
     },
-    "!attack_melee_table": {
-        "action": (args, msg) => { handle_attack_melee_table(args, msg); },
-        "re_syntax": /^!attack_melee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]$/,
-        "hr_syntax": "!attack_meleee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]<br/>Outputs the attack melee table "
+    "!tables.attack_melee_table": {
+        "action": (args, msg) => { handle_tables.attack_melee_table(args, msg); },
+        "re_syntax": /^!tables.attack_melee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]$/,
+        "hr_syntax": "!tables.attack_meleee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]<br/>Outputs the attack melee table "
     },
     "!loc": {
         "action": (args, msg) => { handle_loc(args, msg); },

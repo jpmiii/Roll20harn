@@ -5,16 +5,17 @@
 //
 //
 
-var default_macros = {"helper-Physician-roll":"?{Treatment Bonus|Minor cut - Clean & Dress,30|Serious cut - Surgery,20|Grevious cut - Surgery,10|Minor stab - Clean & Dress,25|Serious stab - Clean & Dress,15|Grevious stab - Surgery,5|Minor bruise - Compress,30|Serious blunt fracture - Splint,20|Grevious blunt crush -Surgery/Splint,10|Bleeding wound - Tourniquet,50|No Bonus,0}",
-			"Random-Char":"!rand"};
-var default_abilities = {
+var tables = {
+"default_macros": {"helper-Physician-roll":"?{Treatment Bonus|Minor cut - Clean & Dress,30|Serious cut - Surgery,20|Grevious cut - Surgery,10|Minor stab - Clean & Dress,25|Serious stab - Clean & Dress,15|Grevious stab - Surgery,5|Minor bruise - Compress,30|Serious blunt fracture - Splint,20|Grevious blunt crush -Surgery/Splint,10|Bleeding wound - Tourniquet,50|No Bonus,0}",
+			"Random-Char":"!rand"},
+"default_abilities": {
     "Atk":`!attack @{selected|token_id} ?{aim zone|mid|high|low${config.additional_target_locations?"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin":""}} ?{Aspect|H|B|E|P|F} ?{Attack Type|melee|missle} ?{Mod|0} @{target|token_id} %{@{character_name}|helper-Weapons}`,
     "Fumble":"&{template:check-lt} {{character_name=@{selected|token_name}}} {{rolldesc=rolls Fumble}} {{rolltarget=[[@{COMBAT_DEX}]]}} {{rollresult=[[[[3d6]] + @{selected|bar3} + @{ENCUMBRANCE}]]}} {{base=@{COMBAT_DEX}}} {{rolltype=3d6+[[@{selected|bar3} + @{ENCUMBRANCE}]]}} {{penalty=[[0]]}}",
     "Stumble":"&{template:check-lt} {{character_name=@{selected|token_name}}} {{rolldesc=rolls Stumble}} {{rolltarget=[[@{COMBAT_AGL}]]}} {{rollresult=[[[[3d6]] + @{selected|bar3} + @{ENCUMBRANCE}]]}} {{base=@{COMBAT_AGL}}} {{rolltype=3d6+[[@{selected|bar3} + @{ENCUMBRANCE}]]}} {{penalty=[[0]]}}",
-    "ImproveSkill":"!improveskill @{character_id} %{@{character_name}|helper-SkillList}"
-};
+    "ImproveSkill":"!improveskill @{character_id} %{@{character_name}|helper-Skilllist}"
+},
 
-var skilllist = {
+"skilllist": {
     "Acrobatics": { "type": "PHYSICAL", "sba": ["STR", "AGL", "AGL"], "ssm": { "Nad": "2", "Hir": "1" }, "oml": "2", "notes": "Trapeze, Tumbling, Vaulting, etc." },
     "CLIMBING": { "type": "PHYSICAL", "sba": ["STR", "DEX", "AGL"], "ssm": { "Ula": "2", "Ara": "2" }, "oml": "4", "notes": "None." },
     "CONDITION": { "type": "PHYSICAL", "sba": ["STR", "STA", "WIL"], "ssm": { "Ula": "1", "Lad": "1" }, "oml": "5", "notes": "None." },
@@ -117,18 +118,18 @@ var skilllist = {
     "Odivshe": { "type": "MAGIC", "sba": ["AUR", "AUR", "DEX"], "ssm": { "Ula": "1", "Fen": "-1", "Ahn": "-2", "Ang": "-3", "Nad": "-2", "Hir": "-1", "Tai": "1", "Sko": "2", "Mas": "3", "Lad": "2" }, "oml": "1", "notes": "none" },
     "Savorya": { "type": "MAGIC", "sba": ["AUR", "AUR", "INT"], "ssm": { "Ula": "-1", "Ara": "-2", "Fen": "-3", "Ahn": "-2", "Ang": "-1", "Hir": "1", "Tar": "2", "Tai": "3", "Sko": "2", "Mas": "1" }, "oml": "1", "notes": "none" },
     "Neutral": { "type": "MAGIC", "sba": ["AUR", "AUR", "WIL"], "ssm": { "Ula": "0" }, "oml": "1", "notes": "none" }
-}
+},
 
 
 
-var autoskills = {"CLIMBING":"ML","CONDITION":"ML","DODGE":"ML","JUMPING":"ML","STEALTH":"ML","INITIATIVE":"ML","UNARMED":"ML","THROWING":"ML","RIDING":"ML","AWARENESS":"ML","INTRIGUE":"ML","ORATORY":"ML","RHETORIC":"ML","SINGING":"ML","PHYSICIAN":"ML"}
-var autoskillsnames = ["Initiative","Unarmed","Dodge","Riding","Climbing","Condition","Jumping","Stealth","Throwing","Awareness","Intrigue","Oratory","Rhetoric","Singing","Physician"]
+"autoskills": {"CLIMBING":"ML","CONDITION":"ML","DODGE":"ML","JUMPING":"ML","STEALTH":"ML","INITIATIVE":"ML","UNARMED":"ML","THROWING":"ML","RIDING":"ML","AWARENESS":"ML","INTRIGUE":"ML","ORATORY":"ML","RHETORIC":"ML","SINGING":"ML","PHYSICIAN":"ML"},
+"autoskillsnames": ["Initiative","Unarmed","Dodge","Riding","Climbing","Condition","Jumping","Stealth","Throwing","Awareness","Intrigue","Oratory","Rhetoric","Singing","Physician"],
 //
 //
 //
 
 
-var prices = {
+"prices": {
     "Ailettes, kurbul":{"price":20,"weight":1.0},
     "Ailettes, plate":{"price":100,"weight":3.2},
     "Alchemical Recipe book":{"price":150,"weight":5.0},
@@ -476,10 +477,10 @@ var prices = {
     "Wineskin, small":{"price":6,"weight":6},
     "Woodcarving kit":{"price":24,"weight":5},
     "q1":{"price":1,"weight":1.0}    
-}
+},
 
 
-var attack_melee = {
+"attack_melee": {
     "block": [
         ["BF", "AF", "DTA", "DTA"],
         ["DF", "Block", "DTA", "DTA"],
@@ -503,10 +504,10 @@ var attack_melee = {
         ["A*1"],
         ["A*3"],
         ["A*4"]]
-}
+},
 
 
-var attack_missile = {
+"attack_missile": {
     "block": [
         ["Wild", "Wild", "Wild", "Wild"],
         ["miss", "miss", "miss", "miss"],
@@ -531,9 +532,9 @@ var attack_missile = {
         ["M*2", "M*2", "M*2", "M*2"],
         ["M*3", "M*3", "M*3", "M*3"]
     ]
-}
+},
 
-var coverage2loc = {
+"coverage2loc": {
     "Sk": { "LOC": "SKULL", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
     "Fa": { "LOC": "FACE", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
     "Nk": { "LOC": "NECK", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
@@ -550,11 +551,11 @@ var coverage2loc = {
     "Kn": { "LOC": "KNEE", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
     "Ca": { "LOC": "CALF", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
     "Ft": { "LOC": "FOOT", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 }
-}
+},
 
 
 
-var hit_location_table = [
+"hit_location_table": [
     ["01-15", "01-05", "-", "SKULL", "M1", "S2", "S3", "K4", "K5", "Sk", "-", "-", "-", "-", "01-56", "01-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
     ["16-30", "06-10", "-", "FACE", "M1", "S2", "S3", "G4", "K5", "Fa", "-", "-", "-", "-", "57-87", "-", "-", "01-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
     ["31-45", "11-15", "-", "NECK", "M1", "S2", "S3", "K4", "K5Amp", "Nk", "01-00", "-", "-", "-", "88-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
@@ -571,9 +572,9 @@ var hit_location_table = [
     ["-", "89-90", "71-78", "KNEE", "StuM1", "StuS2", "StuS3", "StuG4", "StuG5Amp", "Kn", "-", "-", "50-54", "-", "-", "-", "-", "-", "-", "-", "-", "-", "01-00", "-", "-", "-", "-", "-", "-", "-"],
     ["-", "91-96", "79-92", "CALF", "StuM1", "StuM1", "StuS2", "StuS3", "StuG4Amp", "Ca", "-", "-", "55-85", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "01-00", "-", "-", "-", "-", "-", "-"],
     ["-", "97-00", "93-00", "FOOT", "StuM1", "StuS2", "StuS3", "StuG4", "StuG5Amp", "Ft", "-", "-", "86-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "01-00", "-", "-", "-", "-", "-"]
-]
+],
 
-var hit_loc_penalty = {
+"hit_loc_penalty": {
     "high": { "index": 0, "penalty": 10 },
     "mid": { "index": 1, "penalty": 0 },
     "low": { "index": 2, "penalty": 10 },
@@ -597,10 +598,10 @@ var hit_loc_penalty = {
     "forearm": { "index": 27, "penalty": 25 },
     "hand": { "index": 28, "penalty": 30 },
     "groin": { "index": 29, "penalty": 35 }
-}
+},
                         
 
-var armor_coverage = {
+"armor_coverage": {
     "Ailettes":{"zone":"aile","coverage":["Sh"]},
     "Backplate":{"zone":"thor","coverage":["Tx","Ab"]},
     "Body":{"zone":"body","coverage":["Sk","Nk","Fa","Ft","Ha","Ua","Sh","Tx","Ab","Hp","Gr","Fo","El","Th","Kn","Ca"]},
@@ -654,10 +655,10 @@ var armor_coverage = {
     "Tunic, long":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
     "Vambraces":{"zone":"vamb","coverage":["Fo"]},
     "Vest":{"zone":"body","coverage":["Sh","Tx","Ab"]},    
-}
+},
 
 
-var armor_prot = {
+"armor_prot": {
     "Brown bear": ["nat", "6", "4", "3", "5"],
     "Dire wolf": ["nat", "5", "4", "2", "4"],
     "beaver": ["leather", "2", "4", "3", "3"],
@@ -701,10 +702,10 @@ var armor_prot = {
     "waxed canvas": ["cloth", "1", "1", "1", "1"],
     "wolf": ["nat", "4", "3", "1", "3"],
     "worsted": ["cloth", "1", "1", "1", "1"]
-}
+},
 
 
-var weapons_table = {
+"weapons_table": {
     "Shield(Round)":["13","5","20","0","2","-","-"],
 "Shield(Kite)":["14","5","25","0","3","-","-"],
 "Shield(Knight)":["13","5","20","0","2","-","-"],
@@ -752,11 +753,11 @@ var weapons_table = {
 "Unarmed(Kick)":["0","5","5","0","1","-","-"],
 "Unarmed(Punch)":["0","0","15","0","0","-","-"],
 "Bow(Minicrossbow)":["10","5","5","0","1","-","-"]
-}
+},
 
 
 
-var missile_range = {"Bow(Shortbow)":[[5,6],[20,6],[40,5],[80,4],[160,3]],
+"missile_range": {"Bow(Shortbow)":[[5,6],[20,6],[40,5],[80,4],[160,3]],
 "Bow(Longbow)":[[5,8],[25,8],[50,7],[100,6],[200,5]],
 "Bow(Hartbow)":[[10,10],[30,9],[60,8],[120,7],[240,6]],
 "Bow(Crossbow)":[[5,9],[20,8],[40,7],[80,6],[160,5]],
@@ -771,10 +772,10 @@ var missile_range = {"Bow(Shortbow)":[[5,6],[20,6],[40,5],[80,4],[160,3]],
 "Spear(Spear)":[[3,8],[6,8],[12,7],[24,6],[48,5]],
 "Spell(Ethereal Stone)":[[2,6],[5,6],[10,6],[20,6],[40,6]],
 "Melee":[[1,1],[2,1],[4,1],[8,1],[16,1]]
-}
+},
 
 
-var months = [
+"months": [
 "Nuzyael",
 "Peonu",
 "Kelen",
@@ -787,9 +788,9 @@ var months = [
 "Ilvin",
 "Navek",
 "Morgat"
-]
+],
 
-var occupational_skills = {
+"occupational_skills": {
     "Alchemist": [
         "Alchemy/4",
         "Mathematics/3",
@@ -2177,7 +2178,8 @@ var occupational_skills = {
         "Runecraft/3",
         "Tarotry/3"
     ]
-}
+},
+
 
 ////////////////////////////////////////////////////////////
 
@@ -2193,7 +2195,7 @@ var occupational_skills = {
 ///////////////////////////////
 
 
-var occupation_time = {
+"occupation_time": {
     "Alchemist": "7",
     "Animal Trainer": "3",
     "Apothecary": "6",
@@ -2322,5 +2324,5 @@ var occupation_time = {
     "Shek-Pvar/Savorya***": "7",
     "Shek-Pvar/Savorya****": "7",
     "Shek-Pvar/Savorya*****": "7"
-}
+}}
 

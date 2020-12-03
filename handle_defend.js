@@ -115,9 +115,9 @@ function handle_defend(def, msg) {
 	}
 
 	if (atk[4] == "missile") {
-		var r = attack_missile[def[1]][ais][dis];
+		var r = tables.attack_missile[def[1]][ais][dis];
 	} else {
-		var r = attack_melee[def[1]][ais][dis];
+		var r = tables.attack_melee[def[1]][ais][dis];
 	}
 
 	var ares = "";

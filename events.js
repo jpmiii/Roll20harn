@@ -10,11 +10,16 @@ on("ready", function() {
 	if (config.serial != expectedSerial) {
 		sendChat("API", `Unexpected config serial number. Expected ${expectedSerial} but got ${config.serial}`);
 	}
-	log(getHarnTimeStr(state.MainGameNS.GameTime));
+	
 	log("trace: " + trace);
+	//Object.assign(generate_tables(),tables)
+	//
+	
+	//log(getHarnTimeStr(state.MainGameNS.GameTime));
 
-	initializeTables(0);
 	started = true;
+	generate_tables();
+	//if (trace) { log(`API table : ${JSON.stringify(tables,null,4)}`) }
 });
 
 
@@ -97,10 +102,10 @@ on("change:attribute:current", function(obj, prev) {
 	} else if (obj.get('name').includes("WEAPON_NAME") && config.weapon_list_on) {
 		setWeaponsList(obj.get("_characterid"));
 	} else if (obj.get('name').includes("SKILL_NAME") && config.skill_list_on) {
-		setSkillList(obj.get("_characterid"));
+		settables.skilllist(obj.get("_characterid"));
 	} else if (obj.get('name') == "sheetTab") {
 		if (obj.get('current') == "skills" && config.skill_list_on) {
-			setSkillList(obj.get("_characterid"));
+			setSkilllist(obj.get("_characterid"));
 		} else if (obj.get('current') == "combat" && config.weapon_list_on) {
 			setWeaponsList(obj.get("_characterid"));
 		}
@@ -123,7 +128,31 @@ on("change:campaign:turnorder", function(obj, prev) {
 	}
 
 });
+function generate_tables() {
 
+	var scdata = findObjs({
+		name: "API_tables",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			tables = JSON.parse(scda.substring(5, scda.indexOf('</pre>')));
+			initializeTables(0);
+		    if (trace) { log(`API table loaded : ${JSON.stringify(tables.months,null,1)}`) }
+		});
+
+	} else {
+	    var handout = createObj("handout", {
+            name: "API_tables",
+            inplayerjournals: "all",
+            archived: false
+	    });
+	    handout.set('notes', `<pre>${JSON.stringify(tables,null,2)}</pre>`);
+	    handout.set('gmnotes', 'GM notes also need to be set after the handout is created.');
+		initializeTables(0);
+		if (trace) { log(`API table added`) }
+	}
+}
 function house_remove(house_remove, canon, description) {
 	house_remove.forEach((k) => {
 		if (trace)
