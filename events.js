@@ -12,17 +12,11 @@ on("ready", function() {
 	}
 	log(getHarnTimeStr(state.MainGameNS.GameTime));
 	log("trace: " + trace);
-	house_remove(config.remove_items, prices, "inventory");
-	house_remove(config.remove_armor_coverage, armor_coverage, "armor coverage");
-	house_add(config.add_skills, skilllist, "skill");
-	house_add(config.add_items, prices, "inventory");
-	house_add(config.add_armor_coverage, armor_coverage, "skill");
-	house_add(config.add_armor_prot, armor_prot, "skill");
-	house_add(config.add_occupational_skills, occupational_skills, "occupation skill");
-	house_add(config.add_occupation_time, occupation_time, "occupation time");
+
 	initializeTables(0);
 	started = true;
 });
+
 
 
 
