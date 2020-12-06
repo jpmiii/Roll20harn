@@ -4,8 +4,9 @@
 // TABLES
 //
 //
-
 var tables = {
+
+
 "default_macros": {"helper-Physician-roll":"?{Treatment Bonus|Minor cut - Clean & Dress,30|Serious cut - Surgery,20|Grevious cut - Surgery,10|Minor stab - Clean & Dress,25|Serious stab - Clean & Dress,15|Grevious stab - Surgery,5|Minor bruise - Compress,30|Serious blunt fracture - Splint,20|Grevious blunt crush -Surgery/Splint,10|Bleeding wound - Tourniquet,50|No Bonus,0}",
 			"Random-Char":"!rand"},
 "default_abilities": {

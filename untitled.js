@@ -118,10 +118,10 @@ var dispatch_table = {
         "re_syntax": /^!out.*$/,
         "hr_syntax": "Does something"
     },
-    "!tables.attack_melee_table": {
+    "!attack_melee_table": {
         "action": (args, msg) => { handle_tables.attack_melee_table(args, msg); },
-        "re_syntax": /^!tables.attack_melee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]$/,
-        "hr_syntax": "!tables.attack_meleee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]<br/>Outputs the attack melee table "
+        "re_syntax": /^!attack_melee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]$/,
+        "hr_syntax": "!attack_meleee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]<br/>Outputs the attack melee table "
     },
     "!loc": {
         "action": (args, msg) => { handle_loc(args, msg); },
@@ -154,6 +154,11 @@ var dispatch_table = {
         "hr_syntax": "!gmrand selected characters<br/>Randomly choses one of all selected tokens."
 
     },
+    "!help": {
+        "action": (args, msg) => { handle_help(args, msg); },
+        "re_syntax": /^!help.*$/,
+        "hr_syntax": "!help command<br/>Show help strings."
+    },
     "!improveskill": {
         "action": (args, msg) => { handle_improveskill(args, msg); },
         "re_syntax": /^!improveskill [-_a-zA-Z0-9]{20} .*$/,
@@ -163,9 +168,270 @@ var dispatch_table = {
 	    "action": (args, msg) => { handle_pickskill(args, msg); },
         "re_syntax": /^!pickskill [-_a-zA-Z0-9]{20}.*$/,
         "hr_syntax": "!pickskill character_id prompt title<br/>Prompts the user to pick a valid skill to improve"
-
     }
 }
+
+/**
+ * Process an attack message
+ */
+function handle_attack(atk, msg) {
+	if (trace) { log(`handle_attack(${atk},${msg.content})`) }
+
+	if (atk[0] == "!sheetattack") {
+		var tokelist = findObjs({
+			represents: atk[1],
+			_pageid: getSelectedPage(msg),
+			_type: "graphic",
+		});
+		if (tokelist == null || tokelist.length < 1) {
+			sendChat(msg.who, "Move the player banner to this page.");
+			return;
+		}
+		atk[1] = tokelist[0].id;
+
+	}
+	var atoke = getObj("graphic", atk[1]);
+	var charid = atoke.get("represents")
+	var toke = getObj("graphic", atk[6]);
+	if (!toke.get("represents")) { sendChat(msg.who, "No defender"); return; }
+	var defcharid = toke.get("represents");
+
+
+	if (atoke && toke) {
+		var res = `Distance: ${tokendistance(atoke, toke)[0]}<br/>Attacker Move: ${tokemove(atoke)}<br/>Defender Move: ${tokemove(toke)}`;
+	}
+	// Use regular expression to get the string which starts after the 7th space delimited word
+	weapNameArray = msg.content.match(/^([^ ]+ ){7}(.*)$/);
+	var wepname = weapNameArray[weapNameArray.length - 1];
+	log(`selected weapon: ${wepname}`);
+
+	if (wepname == "") {
+		log(msg.content);
+		return;
+	}
+	aroll = randomInteger(100);
+	var ctype = parseInt(myGet('CType', charid, 0))
+
+	log("Roll: " + aroll);
+
+	if (ctype !== 0) {
+		for (i = 0; i < (ctype * -1); i++) {
+			var broll = randomInteger(300);
+			log("cheat: " + aroll + " " + broll);
+			if (broll < aroll) {
+				aroll = broll;
+			}
+		}
+		if (ctype > 0) {
+			aroll = 101 - aroll;
+		}
+		log("Cheat Roll: " + aroll);
+
+	}
+
+	if (state.MainGameNS["cheat"] > 0) {
+		if (state.MainGameNS["cheat"] > 100) {
+			aroll = 100 - state.MainGameNS["cheat"]
+		} else {
+			aroll = state.MainGameNS["cheat"]
+			state.MainGameNS["cheat"] = 0;
+		}
+
+	}
+
+
+	state.MainGameNS["aroll"] = aroll;
+	state.MainGameNS["wepname"] = wepname;
+	state.MainGameNS["attacker"] = atk;
+
+
+	var wep = getWep(defcharid);
+
+	var atkstr = `&{template:${config.attack_template}} \
+		{{rolldesc=${atoke.get('name')} ${atk[4]} attacks ${toke.get('name')} with a ${wepname}}} \
+		{{info=${res}}} \
+		{{def=${buttonMaker("!defend dodge ?{Mod|0} WeaponName:Dodge", "Dodge", null, null, 1.2)}${buttonMaker("!defend ignore #zero WeaponName:", "Ignore", null, null, 1.2)}`;
+	for (var i = 0; i < wep.length; i++) {
+		atkstr += buttonMaker("!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:" + myGet(wep[i].get('name'), defcharid, "").replace(')', '&#41;'), myGet(wep[i].get('name'), defcharid, ""), null, null, 1.2)
+	}
+	atkstr += "}}"
+
+	sendChat(msg.who, atkstr);
+
+}
+
+
+/**
+ * Process an defend message
+ */
+
+
+function handle_defend(def, msg) {
+
+	var atk = state.MainGameNS.attacker;
+	var wepname = state.MainGameNS.wepname
+	var atoke = getObj("graphic", atk[1]);
+
+	var toke = getObj("graphic", atk[6]);
+	if (!toke.get("represents")) { sendChat(msg.who, "No defender"); return; }
+	if (!toke.get("represents").startsWith("-M")) { sendChat(msg.who, "No defender -M"); return; }
+	var charid = atoke.get("represents")
+	var defcharid = toke.get("represents")
+	var defchar = getObj("character", defcharid);
+	var allowed = defchar.get("controlledby");
+	if (!playerIsGM(msg.playerid)) {
+		if (allowed.indexOf(msg.playerid) == -1 && allowed.indexOf("all") == -1) {
+			sendChat("API", msg.who + " is not in control")
+			return;
+		}
+	}
+	///////////////////////////////////////////////////////////////////////
+
+	var aojn = findWeapon(charid, wepname)[0].get('name');
+	if (!aojn) {
+		sendChat(msg.who, "Weapon " + wepname + " not found");
+		return;
+	}
+
+	var aeml = getMeleeEML(atoke, aojn.slice(0, -4), charid, atk[5], atk[2]);
+	var app = 0;
+	var appstr = "";
+
+	if (atk[4] == "missile") {
+		var missi;
+
+		({ missi, app, appstr } = missileAttack(tokendistance(atoke, toke), wepname, tokemove(atoke), charid));
+	}
+
+	var atkml = aeml.total + app;
+	if (!atkml) {
+		sendChat("API", "attack ml problem");
+		return;
+	}
+
+	appstr = `${aeml.targstr} ${appstr}`;
+
+
+	if (atkml > config.emlmax) { atkml = config.emlmax; };
+	if (atkml < config.emlmin) { atkml = config.emlmin; };
+	var { asuc, ais } = determineSuccess(atkml, state.MainGameNS.aroll);
+	///////////////////////////////////////////////////////////////////////
+
+	var deml = { 'total': 0, 'targstr': '' };
+
+	if (def[1] == "dodge") {
+		var deml = getDodgeEML(toke, defcharid, parseInt(def[2]),
+			((atk[4] == "missile") && (wepname.indexOf("Bow") !== -1)));
+	}
+
+	if ((def[1] == "block") || (def[1] == "counterstrike")) {
+		var defwepname = msg.content.slice((msg.content.indexOf("WeaponName:") + 11));
+
+		if (defwepname.length > 3) {
+
+			var defwep = findWeapon(defcharid, defwepname);
+			var ojn = defwep[0].get('name');
+
+			if (def[1] == "counterstrike") {
+				var deml = getMeleeEML(toke, ojn.slice(0, -4), defcharid, def[2], 'mid');
+			} else {
+				var deml = getMeleeEML(toke, ojn.slice(0, -4), defcharid, def[2], 'mid', true);
+			}
+		}
+	}
+
+	droll = randomInteger(100);
+
+	var ctype = parseInt(myGet('DCType', defcharid, 0))
+
+	log("Def roll: " + droll);
+	if (ctype !== 0) {
+		for (i = 0; i < (ctype * -1); i++) {
+			var broll = randomInteger(300);
+			log("cheat: " + aroll + " " + broll);
+			if (broll < droll) {
+				droll = broll
+			}
+		}
+		if (ctype > 0) {
+			droll = 101 - droll;
+		}
+		log("Cheat Def roll: " + droll);
+	}
+
+	if (state.MainGameNS["cheat"] > 0) {
+		if (state.MainGameNS["cheat"] > 100) {
+			droll = 100 - state.MainGameNS["cheat"]
+		} else {
+			droll = state.MainGameNS["cheat"]
+			state.MainGameNS["cheat"] = 0;
+		}
+	}
+
+	if (deml.total > config.emlmax) { deml.total = config.emlmax; };
+	if (deml.total < config.emlmin) { deml.total = config.emlmin; };
+
+	log("DefML: " + deml.total)
+
+	var { dsuc, dis } = determineDefSuccess(deml.total, droll);
+
+	if (def[1] == "ignore") {
+		dis = 0;
+	}
+
+	if (atk[4] == "missile") {
+		var r = tables.attack_missile[def[1]][ais][dis];
+	} else {
+		var r = tables.attack_melee[def[1]][ais][dis];
+	}
+
+	var ares = "";
+	var dres = "";
+
+	if ((r.indexOf("A*") == 0) || (r.indexOf("B*") == 0)
+		|| (r.indexOf("M*") == 0)) {
+		ares = doHit(parseInt(r.slice(2)), aojn.slice(0, -4),
+			charid, defcharid, atk[3], missi, atk[2], atoke, toke);
+	}
+
+	if ((r.indexOf("D*") == 0) || (r.indexOf("B*") == 0)) {
+		dres = doHit(parseInt(r.slice(2)), ojn.slice(0, -4),
+			defcharid, charid, 'H', null, 'mid', toke, atoke);
+	}
+
+	if (def[1] == "dodge") {
+		var rolldesc = `${toke.get('name')} attempts dodge`
+	} else if (def[1] == "ignore") {
+		var rolldesc = `${toke.get('name')} ignores`
+		dis = 5;
+	} else {
+		var rolldesc = `${toke.get('name')} ${def[1]}s with a ${defwepname}`
+	}
+
+	//log crits
+
+	if (asuc == "CS") {
+		charLog(charid, ": Attack CS " + wepname, config.realtime, config.gametime)
+	} else if (asuc == "CF") {
+		charLog(charid, ": Attack CF " + wepname, config.realtime, config.gametime)
+	}
+	if (dsuc == "CS") {
+		charLog(defcharid, ": Defend CS " + defwepname, config.realtime, config.gametime)
+	} else if (dsuc == "CF") {
+		charLog(defcharid, ": Defend CF " + defwepname, config.realtime, config.gametime)
+	}
+
+	sendChat(msg.who, defendTemplate(config.defend_template,
+		rolldesc,
+		labelMaker(`Roll d100: ${state.MainGameNS.aroll}`, null, null, 1.3),
+		labelMaker(`Target: ${atkml}`, appstr, null, 1.3),
+		ais,
+		labelMaker(`Roll d100: ${droll}`, null, null, 1.3),
+		labelMaker(`Target: ${deml.total}`, deml.targstr, null, 1.3),
+		dis, ares, dres, r));
+}
+
+
 
 
 
@@ -664,6 +930,33 @@ function getCharByNameAtt(charname) {
 	})[0];
 	return getObj("character", attr.get('_characterid'));
 }
+
+
+/**
+ * Show help.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_help(args, msg) {
+	if (trace) { log(`handle_help(${args},${msg.content})`) }
+	if (args.length == 1) {
+		var out = "<br/>";
+		_.each(_.keys(dispatch_table), function(obj) {
+			//out = `${out}${dispatch_table[obj]["hr_syntax"]}<br/>`;
+			out += buttonMaker(`!help ${obj}`,obj,null,null,1) ;
+		});
+		sendChat("API Commands",out,null,{noarchive:true});
+	}
+	if (args.length == 2) {
+		if (args[1] in dispatch_table) {
+			var out = dispatch_table[args[1]]["hr_syntax"].replace(/\)/g, '&#41;').replace(/\]/g, '&#93;')
+			sendChat(``,`  ${out}  `,null,{noarchive:true});
+		} else {
+			sendChat(args[1],"Not Found",null,{noarchive:true});
+		}
+	}
+}
+
+
 /**
  * Update the skill bonues of the active sheet.
  * @param {Message} msg the message representing the command, with arguments separated by spaces
