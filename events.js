@@ -128,7 +128,9 @@ on("change:campaign:turnorder", function(obj, prev) {
 	}
 
 });
-function generate_tables() {
+function generate_tables(pid=0) {
+	
+
 
 	var scdata = findObjs({
 		name: "API_tables",
@@ -137,7 +139,6 @@ function generate_tables() {
 	if (scdata) {
 		scdata.get("notes", function(scda) {
 			tables = JSON.parse(scda.substring(5, scda.indexOf('</pre>')));
-			initializeTables(0);
 		    if (trace) { log(`API table loaded`) }
 		});
 
@@ -147,12 +148,72 @@ function generate_tables() {
             inplayerjournals: "all",
             archived: false
 	    });
-	    handout.set('notes', `<pre>${JSON.stringify(tables,null,2)}</pre>`);
-	    handout.set('gmnotes', 'GM notes also need to be set after the handout is created.');
-		initializeTables(0);
+	var ostr = "{\n";
+	for (k in {'default_macros':'','default_abilities':'','skilllist':'','autoskills':'','autoskillsnames':'','attack_melee':'','attack_missile':'','coverage2loc':'','hit_location_table':'','hit_loc_penalty':'','armor_coverage':'','armor_prot':'','weapons_table':'','missile_range':''}) { 
+		//log(k);
+		ostr += `\"${k}\": ${JSON.stringify(tables[k],null,2)},\n\n`
+	}
+	ostr += `\"months\": ${JSON.stringify(tables['months'],null,2)}\n}`
+		
+	    handout.set('notes', `<pre>${ostr}</pre>`);
+	    handout.set('gmnotes', 'GM notes.');
+		//initializeTables(pid);
+		if (trace) { log(`API table added`) }
+	}
+var scdata = findObjs({
+		name: "API_occupation",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			var t_in = JSON.parse(scda.substring(5, scda.indexOf('</pre>')));
+			tables.occupational_skills = t_in.occupational_skills;
+			tables.occupation_time = t_in.occupation_time;
+			//initializeTables(pid);
+		    if (trace) { log(`API table loaded`) }
+		});
+
+	} else {
+	    var handout = createObj("handout", {
+            name: "API_occupation",
+            inplayerjournals: "all",
+            archived: false
+	    });
+		var ostr = `\"occupational_skills\": ${JSON.stringify(tables['occupational_skills'],null,2)},\n\n`;
+
+		ostr += `\"occupation_time\": ${JSON.stringify(tables['occupation_time'],null,2)}\n`
+		
+	    handout.set('notes', `<pre>{\n${ostr}\n}</pre>`);
+	    handout.set('gmnotes', 'GM notes.');
+		//initializeTables(pid);
+		if (trace) { log(`API table added`) }
+	}
+	var scdata = findObjs({
+		name: "API_prices",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			tables.prices = JSON.parse(scda.substring(5, scda.indexOf('</pre>')));
+			initializeTables(pid);
+		    if (trace) { log(`API table loaded`) }
+		});
+
+	} else {
+	    var handout = createObj("handout", {
+            name: "API_prices",
+            inplayerjournals: "all",
+            archived: false
+	    });
+
+		
+	    handout.set('notes', `<pre>${JSON.stringify(tables.prices)}</pre>`);
+	    handout.set('gmnotes', 'GM notes.');
+		initializeTables(pid);
 		if (trace) { log(`API table added`) }
 	}
 }
+
 function house_remove(house_remove, canon, description) {
 	house_remove.forEach((k) => {
 		if (trace)

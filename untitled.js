@@ -29,7 +29,7 @@ var dispatch_table = {
     "!mapsend": {
         "action": (args, msg) => { handle_mapsend(args, msg); },
         "re_syntax": /^!mapsend [^,]+,[^,]+$/,
-        "hr_syntax": "!mapsend player_name,page_name <br/>Not sure what this does."
+        "hr_syntax": "!mapsend player_name,page_name <br/>Sends the named player to the named map."
     },
     "!itemlist": {
         "action": (args, msg) => { handle_itemlist(args, msg); },
@@ -79,13 +79,8 @@ var dispatch_table = {
     "!invin": {
         "action": (args, msg) => { handle_invin(args, msg); },
         "re_syntax": /^!invin [-_a-zA-Z0-9]{20}$/,
-        "hr_syntax": "!invin character_id<br/>Outputs character in HârnMaster Character Utility text format in character note."
+        "hr_syntax": "!invin character_id<br/>Inputs character inventory in HârnMaster Character Utility text format from character note."
 
-    },
-    "!move": {
-        "action": (args, msg) => { handle_move(args, msg); },
-        "re_syntax": /^!move.*$/,
-        "hr_syntax": "Does something"
     },
     "!xin": {
         "action": (args, msg) => { handle_xin(args, msg); },
@@ -111,12 +106,12 @@ var dispatch_table = {
     "!tokemove": {
         "action": (args, msg) => { handle_tokemove(args, msg); },
         "re_syntax": /^!tokemove.*$/,
-        "hr_syntax": "Does something"
+        "hr_syntax": "Shows token move distance"
     },
     "!out": {
         "action": (args, msg) => { handle_out(args, msg); },
         "re_syntax": /^!out.*$/,
-        "hr_syntax": "Does something"
+        "hr_syntax": "!out token_id<br/> outputs character data to log"
     },
     "!attack_melee_table": {
         "action": (args, msg) => { handle_tables.attack_melee_table(args, msg); },
@@ -928,7 +923,16 @@ function getCharByNameAtt(charname) {
 		name: "NAME",
 		_type: "attribute",
 	})[0];
-	return getObj("character", attr.get('_characterid'));
+	if (attr) {
+		return getObj("character", attr.get('_characterid'));
+	} else {
+		var tk = findObjs({
+			name: charname,
+			_type: "graphic",
+		})[0];
+		return getObj("character", tk.get('represents'));
+	}
+	
 }
 
 
@@ -1019,7 +1023,7 @@ function handle_mapsend(args, msg) {
  */
 function handle_itemlist(args, msg) {
 	if (trace) { log(`handle_itemlist(${args},${msg.content})`) }
-	initializeTables(msg.playerid);
+	generate_tables(msg.playerid);
 }
 
 /**
@@ -1186,19 +1190,6 @@ function handle_xin(args, msg) {
 	}
 }
 
-/**
- * This command appears obsolete.
- * @param {Message} msg the message representing the command, with arguments separated by spaces
- */
-function handle_move(args, msg) {
-	if (trace) { log(`handle_move(${args},${msg.content})`) }
-	if (msg.selected) {
-		var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
-		//log(tokemove(g))
-	} else {
-		log("Please select token");
-	}
-}
 
 /**
  * ?
@@ -1329,7 +1320,7 @@ function initializeTables(playerid) {
 		}
 	} else { if (trace) { log(`no item list`) } }
 	_.each(_.keys(tables.default_macros), function(obj) {
-		if (trace) { log("macro: " + obj) }
+		//if (trace) { log("macro: " + obj) }
 
 		var out = tables.default_macros[obj];
 		var mac = findObjs({
@@ -1353,18 +1344,18 @@ function initializeTables(playerid) {
 
 	if (trace) log("Creating default character macros");
 	chars.forEach(function(c) {
-		if (trace) log(`Character ${c.get("name")}`);
+		//if (trace) log(`Character ${c.get("name")}`);
 		setWeaponsList(c.id);
 		setSkilllist(c.id);
 		_.each(_.keys(tables.default_abilities), function(obj) {
-			if (trace) log(`Macro ${obj}`)
+			//if (trace) log(`Macro ${obj}`)
 			var mac = findObjs({
 				type: 'ability',
 				_characterid: c.id,
 				name: obj
 			})[0];
 			if (!mac) {
-				if (trace) log('registering');
+				//if (trace) log('registering');
 				var out = tables.default_abilities[obj];
 				createObj('ability', {
 					name: obj,
@@ -1399,7 +1390,7 @@ function getWep(charid) {
 }
 
 function setWeaponsList(charid) {
-	if (trace) log("Macro helper-Weapons");
+	//if (trace) log("Macro helper-Weapons");
 	var out2 = "";
 	getWep(charid).forEach(function(w) {
 		out2 += "|" + myGet(w.get('name'), charid, "");
@@ -1427,7 +1418,7 @@ function setWeaponsList(charid) {
 }
 
 function setSkilllist(charid) {
-	if (trace) log("Macro helper-Skilllist");
+	//if (trace) log("Macro helper-Skilllist");
 	var out = "";
 	var sl = skillList(charid);
 
@@ -2145,50 +2136,17 @@ function invin(charid) {
 	if (atts[0]) {
 		log("=================================")
 		ojv = atts[0].get('current');
-		log(atts[0]);
-		if (ojv.length > 100) {
+		if (ojv.length > 3) {
 			ojv = ojv.replace(/\t/g, "")
-			for (i = 0; i < 10; i++) {
+			for (i = 0; i < 5; i++) {
 				ojv = ojv.replace(/  /g, " ")
 			}
 
 			ojv = ojv.replace(/\n /g, "\n");
-			ojv = ojv.replace(/\nOffspring:/g, "");
-			ojv = ojv.replace(/\nOrphan:/g, "");
 			lns = ojv.split("\n");
 
-
-
-			var tv = lns[1].split(" ");
-			var xi = 0;
-
-			if (lns[xi].slice(0, 15) == "Clothing/Armor:") {
-				lns[xi] = lns[xi].slice(16);
-				while ((lns[xi].slice(0, 8) !== "Weapons:") && (lns[xi].slice(0, 6) !== "Notes:")) {
-					if (lns[xi].length > 2) { addArmor(charid, lns[xi]); }
-					xi++;
-
-
-				}
-
-			}
-
-			if (lns[xi].slice(0, 8) == "Weapons:") {
-				lns[xi] = lns[xi].slice(9);
-				while ((lns[xi].slice(0, 10) !== "Equipment:") && (lns[xi].slice(0, 6) !== "Notes:")) {
-					if (lns[xi].length > 2) { addWeapon(charid, lns[xi]); }
-					xi++;
-				}
-
-
-			}
-
-			if (lns[xi].slice(0, 10) == "Equipment:") {
-				lns[xi] = lns[xi].slice(11);
-				while (lns[xi].slice(0, 6) !== "Notes:") {
-					if (lns[xi].length > 2) { addItem(charid, lns[xi]); }
-					xi++;
-				}
+			for(xi=0;xi<lns.length;xi++) {
+				if (lns[xi].length > 2) { addItem(charid, lns[xi]); }
 			}
 		}
 	}
@@ -2607,48 +2565,48 @@ function chatParser(msg) {
 
 	// check for and log crits
 	if (msg.content.startsWith(" {{character_name=")) {
-		var d = new Date();
-		var n = d.toLocaleString();
-		if (msg.content.includes("rolldesc=rolls ")) {
-			if (msg.inlinerolls[3].results.total % 5 == 0) {
-				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name") + 15), msg.content.indexOf("}} ")));
-
-				if (msg.inlinerolls[1].results.total >= msg.inlinerolls[3].results.total) {
-					charLog(char.id, ": CS "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
-				} else {
-					charLog(char.id, ": CF "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
+		var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name") + 15), msg.content.indexOf("}} ")));
+		if (char) {
+			var d = new Date();
+			var n = d.toLocaleString();
+			if (msg.content.includes("rolldesc=rolls ")) {
+				if (msg.inlinerolls[3].results.total % 5 == 0) {
+	
+					if (msg.inlinerolls[1].results.total >= msg.inlinerolls[3].results.total) {
+						charLog(char.id, ": CS "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
+					} else {
+						charLog(char.id, ": CF "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
+					}
 				}
-			}
-		} else if (msg.content.includes("rolldesc=performs ")) {
-			if (msg.inlinerolls[7].results.total % 5 == 0) {
-				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name") + 15), msg.content.indexOf("}} ")));
-
-				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
-					charLog(char.id, ": CS "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
-				} else {
-					charLog(char.id, ": CF "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
+			} else if (msg.content.includes("rolldesc=performs ")) {
+				if (msg.inlinerolls[7].results.total % 5 == 0) {
+	
+					if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+						charLog(char.id, ": CS "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
+					} else {
+						charLog(char.id, ": CF "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
+					}
 				}
-			}
-		} else if (msg.content.includes("rolldesc=casts ")) {
-			if (msg.inlinerolls[7].results.total % 5 == 0) {
-				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name") + 15), msg.content.indexOf("}} ")));
-
-				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
-					charLog(char.id, ": CS "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
-				} else {
-					charLog(char.id, ": CF "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
+			} else if (msg.content.includes("rolldesc=casts ")) {
+				if (msg.inlinerolls[7].results.total % 5 == 0) {
+	
+					if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+						charLog(char.id, ": CS "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
+					} else {
+						charLog(char.id, ": CF "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
+					}
 				}
 			}
 		}
