@@ -1,4 +1,442 @@
-log("loading javascript version 0.0.1");
+
+/**
+ * Command dispatcher
+ */
+// commandname -> object with
+//                  "action" a function taking two args, args and msg, which implements the command.
+//                  "re_syntax" regular expression the command has to match
+//                  "hr_syntax" a more human understandable version of the command syntax
+
+// Regular expression tester: https://regex101.com/
+// Regular expression cheatsheet:
+// Character id: [-_a-zA-Z0-9]{20}
+// Number: [-+]?[0-9]+
+// one of the following: (high|mid|low|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin)
+
+var target_locations="(high|mid|low"+(config.additional_target_locations?"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin":"")+")"
+
+var dispatch_table = {
+    "!calcsb": {
+        "action": (args, msg) => { handle_calcsb(args, msg); },
+        "re_syntax": /^!calcsb [-_a-zA-Z0-9]{20}$/,
+        "hr_syntax": "!calcsb character_id<br/>Calculate the skill bonus for the selected character."
+    },
+    "!cheat": {
+        "action": (args, msg) => { handle_cheat(args, msg); },
+        "re_syntax": /^!cheat [-+]?[0-9]+$/,
+        "hr_syntax": "!cheat number<br/>The next d100 roll will be the provided number."
+    },
+    "!mapsend": {
+        "action": (args, msg) => { handle_mapsend(args, msg); },
+        "re_syntax": /^!mapsend [^,]+,[^,]+$/,
+        "hr_syntax": "!mapsend player_name,page_name <br/>Sends the named player to the named map."
+    },
+    "!itemlist": {
+        "action": (args, msg) => { handle_itemlist(args, msg); },
+        "re_syntax": /^!itemlist$/,
+        "hr_syntax": "!itemlist<br/>Prepares the item lists for use by other macros."
+    },
+    "!occupation": {
+        "action": (args, msg) => { handle_occupation(args, msg); },
+        "re_syntax": /^!occupation [-_a-zA-Z0-9]{20}$/,
+        "hr_syntax": "!occupation character_id<br/>Adds the occupation skills to the character."
+    },
+    "!table": {
+        "action": (args, msg) => { handle_table(args, msg); },
+        "re_syntax": /^!table .+$/,
+        "hr_syntax": "!table [[inline roll]] [[inline roll]] character id<br/>Rolls a value on a specially formatted handout."
+    },
+    "!rollatts": {
+        "action": (args, msg) => { handle_rollatts(args, msg); },
+        "re_syntax": /^!rollatts [-_a-zA-Z0-9]{20}$/,
+        "hr_syntax": "!rollatts character_id<br/>Rolls a new character for you"
+    },
+    "!newturn": {
+        "action": (args, msg) => { handle_newturn(args, msg); },
+        "re_syntax": /^!newturn$/,
+        "hr_syntax": "!newturn<br/>Starts a new round and re-computes initiative"
+    },
+    "!tokendis": {
+        "action": (args, msg) => { handle_tokendis(args, msg); },
+        "re_syntax": /^!tokendis [-_a-zA-Z0-9]{20} [-_a-zA-Z0-9]{20}$/,
+        "hr_syntax": "!tokendis character_id1 character_id2<br/>Computes the distance between two characters"
+    },
+    "!sheetattack": {
+        "action": (args, msg) => { handle_sheetattack(args, msg); },
+        "re_syntax": new RegExp(`^(!sheetattack|!attack) [-_a-zA-Z0-9]{20} ${target_locations} (H|B|E|P|F) (melee|missile) [-+]?[0-9]+ [-_a-zA-Z0-9]{20} .+$`),
+        "hr_syntax": `![sheet]attack attacker_id ${target_locations} (H|B|E|P|F) (missile|melee) modifier defender_id weapon`
+    },
+    "!attack": {
+        "action": (args, msg) => { handle_attack(args, msg); },
+        "re_syntax": new RegExp(`^(!sheetattack|!attack) [-_a-zA-Z0-9]{20} ${target_locations} (H|B|E|P|F) (melee|missile) [-+]?[0-9]+ [-_a-zA-Z0-9]{20} .+$`),
+        "hr_syntax": `![sheet]attack attacker_id ${target_locations} (H|B|E|P|F) (missile|melee) modifier defender_id weapon`
+    },
+    "!defend": {
+        "action": (args, msg) => { handle_defend(args, msg); },
+        "re_syntax": /^!defend (ignore|dodge|block|counterstrike) (#zero|[-+]?[0-9]+) WeaponName:.*$/,
+        "hr_syntax": "!defend (block mod WeaponName: weapon_name|dodge mod|ignore|counterstrike mod WeaponName: weapon_name)<br/>defends against an attack"
+    },
+    "!invin": {
+        "action": (args, msg) => { handle_invin(args, msg); },
+        "re_syntax": /^!invin [-_a-zA-Z0-9]{20}$/,
+        "hr_syntax": "!invin character_id<br/>Inputs character inventory in HârnMaster Character Utility text format from character note."
+
+    },
+    "!xin": {
+        "action": (args, msg) => { handle_xin(args, msg); },
+        "re_syntax": /^!xin( [-_a-zA-Z0-9]{20})?$/,
+        "hr_syntax": "!xin [character_id]<br/>Imports a character in HârnMaster Character Utility text format from the character note."
+
+    },
+    "!ca": {
+        "action": (args, msg) => { handle_ca(args, msg); },
+        "re_syntax": /^!ca( [-_a-zA-Z0-9]{20})?$/,
+        "hr_syntax": "!ca [character_id]<br/>Calculates armor values at hit locations."
+    },
+    "!addItem": {
+        "action": (args, msg) => { handle_addItem(args, msg); },
+        "re_syntax": /^!addItem [-_a-zA-Z0-9]{20} .*$/,
+        "hr_syntax": "!addItem character_id Item name"
+    },
+    "!clearmove": {
+        "action": (args, msg) => { handle_clearmove(args, msg); },
+        "re_syntax": /^!clearmove.*$/,
+        "hr_syntax": "Does something"
+    },
+    "!tokemove": {
+        "action": (args, msg) => { handle_tokemove(args, msg); },
+        "re_syntax": /^!tokemove.*$/,
+        "hr_syntax": "Shows token move distance"
+    },
+    "!out": {
+        "action": (args, msg) => { handle_out(args, msg); },
+        "re_syntax": /^!out.*$/,
+        "hr_syntax": "!out token_id<br/> outputs character data to log"
+    },
+    "!attack_melee_table": {
+        "action": (args, msg) => { handle_tables.attack_melee_table(args, msg); },
+        "re_syntax": /^!attack_melee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]$/,
+        "hr_syntax": "!attack_meleee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]<br/>Outputs the attack melee table "
+    },
+    "!loc": {
+        "action": (args, msg) => { handle_loc(args, msg); },
+        "re_syntax": /^!loc [0-9]+ [0-9]+$/,
+        "hr_syntax": "!loc result aim_index<br/>Gets the hit location for a die roll and aim"
+    },
+    "!time": {
+        "action": (args, msg) => { handle_time(args, msg); },
+        "re_syntax": /^!time$/,
+        "hr_syntax": "!time<br/>Outputs the current time"
+    },
+    "!settime": {
+        "action": (args, msg) => { handle_settime(args, msg); },
+        "re_syntax": /^!settime [0-9]{3,}( [0-9]{1,2}( [0-9]{1,2}( [0-9]{1,2}( [0-9]{1,2}( [0-9]{1,2})?)?)?)?)?$/,
+        "hr_syntax": "!settime YYY [MM [DD [HH [MM [SS]]]]]"
+    },
+    "!addtime": {
+        "action": (args, msg) => { handle_addtime(args, msg); },
+        "re_syntax": /^!addtime [+-]?[0-9]+$/,
+        "hr_syntax": "!addtime seconds<br/>Adds seconds to the time"
+    },
+    "!rand": {
+        "action": (args, msg) => { handle_rand(args, msg); },
+        "re_syntax": /^!rand.*$/,
+        "hr_syntax": "!rand selected characters<br/>Randomly choses one of all selected tokens."
+    },
+    "!gmrand": {
+        "action": (args, msg) => { handle_gmrand(args, msg); },
+        "re_syntax": /^!gmrand.*$/,
+        "hr_syntax": "!gmrand selected characters<br/>Randomly choses one of all selected tokens."
+
+    },
+    "!help": {
+        "action": (args, msg) => { handle_help(args, msg); },
+        "re_syntax": /^!help.*$/,
+        "hr_syntax": "!help command<br/>Show help strings."
+    },
+    "!improveskill": {
+        "action": (args, msg) => { handle_improveskill(args, msg); },
+        "re_syntax": /^!improveskill [-_a-zA-Z0-9]{20} .*$/,
+        "hr_syntax": "!improveskill character_id skill name<br/>Performs a skill improvement roll for the given character and skill."
+    },
+    "!pickskill": {
+	    "action": (args, msg) => { handle_pickskill(args, msg); },
+        "re_syntax": /^!pickskill [-_a-zA-Z0-9]{20}.*$/,
+        "hr_syntax": "!pickskill character_id prompt title<br/>Prompts the user to pick a valid skill to improve"
+    }
+}
+
+/**
+ * Process an attack message
+ */
+function handle_attack(atk, msg) {
+	if (trace) { log(`handle_attack(${atk},${msg.content})`) }
+
+	if (atk[0] == "!sheetattack") {
+		var tokelist = findObjs({
+			represents: atk[1],
+			_pageid: getSelectedPage(msg),
+			_type: "graphic",
+		});
+		if (tokelist == null || tokelist.length < 1) {
+			sendChat(msg.who, "Move the player banner to this page.");
+			return;
+		}
+		atk[1] = tokelist[0].id;
+
+	}
+	var atoke = getObj("graphic", atk[1]);
+	var charid = atoke.get("represents")
+	var toke = getObj("graphic", atk[6]);
+	if (!toke.get("represents")) { sendChat(msg.who, "No defender"); return; }
+	var defcharid = toke.get("represents");
+
+
+	if (atoke && toke) {
+		var res = `Distance: ${tokendistance(atoke, toke)[0]}<br/>Attacker Move: ${tokemove(atoke)}<br/>Defender Move: ${tokemove(toke)}`;
+	}
+	// Use regular expression to get the string which starts after the 7th space delimited word
+	weapNameArray = msg.content.match(/^([^ ]+ ){7}(.*)$/);
+	var wepname = weapNameArray[weapNameArray.length - 1];
+	log(`selected weapon: ${wepname}`);
+
+	if (wepname == "") {
+		log(msg.content);
+		return;
+	}
+	aroll = randomInteger(100);
+	var ctype = parseInt(myGet('CType', charid, 0))
+
+	log("Roll: " + aroll);
+
+	if (ctype !== 0) {
+		for (i = 0; i < (ctype * -1); i++) {
+			var broll = randomInteger(300);
+			log("cheat: " + aroll + " " + broll);
+			if (broll < aroll) {
+				aroll = broll;
+			}
+		}
+		if (ctype > 0) {
+			aroll = 101 - aroll;
+		}
+		log("Cheat Roll: " + aroll);
+
+	}
+
+	if (state.MainGameNS["cheat"] > 0) {
+		if (state.MainGameNS["cheat"] > 100) {
+			aroll = 100 - state.MainGameNS["cheat"]
+		} else {
+			aroll = state.MainGameNS["cheat"]
+			state.MainGameNS["cheat"] = 0;
+		}
+
+	}
+
+
+	state.MainGameNS["aroll"] = aroll;
+	state.MainGameNS["wepname"] = wepname;
+	state.MainGameNS["attacker"] = atk;
+
+
+	var wep = getWep(defcharid);
+
+	var atkstr = `&{template:${config.attack_template}} \
+		{{rolldesc=${atoke.get('name')} ${atk[4]} attacks ${toke.get('name')} with a ${wepname}}} \
+		{{info=${res}}} \
+		{{def=${buttonMaker("!defend dodge ?{Mod|0} WeaponName:Dodge", "Dodge", null, null, 1.2)}${buttonMaker("!defend ignore #zero WeaponName:", "Ignore", null, null, 1.2)}`;
+	for (var i = 0; i < wep.length; i++) {
+		atkstr += buttonMaker("!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:" + myGet(wep[i].get('name'), defcharid, "").replace(')', '&#41;'), myGet(wep[i].get('name'), defcharid, ""), null, null, 1.2)
+	}
+	atkstr += "}}"
+
+	sendChat(msg.who, atkstr);
+
+}
+
+
+/**
+ * Process an defend message
+ */
+
+
+function handle_defend(def, msg) {
+
+	var atk = state.MainGameNS.attacker;
+	var wepname = state.MainGameNS.wepname
+	var atoke = getObj("graphic", atk[1]);
+
+	var toke = getObj("graphic", atk[6]);
+	if (!toke.get("represents")) { sendChat(msg.who, "No defender"); return; }
+	if (!toke.get("represents").startsWith("-M")) { sendChat(msg.who, "No defender -M"); return; }
+	var charid = atoke.get("represents")
+	var defcharid = toke.get("represents")
+	var defchar = getObj("character", defcharid);
+	var allowed = defchar.get("controlledby");
+	if (!playerIsGM(msg.playerid)) {
+		if (allowed.indexOf(msg.playerid) == -1 && allowed.indexOf("all") == -1) {
+			sendChat("API", msg.who + " is not in control")
+			return;
+		}
+	}
+	///////////////////////////////////////////////////////////////////////
+
+	var aojn = findWeapon(charid, wepname)[0].get('name');
+	if (!aojn) {
+		sendChat(msg.who, "Weapon " + wepname + " not found");
+		return;
+	}
+
+	var aeml = getMeleeEML(atoke, aojn.slice(0, -4), charid, atk[5], atk[2]);
+	var app = 0;
+	var appstr = "";
+
+	if (atk[4] == "missile") {
+		var missi;
+
+		({ missi, app, appstr } = missileAttack(tokendistance(atoke, toke), wepname, tokemove(atoke), charid));
+	}
+
+	var atkml = aeml.total + app;
+	if (!atkml) {
+		sendChat("API", "attack ml problem");
+		return;
+	}
+
+	appstr = `${aeml.targstr} ${appstr}`;
+
+
+	if (atkml > config.emlmax) { atkml = config.emlmax; };
+	if (atkml < config.emlmin) { atkml = config.emlmin; };
+	var { asuc, ais } = determineSuccess(atkml, state.MainGameNS.aroll);
+	///////////////////////////////////////////////////////////////////////
+
+	var deml = { 'total': 0, 'targstr': '' };
+
+	if (def[1] == "dodge") {
+		var deml = getDodgeEML(toke, defcharid, parseInt(def[2]),
+			((atk[4] == "missile") && (wepname.indexOf("Bow") !== -1)));
+	}
+
+	if ((def[1] == "block") || (def[1] == "counterstrike")) {
+		var defwepname = msg.content.slice((msg.content.indexOf("WeaponName:") + 11));
+
+		if (defwepname.length > 3) {
+
+			var defwep = findWeapon(defcharid, defwepname);
+			var ojn = defwep[0].get('name');
+
+			if (def[1] == "counterstrike") {
+				var deml = getMeleeEML(toke, ojn.slice(0, -4), defcharid, def[2], 'mid');
+			} else {
+				var deml = getMeleeEML(toke, ojn.slice(0, -4), defcharid, def[2], 'mid', true);
+			}
+		}
+	}
+
+	droll = randomInteger(100);
+
+	var ctype = parseInt(myGet('DCType', defcharid, 0))
+
+	log("Def roll: " + droll);
+	if (ctype !== 0) {
+		for (i = 0; i < (ctype * -1); i++) {
+			var broll = randomInteger(300);
+			log("cheat: " + aroll + " " + broll);
+			if (broll < droll) {
+				droll = broll
+			}
+		}
+		if (ctype > 0) {
+			droll = 101 - droll;
+		}
+		log("Cheat Def roll: " + droll);
+	}
+
+	if (state.MainGameNS["cheat"] > 0) {
+		if (state.MainGameNS["cheat"] > 100) {
+			droll = 100 - state.MainGameNS["cheat"]
+		} else {
+			droll = state.MainGameNS["cheat"]
+			state.MainGameNS["cheat"] = 0;
+		}
+	}
+
+	if (deml.total > config.emlmax) { deml.total = config.emlmax; };
+	if (deml.total < config.emlmin) { deml.total = config.emlmin; };
+
+	log("DefML: " + deml.total)
+
+	var { dsuc, dis } = determineDefSuccess(deml.total, droll);
+
+	if (def[1] == "ignore") {
+		dis = 0;
+	}
+
+	if (atk[4] == "missile") {
+		var r = tables.attack_missile[def[1]][ais][dis];
+	} else {
+		var r = tables.attack_melee[def[1]][ais][dis];
+	}
+
+	var ares = "";
+	var dres = "";
+
+	if ((r.indexOf("A*") == 0) || (r.indexOf("B*") == 0)
+		|| (r.indexOf("M*") == 0)) {
+		ares = doHit(parseInt(r.slice(2)), aojn.slice(0, -4),
+			charid, defcharid, atk[3], missi, atk[2], atoke, toke);
+	}
+
+	if ((r.indexOf("D*") == 0) || (r.indexOf("B*") == 0)) {
+		dres = doHit(parseInt(r.slice(2)), ojn.slice(0, -4),
+			defcharid, charid, 'H', null, 'mid', toke, atoke);
+	}
+
+	if (def[1] == "dodge") {
+		var rolldesc = `${toke.get('name')} attempts dodge`
+	} else if (def[1] == "ignore") {
+		var rolldesc = `${toke.get('name')} ignores`
+		dis = 5;
+	} else {
+		var rolldesc = `${toke.get('name')} ${def[1]}s with a ${defwepname}`
+	}
+
+	//log crits
+
+	if (asuc == "CS") {
+		charLog(charid, ": Attack CS " + wepname, config.realtime, config.gametime)
+	} else if (asuc == "CF") {
+		charLog(charid, ": Attack CF " + wepname, config.realtime, config.gametime)
+	}
+	if (dsuc == "CS") {
+		charLog(defcharid, ": Defend CS " + defwepname, config.realtime, config.gametime)
+	} else if (dsuc == "CF") {
+		charLog(defcharid, ": Defend CF " + defwepname, config.realtime, config.gametime)
+	}
+
+	sendChat(msg.who, defendTemplate(config.defend_template,
+		rolldesc,
+		labelMaker(`Roll d100: ${state.MainGameNS.aroll}`, null, null, 1.3),
+		labelMaker(`Target: ${atkml}`, appstr, null, 1.3),
+		ais,
+		labelMaker(`Roll d100: ${droll}`, null, null, 1.3),
+		labelMaker(`Target: ${deml.total}`, deml.targstr, null, 1.3),
+		dis, ares, dres, r));
+}
+
+
+
+
+
+//
+//
+//
+// CODE 
+//
+//
+
 
 var started = false;
 
@@ -76,7 +514,7 @@ function getMeleeEML(toke, repeating_weapon_name, charid, mod = 0, loc = "mid", 
 		tot += x;
 		targstr = `${targstr}Encumbrance: ${x}<br>`;
 	}
-	x = -1 * hit_loc_penalty[loc]["penalty"];
+	x = -1 * tables.hit_loc_penalty[loc]["penalty"];
 	if (x !== 0) {
 		tot += x;
 		targstr = `${targstr}Location ${loc}: ${x}<br>`;
@@ -257,7 +695,7 @@ function getWeaponImpact(repeating_weapon_name, charid, aspect = "H", missi = nu
 	}
 
 	if (missi) {
-		if (myGet(`${repeating_weapon_name}NAME`, charid, "") in missile_range) {
+		if (myGet(`${repeating_weapon_name}NAME`, charid, "") in tables.missile_range) {
 			out.impact = missi[1];
 		} else {
 			out.impact = Math.round(out.impact * parseFloat(missi[1]))
@@ -366,7 +804,7 @@ function charLog(character_id, text, rtime = false, gtime = false) {
 
 function handle_pickskill(args, msg) {
 	sendChat("Skill Improvement Roll", msg.content.slice(msg.content.indexOf(args[1]) + 21) + "<br>[Pick Skill](!improveskill " + args[1]
-		+ " %{" + msg.content.slice(msg.content.indexOf(args[1]) + 21) + "|helper-SkillList})")
+		+ " %{" + msg.content.slice(msg.content.indexOf(args[1]) + 21) + "|helper-tables.skilllist})")
 }
 
 
@@ -429,11 +867,8 @@ function handle_rollatts(args, msg) {
 			mySet(attname, char.id, r);
 		}
 	});
-	var autoskills = ["CLIMBING_SB", "CONDITION_SB", "DODGE_SB", "JUMPING_SB",
-		"STEALTH_SB", "THROWING_SB", "AWARENESS_SB", "INTRIGUE_SB",
-		"ORATORY_SB", "RHETORIC_SB", "SINGING_SB", "INITIATIVE_SB",
-		"UNARMED_SB"]
-	_.each(autoskills, function(skillname) {
+
+	_.each(tables.autoskills, function(skillname) {
 		myGet(skillname, char.id, 1);
 
 	});
@@ -455,7 +890,7 @@ function gethiteff(loc, effImp) {
 	if (effImp > 16) {
 		var col = 8;
 	}
-	_.each(hit_location_table, function(row) {
+	_.each(tables.hit_location_table, function(row) {
 		if (row[3] == loc) {
 			lr = row[col];
 		}
@@ -467,7 +902,7 @@ function gethiteff(loc, effImp) {
 
 function gethitloc(roll, aim) {
 	var lr;
-	_.each(hit_location_table, function(row) {
+	_.each(tables.hit_location_table, function(row) {
 		if (row[aim] !== "-") {
 			if (parseInt(row[aim].slice(0, 2)) <= roll) {
 				lr = row[3];
@@ -488,8 +923,44 @@ function getCharByNameAtt(charname) {
 		name: "NAME",
 		_type: "attribute",
 	})[0];
-	return getObj("character", attr.get('_characterid'));
+	if (attr) {
+		return getObj("character", attr.get('_characterid'));
+	} else {
+		var tk = findObjs({
+			name: charname,
+			_type: "graphic",
+		})[0];
+		return getObj("character", tk.get('represents'));
+	}
+	
 }
+
+
+/**
+ * Show help.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_help(args, msg) {
+	if (trace) { log(`handle_help(${args},${msg.content})`) }
+	if (args.length == 1) {
+		var out = "<br/>";
+		_.each(_.keys(dispatch_table), function(obj) {
+			//out = `${out}${dispatch_table[obj]["hr_syntax"]}<br/>`;
+			out += buttonMaker(`!help ${obj}`,obj,null,null,1) ;
+		});
+		sendChat("API Commands",out,null,{noarchive:true});
+	}
+	if (args.length == 2) {
+		if (args[1] in dispatch_table) {
+			var out = dispatch_table[args[1]]["hr_syntax"].replace(/\)/g, '&#41;').replace(/\]/g, '&#93;')
+			sendChat(``,`  ${out}  `,null,{noarchive:true});
+		} else {
+			sendChat(args[1],"Not Found",null,{noarchive:true});
+		}
+	}
+}
+
+
 /**
  * Update the skill bonues of the active sheet.
  * @param {Message} msg the message representing the command, with arguments separated by spaces
@@ -552,7 +1023,7 @@ function handle_mapsend(args, msg) {
  */
 function handle_itemlist(args, msg) {
 	if (trace) { log(`handle_itemlist(${args},${msg.content})`) }
-	initializeTables(msg.playerid);
+	generate_tables(msg.playerid);
 }
 
 /**
@@ -565,8 +1036,8 @@ function handle_occupation(args, msg) {
 	if (char) {
 		log(msg.content.slice(33));
 		var occ = myGet('OCCUPATION', char.id, "Farmer");
-		if (occ in occupational_skills) {
-			_.each(occupational_skills[occ], function(skl) {
+		if (occ in tables.occupational_skills) {
+			_.each(tables.occupational_skills[occ], function(skl) {
 				sk = skl.split("/");
 				skn = findSkill(char, sk[0]).slice(0, -4);
 				log(skn);
@@ -615,6 +1086,8 @@ function handle_settime(args, msg) {
 function handle_time(args, msg) {
 	if (trace) { log(`handle_time(${args},${msg.content})`) }
 	log(getHarnTimeStr(state.MainGameNS.GameTime));
+	initializeTables(0);
+	if (trace) { log(`API table  : ${JSON.stringify(tables,null,4)}`) }
 	sendChat("Timekeeper", getHarnTimeStr(state.MainGameNS.GameTime));
 }
 
@@ -625,7 +1098,7 @@ function handle_loc(args, msg) {
 
 function handle_attack_melee_table(args, msg) {
 	if (trace) { log(`handle_attack_melee_table(${args},${msg.content})`) }
-	sendChat(msg.who, "Melee Attack Result<br/>" + attack_melee[args[1]][args[2]][args[3]] + "<br/>");
+	sendChat(msg.who, "Melee Attack Result<br/>" + tables.attack_melee[args[1]][args[2]][args[3]] + "<br/>");
 }
 
 function handle_out(args, msg) {
@@ -717,19 +1190,6 @@ function handle_xin(args, msg) {
 	}
 }
 
-/**
- * This command appears obsolete.
- * @param {Message} msg the message representing the command, with arguments separated by spaces
- */
-function handle_move(args, msg) {
-	if (trace) { log(`handle_move(${args},${msg.content})`) }
-	if (msg.selected) {
-		var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
-		//log(tokemove(g))
-	} else {
-		log("Please select token");
-	}
-}
 
 /**
  * ?
@@ -795,10 +1255,10 @@ function initializeTables(playerid) {
 		var out = "";
 		var outarmor = "";
 		var outweap = "";
-		Object.keys(prices).sort().forEach(function(k) {
-			if (k in weapons_table) {
+		Object.keys(tables.prices).sort().forEach(function(k) {
+			if (k in tables.weapons_table) {
 				outweap += "|" + k;
-			} else if (k.substr(0, k.lastIndexOf(",")) in armor_coverage) {
+			} else if (k.substr(0, k.lastIndexOf(",")) in tables.armor_coverage) {
 				outarmor += "|" + k;
 			} else {
 				out += "|" + k;
@@ -859,10 +1319,10 @@ function initializeTables(playerid) {
 			});
 		}
 	} else { if (trace) { log(`no item list`) } }
-	_.each(_.keys(default_macros), function(obj) {
-		if (trace) { log("macro: " + obj) }
+	_.each(_.keys(tables.default_macros), function(obj) {
+		//if (trace) { log("macro: " + obj) }
 
-		var out = default_macros[obj];
+		var out = tables.default_macros[obj];
 		var mac = findObjs({
 			type: 'macro',
 			playerid: gmId,
@@ -884,19 +1344,19 @@ function initializeTables(playerid) {
 
 	if (trace) log("Creating default character macros");
 	chars.forEach(function(c) {
-		if (trace) log(`Character ${c.get("name")}`);
+		//if (trace) log(`Character ${c.get("name")}`);
 		setWeaponsList(c.id);
-		setSkillList(c.id);
-		_.each(_.keys(default_abilities), function(obj) {
-			if (trace) log(`Macro ${obj}`)
+		setSkilllist(c.id);
+		_.each(_.keys(tables.default_abilities), function(obj) {
+			//if (trace) log(`Macro ${obj}`)
 			var mac = findObjs({
 				type: 'ability',
 				_characterid: c.id,
 				name: obj
 			})[0];
 			if (!mac) {
-				if (trace) log('registering');
-				var out = default_abilities[obj];
+				//if (trace) log('registering');
+				var out = tables.default_abilities[obj];
 				createObj('ability', {
 					name: obj,
 					action: out,
@@ -930,7 +1390,7 @@ function getWep(charid) {
 }
 
 function setWeaponsList(charid) {
-	if (trace) log("Macro helper-Weapons");
+	//if (trace) log("Macro helper-Weapons");
 	var out2 = "";
 	getWep(charid).forEach(function(w) {
 		out2 += "|" + myGet(w.get('name'), charid, "");
@@ -957,8 +1417,8 @@ function setWeaponsList(charid) {
 
 }
 
-function setSkillList(charid) {
-	if (trace) log("Macro helper-Skilllist");
+function setSkilllist(charid) {
+	//if (trace) log("Macro helper-Skilllist");
 	var out = "";
 	var sl = skillList(charid);
 
@@ -1009,15 +1469,15 @@ function addinjury(loc, injstr, charid) {
 
 
 function getrange(weapname, dist) {
-	if (!(weapname in missile_range)) { weapname = "Melee"; }
+	if (!(weapname in tables.missile_range)) { weapname = "Melee"; }
 	for (var i = 4; i >= 0; i--) {
-		if ((missile_range[weapname][i][0] * 5) > dist) {
+		if ((tables.missile_range[weapname][i][0] * 5) > dist) {
 			if (i == 0) {
 				var penalty = config.missle_close_range_mod;
 			} else {
 				var penalty = (i - 1) * 20;
 			}
-			var impact = missile_range[weapname][i][1];
+			var impact = tables.missile_range[weapname][i][1];
 		}
 	}
 	return [penalty, impact]
@@ -1081,20 +1541,20 @@ function turnPush(obj) {
 
 function addWeapon(charid, weapon_name) {
 	if (trace) { log("addWeapon(" + charid + ", " + weapon_name + ")") }
-	if (weapon_name in weapons_table) {
+	if (weapon_name in tables.weapons_table) {
 
 		var mid = makeid();
 		mySet("repeating_weapon_" + mid + "_WEAPON_NAME", charid, weapon_name);
-		if (weapon_name in prices) { mySet("repeating_weapon_" + mid + "_WEAPON_WGT", charid, prices[weapon_name]["weight"]); } else {
+		if (weapon_name in tables.prices) { mySet("repeating_weapon_" + mid + "_WEAPON_WGT", charid, tables.prices[weapon_name]["weight"]); } else {
 			mySet("repeating_weapon_" + mid + "_WEAPON_WGT", charid, 0);
 		}
-		mySet("repeating_weapon_" + mid + "_WEAPON_WQ", charid, weapons_table[weapon_name][0]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_ATK", charid, weapons_table[weapon_name][1]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_DEF", charid, weapons_table[weapon_name][2]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_HM", charid, weapons_table[weapon_name][3]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_B", charid, weapons_table[weapon_name][4]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_E", charid, weapons_table[weapon_name][5]);
-		mySet("repeating_weapon_" + mid + "_WEAPON_P", charid, weapons_table[weapon_name][6]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_WQ", charid, tables.weapons_table[weapon_name][0]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_ATK", charid, tables.weapons_table[weapon_name][1]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_DEF", charid, tables.weapons_table[weapon_name][2]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_HM", charid, tables.weapons_table[weapon_name][3]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_B", charid, tables.weapons_table[weapon_name][4]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_E", charid, tables.weapons_table[weapon_name][5]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_P", charid, tables.weapons_table[weapon_name][6]);
 
 		if (weapon_name.indexOf("Unarmed") == 0) {
 			mySet("repeating_weapon_" + mid + "_WEAPON_ML", charid, myGet("UNARMED_ML", charid, 0));
@@ -1125,9 +1585,9 @@ function addWeapon(charid, weapon_name) {
 	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WORN", charid, "on");
 
 
-	if (weapon_name in prices) {
-		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, prices[weapon_name]["weight"]);
-		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, prices[weapon_name]["price"]);
+	if (weapon_name in tables.prices) {
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, tables.prices[weapon_name]["weight"]);
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, tables.prices[weapon_name]["price"]);
 	} else {
 		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, 0);
 		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, 0)
@@ -1137,12 +1597,12 @@ function addWeapon(charid, weapon_name) {
 
 function addItem(charid, item) {
 	if (trace) { log("addItem(" + charid + ", " + item + ")") }
-	if (item in weapons_table) {
+	if (item in tables.weapons_table) {
 		addWeapon(charid, item);
 	} else {
 		var mid = makeid();
 		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_NAME", charid, item);
-		if (item.substr(0, item.lastIndexOf(",")) in armor_coverage) {
+		if (item.substr(0, item.lastIndexOf(",")) in tables.armor_coverage) {
 			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_TYPE", charid, "Armor");
 		} else {
 			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_TYPE", charid, "Item");
@@ -1155,9 +1615,9 @@ function addItem(charid, item) {
 		log(item)
 
 
-		if (item in prices) {
-			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, prices[item]["weight"]);
-			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, prices[item]["price"]);
+		if (item in tables.prices) {
+			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, tables.prices[item]["weight"]);
+			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, tables.prices[item]["price"]);
 		} else {
 			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, 0);
 			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, 0)
@@ -1176,9 +1636,9 @@ function addArmor(charid, item) {
 	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WORN", charid, "on");
 
 
-	if (item in prices) {
-		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, prices[item]["weight"]);
-		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, prices[item]["price"]);
+	if (item in tables.prices) {
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, tables.prices[item]["weight"]);
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, tables.prices[item]["price"]);
 	} else {
 		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, 0);
 		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, 0)
@@ -1198,7 +1658,7 @@ function calcArmor(charid) {
 
 
 
-	var newa = coverage2loc
+	var newa = tables.coverage2loc
 	_.each(newa, function(ob1) {
 		ob1["COV"] = "";
 		ob1["AQ"] = 0;
@@ -1217,12 +1677,12 @@ function calcArmor(charid) {
 		if (myGet(ojn.slice(0, -4) + "TYPE", charid, 0) == "Armor") {
 			if (myGet(ojn.slice(0, -4) + "WORN", charid, 0) == "on") {
 				ojv = ob1.get('current');
-				if (ojv.slice(ojv.lastIndexOf(",") + 2) in armor_prot) {
+				if (ojv.slice(ojv.lastIndexOf(",") + 2) in tables.armor_prot) {
 
-					var art = armor_prot[ojv.slice(ojv.lastIndexOf(",") + 2)];
+					var art = tables.armor_prot[ojv.slice(ojv.lastIndexOf(",") + 2)];
 
-					if (ojv.slice(0, ojv.lastIndexOf(",")) in armor_coverage) {
-						var arl = armor_coverage[ojv.slice(0, ojv.lastIndexOf(","))]["coverage"];
+					if (ojv.slice(0, ojv.lastIndexOf(",")) in tables.armor_coverage) {
+						var arl = tables.armor_coverage[ojv.slice(0, ojv.lastIndexOf(","))]["coverage"];
 						for (var i = 0; i < arl.length; i++) {
 							newa[arl[i]]["COV"] += " " + art[0];
 							aq = parseInt(myGet(ojn.slice(0, -4) + "Q", charid, 0))
@@ -1262,7 +1722,7 @@ function getHarnTimeStr(timef) {
 	var hour = Math.floor((timef - (year * 31104000) - (day * 86400)) / 3600);
 	var minute = Math.floor((timef - (year * 31104000) - (day * 86400) - (hour * 3600)) / 60);
 	var sec = Math.floor(timef - (year * 31104000) - (day * 86400) - (hour * 3600) - (minute * 60));
-	return (year + 720).toString() + '-' + month.toString() + '(' + months[(month - 1)] + ')-' + mday.toString() + ' ' + opad(hour.toString()) + ':' + opad(minute.toString()) + ':' + opad(sec.toString());
+	return (year + 720).toString() + '-' + month.toString() + '(' + tables.months[(month - 1)] + ')-' + mday.toString() + ' ' + opad(hour.toString()) + ':' + opad(minute.toString()) + ':' + opad(sec.toString());
 
 }
 function setHarnTime(args) {
@@ -1419,7 +1879,7 @@ function skillList(charid) {
 
 	var slist = [];
 
-	slist.push.apply(slist, autoskillsnames);
+	slist.push.apply(slist, tables.autoskillsnames);
 
 	var atts = findObjs({
 		_characterid: charid,
@@ -1432,7 +1892,7 @@ function skillList(charid) {
 		ojv = ob1.get('current')
 
 		if ((ojv) && (ojn.indexOf("SKILL_NAME") !== -1)) {
-			_.each(_.keys(skilllist), function(obj) {
+			_.each(_.keys(tables.skilllist), function(obj) {
 				if (ojv.indexOf(obj) !== -1) {
 					slist.push(ojv);
 				}
@@ -1448,7 +1908,7 @@ function skillList(charid) {
 function findSkill(char, skillname) {
 
 	var nameout = "False"
-	if (skillname.toUpperCase() in autoskills) {
+	if (skillname.toUpperCase() in tables.autoskills) {
 		nameout = skillname.toUpperCase() + "_NAME"
 	} else {
 		var atts = findObjs({
@@ -1463,7 +1923,7 @@ function findSkill(char, skillname) {
 			ojv = ob1.get('current')
 
 			if (ojn.indexOf("SKILL_NAME") !== -1) {
-				_.each(_.keys(skilllist), function(obj) {
+				_.each(_.keys(tables.skilllist), function(obj) {
 					if ((ojv.indexOf(obj) !== -1) && (skillname.indexOf(obj) !== -1)) {
 						nameout = ojn;
 					}
@@ -1473,36 +1933,36 @@ function findSkill(char, skillname) {
 	}
 	if (nameout == "False") {
 
-		_.each(_.keys(skilllist), function(obj) {
+		_.each(_.keys(tables.skilllist), function(obj) {
 			if (skillname.indexOf(obj) !== -1) {
 				var mid = makeid();
 
-				if (skilllist[obj]["type"] == "PHYSICAL") {
+				if (tables.skilllist[obj]["type"] == "PHYSICAL") {
 					mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_NAME", char.id, obj);
 					mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_SB", char.id, 0);
 					mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_ML", char.id, 0);
 					nameout = "repeating_physicalskill_" + mid + "_PHYSICALSKILL_NAME";
-				} else if (skilllist[obj]["type"] == "LORE") {
+				} else if (tables.skilllist[obj]["type"] == "LORE") {
 					mySet("repeating_loreskill_" + mid + "_LORESKILL_NAME", char.id, obj);
 					mySet("repeating_loreskill_" + mid + "_LORESKILL_SB", char.id, 0);
 					mySet("repeating_loreskill_" + mid + "_LORESKILL_ML", char.id, 0);
 					nameout = "repeating_loreskill_" + mid + "_LORESKILL_NAME";
-				} else if (skilllist[obj]["type"] == "MAGIC") {
+				} else if (tables.skilllist[obj]["type"] == "MAGIC") {
 					mySet("repeating_magicskill_" + mid + "_MAGICSKILL_NAME", char.id, obj);
 					mySet("repeating_magicskill_" + mid + "_MAGICSKILL_SB", char.id, 0);
 					mySet("repeating_magicskill_" + mid + "_MAGICSKILL_ML", char.id, 0);
 					nameout = "repeating_magicskill_" + mid + "_MAGICSKILL_NAME";
-				} else if (skilllist[obj]["type"] == "COMBAT") {
+				} else if (tables.skilllist[obj]["type"] == "COMBAT") {
 					mySet("repeating_combatskill_" + mid + "_COMBATSKILL_NAME", char.id, obj);
 					mySet("repeating_combatskill_" + mid + "_COMBATSKILL_SB", char.id, 0);
 					mySet("repeating_combatskill_" + mid + "_COMBATSKILL_ML", char.id, 0);
 					nameout = "repeating_combatskill_" + mid + "_COMBATSKILL_NAME";
-				} else if (skilllist[obj]["type"] == "COMMUNICATION") {
+				} else if (tables.skilllist[obj]["type"] == "COMMUNICATION") {
 					mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_NAME", char.id, obj);
 					mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_SB", char.id, 0);
 					mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_ML", char.id, 0);
 					nameout = "repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_NAME";
-				} else if (skilllist[obj]["type"] == "RITUAL") {
+				} else if (tables.skilllist[obj]["type"] == "RITUAL") {
 					mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_NAME", char.id, obj);
 					mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_SB", char.id, 0);
 					mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_ML", char.id, 0);
@@ -1526,7 +1986,7 @@ function calcSB(char, msg) {
 		myGet(attname, char.id, r);
 	});
 
-	_.each(_.keys(autoskills), function(skillname) {
+	_.each(_.keys(tables.autoskills), function(skillname) {
 
 		myGet(skillname + "_SB", char.id, 1);
 	});
@@ -1547,18 +2007,18 @@ function calcSB(char, msg) {
 
 		if (ojn.indexOf("SKILL_NAME") !== -1) {
 
-			_.each(_.keys(skilllist), function(obj) {
+			_.each(_.keys(tables["skilllist"]), function(obj) {
 				if (ojv.indexOf(obj) !== -1) {
-					var sb = Math.round(((Number(myGet(skilllist[obj]["sba"][0], char.id)) + Number(myGet(skilllist[obj]["sba"][1], char.id)) + Number(myGet(skilllist[obj]["sba"][2], char.id))) / 3));
+					var sb = Math.round(((Number(myGet(tables.skilllist[obj]["sba"][0], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][1], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][2], char.id))) / 3));
 					var sb1 = 0;
 					var sb2 = 0;
 					if (sss.length == 2) {
 
-						if (sss[0].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb1 = Number(skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb1 = Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
 						}
-						if (sss[1].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb2 = Number(skilllist[obj]["ssm"][sss[1].slice(0, 3)])
+						if (sss[1].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb2 = Number(tables.skilllist[obj]["ssm"][sss[1].slice(0, 3)])
 						}
 						if (sb1 > sb2) {
 							sb += sb1;
@@ -1567,8 +2027,8 @@ function calcSB(char, msg) {
 						}
 
 					} else {
-						if (sss[0].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb = sb + Number(skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb = sb + Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
 						}
 					}
 
@@ -1582,11 +2042,11 @@ function calcSB(char, msg) {
 					var ml = parseInt(myGet(ojn.slice(0, -4) + "ML", char.id, 0));
 
 					if ((!ml) || (ml == 0)) {
-						if (skilllist[obj]["oml"]) {
-							mySet(ojn.slice(0, -4) + "ML", char.id, (sb * parseInt(skilllist[obj]["oml"])))
+						if (tables.skilllist[obj]["oml"]) {
+							mySet(ojn.slice(0, -4) + "ML", char.id, (sb * parseInt(tables.skilllist[obj]["oml"])))
 						}
 					} else if ((parseInt(ml) > 0) && (parseInt(ml) < sb)) {
-						if (skilllist[obj]["oml"]) {
+						if (tables.skilllist[obj]["oml"]) {
 							mySet(ojn.slice(0, -4) + "ML", char.id, (sb * parseInt(ml)))
 						}
 					}
@@ -1595,18 +2055,18 @@ function calcSB(char, msg) {
 		}
 		if (ojn.indexOf("_SB") !== -1) {
 
-			_.each(_.keys(skilllist), function(obj) {
+			_.each(_.keys(tables.skilllist), function(obj) {
 				if (ojn.indexOf(obj) !== -1) {
-					var sb = Math.round(((Number(myGet(skilllist[obj]["sba"][0], char.id)) + Number(myGet(skilllist[obj]["sba"][1], char.id)) + Number(myGet(skilllist[obj]["sba"][2], char.id))) / 3));
+					var sb = Math.round(((Number(myGet(tables.skilllist[obj]["sba"][0], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][1], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][2], char.id))) / 3));
 					var sb1 = 0;
 					var sb2 = 0;
 
 					if (sss.length == 2) {
-						if (sss[0].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb1 = Number(skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb1 = Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
 						}
-						if (sss[1].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb2 = Number(skilllist[obj]["ssm"][sss[1].slice(0, 3)])
+						if (sss[1].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb2 = Number(tables.skilllist[obj]["ssm"][sss[1].slice(0, 3)])
 						}
 						if (sb1 > sb2) {
 							sb += sb1
@@ -1614,8 +2074,8 @@ function calcSB(char, msg) {
 							sb += sb2
 						}
 					} else {
-						if (sss[0].slice(0, 3) in skilllist[obj]["ssm"]) {
-							sb = sb + Number(skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb = sb + Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
 						}
 					}
 					if (msg.content.indexOf("?") !== -1) {
@@ -1627,11 +2087,11 @@ function calcSB(char, msg) {
 					var ml = parseInt(myGet(ojn.slice(0, -2) + "ML", char.id, 0));
 
 					if ((!ml) || (ml == 0)) {
-						if (skilllist[obj]["oml"]) {
-							mySet(ojn.slice(0, -2) + "ML", char.id, (sb * parseInt(skilllist[obj]["oml"])))
+						if (tables.skilllist[obj]["oml"]) {
+							mySet(ojn.slice(0, -2) + "ML", char.id, (sb * parseInt(tables.skilllist[obj]["oml"])))
 						}
 					} else if ((parseInt(ml) > 0) && (parseInt(ml) < sb)) {
-						if (skilllist[obj]["oml"]) {
+						if (tables.skilllist[obj]["oml"]) {
 							mySet(ojn.slice(0, -2) + "ML", char.id, (sb * parseInt(ml)))
 						}
 					}
@@ -1676,50 +2136,17 @@ function invin(charid) {
 	if (atts[0]) {
 		log("=================================")
 		ojv = atts[0].get('current');
-		log(atts[0]);
-		if (ojv.length > 100) {
+		if (ojv.length > 3) {
 			ojv = ojv.replace(/\t/g, "")
-			for (i = 0; i < 10; i++) {
+			for (i = 0; i < 5; i++) {
 				ojv = ojv.replace(/  /g, " ")
 			}
 
 			ojv = ojv.replace(/\n /g, "\n");
-			ojv = ojv.replace(/\nOffspring:/g, "");
-			ojv = ojv.replace(/\nOrphan:/g, "");
 			lns = ojv.split("\n");
 
-
-
-			var tv = lns[1].split(" ");
-			var xi = 0;
-
-			if (lns[xi].slice(0, 15) == "Clothing/Armor:") {
-				lns[xi] = lns[xi].slice(16);
-				while ((lns[xi].slice(0, 8) !== "Weapons:") && (lns[xi].slice(0, 6) !== "Notes:")) {
-					if (lns[xi].length > 2) { addArmor(charid, lns[xi]); }
-					xi++;
-
-
-				}
-
-			}
-
-			if (lns[xi].slice(0, 8) == "Weapons:") {
-				lns[xi] = lns[xi].slice(9);
-				while ((lns[xi].slice(0, 10) !== "Equipment:") && (lns[xi].slice(0, 6) !== "Notes:")) {
-					if (lns[xi].length > 2) { addWeapon(charid, lns[xi]); }
-					xi++;
-				}
-
-
-			}
-
-			if (lns[xi].slice(0, 10) == "Equipment:") {
-				lns[xi] = lns[xi].slice(11);
-				while (lns[xi].slice(0, 6) !== "Notes:") {
-					if (lns[xi].length > 2) { addItem(charid, lns[xi]); }
-					xi++;
-				}
+			for(xi=0;xi<lns.length;xi++) {
+				if (lns[xi].length > 2) { addItem(charid, lns[xi]); }
 			}
 		}
 	}
@@ -1821,7 +2248,7 @@ function xin(charid) {
 				while (lns[xi] !== "Communications Skills:") {
 					tv = lns[xi].replace(/ /g, "").split("/");
 					if (tv.length > 1) {
-						if (tv[0] in autoskills) {
+						if (tv[0] in tables.autoskills) {
 							tv2 = tv[1].split("(SB:");
 							tv3 = tv2[1].split(")OML:");
 							mySet(tv[0] + "_SB", charid, tv3[0])
@@ -1846,7 +2273,7 @@ function xin(charid) {
 					var stv = lns[xi].replace(/ /g, "")
 					var tv = stv.split("/");
 					if (tv.length > 1) {
-						if (tv[0] in autoskills) {
+						if (tv[0] in tables.autoskills) {
 							var tv2 = tv[1].split("(SB:");
 							var tv3 = tv2[1].split(")OML:");
 							mySet(tv[0] + "_SB", charid, tv3[0])
@@ -1868,7 +2295,7 @@ function xin(charid) {
 				while (lns[xi] !== "Crafts & Lore Skills:") {
 					tv = lns[xi].replace(/ /g, "").split("/");
 					if (tv.length > 1) {
-						if (tv[0] in autoskills) {
+						if (tv[0] in tables.autoskills) {
 							tv2 = tv[1].split("(SB:");
 							tv3 = tv2[1].split(")OML:");
 							mySet(tv[0] + "_SB", charid, tv3[0])
@@ -2138,48 +2565,48 @@ function chatParser(msg) {
 
 	// check for and log crits
 	if (msg.content.startsWith(" {{character_name=")) {
-		var d = new Date();
-		var n = d.toLocaleString();
-		if (msg.content.includes("rolldesc=rolls ")) {
-			if (msg.inlinerolls[3].results.total % 5 == 0) {
-				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name") + 15), msg.content.indexOf("}} ")));
-
-				if (msg.inlinerolls[1].results.total >= msg.inlinerolls[3].results.total) {
-					charLog(char.id, ": CS "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
-				} else {
-					charLog(char.id, ": CF "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
+		var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name") + 15), msg.content.indexOf("}} ")));
+		if (char) {
+			var d = new Date();
+			var n = d.toLocaleString();
+			if (msg.content.includes("rolldesc=rolls ")) {
+				if (msg.inlinerolls[3].results.total % 5 == 0) {
+	
+					if (msg.inlinerolls[1].results.total >= msg.inlinerolls[3].results.total) {
+						charLog(char.id, ": CS "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
+					} else {
+						charLog(char.id, ": CF "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
+					}
 				}
-			}
-		} else if (msg.content.includes("rolldesc=performs ")) {
-			if (msg.inlinerolls[7].results.total % 5 == 0) {
-				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name") + 15), msg.content.indexOf("}} ")));
-
-				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
-					charLog(char.id, ": CS "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
-				} else {
-					charLog(char.id, ": CF "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
+			} else if (msg.content.includes("rolldesc=performs ")) {
+				if (msg.inlinerolls[7].results.total % 5 == 0) {
+	
+					if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+						charLog(char.id, ": CS "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
+					} else {
+						charLog(char.id, ": CF "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
+					}
 				}
-			}
-		} else if (msg.content.includes("rolldesc=casts ")) {
-			if (msg.inlinerolls[7].results.total % 5 == 0) {
-				var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name") + 15), msg.content.indexOf("}} ")));
-
-				if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
-					charLog(char.id, ": CS "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
-				} else {
-					charLog(char.id, ": CF "
-						+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
-							msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
+			} else if (msg.content.includes("rolldesc=casts ")) {
+				if (msg.inlinerolls[7].results.total % 5 == 0) {
+	
+					if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+						charLog(char.id, ": CS "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
+					} else {
+						charLog(char.id, ": CF "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
+					}
 				}
 			}
 		}
@@ -2192,7 +2619,7 @@ function doHit(base, atkrepwep, acharid, dcharid, aspect, missi, loc, atktoke, d
 	var atk_impact = getImpact(base, atkrepwep, acharid, aspect, missi);
 
 
-	var hitloc = gethitloc(randomInteger(100), hit_loc_penalty[loc]["index"]);
+	var hitloc = gethitloc(randomInteger(100), tables.hit_loc_penalty[loc]["index"]);
 
 	var avatloc = myGet(hitloc + "_" + atk_impact.aspect, dcharid, 0);
 

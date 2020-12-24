@@ -27,7 +27,7 @@ config=config.js
 dir="./"
 CURL_ARGS="-s"
 credfile="campaign.txt"
-while getopts ":l:c:s:u:p:f:d:vh" opt; do
+while getopts ":l:c:s:u:p:f:e:d:vh" opt; do
   case ${opt} in
     d ) # what directory the files are in
         dir=$OPTARG
@@ -35,6 +35,15 @@ while getopts ":l:c:s:u:p:f:d:vh" opt; do
                 echo "Looking in $dir for all .js files"
         else
                 echo "Unable to locate $dir. Try specifying the full path."
+                exit 1
+        fi
+        ;;
+    e ) # what directory the html are in
+        edir=$OPTARG
+        if [ -d $edir ]; then 
+                echo "Looking in $edir for html file"
+        else
+                echo "Unable to locate $edir. Try specifying the full path."
                 exit 1
         fi
         ;;
@@ -95,7 +104,9 @@ if [ -z $password ]; then
   echo "Please enter password:"
   read password
 fi
-
+if [ -z $edir ]; then
+  edir=$dir
+fi
 # delete the cookies from last time
 rm roll20*.cookies 2>/dev/null
 
@@ -111,7 +122,7 @@ echo "Publishing..."
 for i in ${config} ${dir}*[^config].js; do
         echo "$i"
 done
-echo ${dir}roll20harn.html
+echo ${edir}roll20harn.html
 echo ${dir}roll20harn.css
 cat ${config} >> $harnJS
 # combine all the remaining JS files into a single JS file
@@ -155,7 +166,7 @@ curl \
         -d "bgimage=${bgimage:-magic}" \
         -d "allowcharacterimport=${allowcharacterimport:-false}" \
         --data-urlencode 'charsheettype=custom' \
-        --data-urlencode customcharsheet_layout@${dir}roll20harn.html \
+        --data-urlencode customcharsheet_layout@${edir}roll20harn.html \
         --data-urlencode customcharsheet_style@${dir}roll20harn.css \
         -o roll20_html.respose \
         https://app.roll20.net/campaigns/savesettings/${campaign} \
