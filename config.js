@@ -13,6 +13,7 @@ var config = {
     gametime: true, //character sheet log shows game time 
     attack_template: "harn-fancy", // sets the roll template (harn-fancy or harnroll) for the attack function
     defend_template: "harn-defend", // sets the roll template (harn-defend or harnroll) for the defend function
+    shock_marker: "sleepy",
     //
     // House rules - default should always be canon rules
     //

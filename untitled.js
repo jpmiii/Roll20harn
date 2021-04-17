@@ -847,7 +847,18 @@ function rollshock(charid, token, unipenalty) {
 	}
 	end = myGet("COMBAT_ENDURANCE", charid, 0);
 	if (shockroll > end) {
-		token.set("status_sleepy");
+	    sm = token.get("statusmarkers")
+	    log(sm)
+	    if (sm.length > 3) {
+	        if (!sm.includes(config['shock_marker'])) {
+	            sm =  sm + "," + config['shock_marker'];
+	            token.set("statusmarkers", sm)
+	        }
+	    } else {
+	        sm = config['shock_marker'];
+	        token.set("statusmarkers", sm)
+	    }
+		//token.set("status_sleepy");
 		return "<br/>Shock Roll: " + labelMaker(shockroll, shockstr) + "<br/><h4>FAIL</h4>";
 	} else {
 		return "<br/>Shock Roll: " + labelMaker(shockroll, shockstr) + "<br/>Pass";
@@ -1521,8 +1532,8 @@ function turnPush(obj) {
 		var pp = (parseInt(myGet('UNIVERSAL_PENALTY', obj.get("represents"), 0)) + parseInt(myGet('ENCUMBRANCE', obj.get("represents"), 0))) * 5;
 	}
 	obj.set('lastmove', obj.get('left') + ',' + obj.get('top'))
-
-	if (obj.get('status_sleepy')) {
+    sm = obj.get("statusmarkers");
+	if (sm.includes(config['shock_marker'])) {
 		var initml = 0;
 	} else {
 		if (myGet("IS_MOUNTED", obj.get("represents"), 0) == "on") {
