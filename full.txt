@@ -1,5 +1,5 @@
 //
-//  03/15/2021 13:38:31
+//  04/19/2021 13:38:46
 //
 //
 // CONFIGURATION
@@ -7,7 +7,7 @@
 //
 var trace = true; // trace entry and exit for debugging
 var config = {
-    serial: 1, // Increase this by one every time you add/rename/delete an attribute.
+    serial: 2, // Increase this by one every time you add/rename/delete an attribute.
     generate_item_list: true, //generate the item, weapon, and armor lists for the inventory tab on startup
     skill_list_on: true, //regenerate skill list ability on change to skill tab and skill name change
     weapon_list_on: true, //regenerate weapon list ability on change to weapontab and weapon name change
@@ -15,6 +15,7 @@ var config = {
     gametime: true, //character sheet log shows game time 
     attack_template: "harn-fancy", // sets the roll template (harn-fancy or harnroll) for the attack function
     defend_template: "harn-defend", // sets the roll template (harn-defend or harnroll) for the defend function
+    shock_marker: "sleepy",
     //
     // House rules - default should always be canon rules
     //
@@ -25,7 +26,6 @@ var config = {
     additional_target_locations: false, //add additional target locations e.g. neck for faster combat resolution
 
 };
-
 
 
 
@@ -2668,13 +2668,13 @@ var dispatch_table = {
     "!invin": {
         "action": (args, msg) => { handle_invin(args, msg); },
         "re_syntax": /^!invin [-_a-zA-Z0-9]{20}$/,
-        "hr_syntax": "!invin character_id<br/>Inputs character inventory in HÃ¢rnMaster Character Utility text format from character note."
+        "hr_syntax": "!invin character_id<br/>Inputs character inventory in HârnMaster Character Utility text format from character note."
 
     },
     "!xin": {
         "action": (args, msg) => { handle_xin(args, msg); },
         "re_syntax": /^!xin( [-_a-zA-Z0-9]{20})?$/,
-        "hr_syntax": "!xin [character_id]<br/>Imports a character in HÃ¢rnMaster Character Utility text format from the character note."
+        "hr_syntax": "!xin [character_id]<br/>Imports a character in HârnMaster Character Utility text format from the character note."
 
     },
     "!ca": {
@@ -3436,7 +3436,18 @@ function rollshock(charid, token, unipenalty) {
 	}
 	end = myGet("COMBAT_ENDURANCE", charid, 0);
 	if (shockroll > end) {
-		token.set("status_sleepy");
+	    sm = token.get("statusmarkers")
+	    log(sm)
+	    if (sm.length > 3) {
+	        if (!sm.includes(config['shock_marker'])) {
+	            sm =  sm + "," + config['shock_marker'];
+	            token.set("statusmarkers", sm)
+	        }
+	    } else {
+	        sm = config['shock_marker'];
+	        token.set("statusmarkers", sm)
+	    }
+		//token.set("status_sleepy");
 		return "<br/>Shock Roll: " + labelMaker(shockroll, shockstr) + "<br/><h4>FAIL</h4>";
 	} else {
 		return "<br/>Shock Roll: " + labelMaker(shockroll, shockstr) + "<br/>Pass";
@@ -3759,7 +3770,7 @@ function handle_ca(args, msg) {
 }
 
 /**
- * Import a character generated with HÃ¢rnMaster Character Utility from https://www.lythia.com/game_aides/harnchar/
+ * Import a character generated with HârnMaster Character Utility from https://www.lythia.com/game_aides/harnchar/
  * @param {Message} msg the message representing the command, with arguments separated by spaces
  */
 function handle_xin(args, msg) {
@@ -4110,8 +4121,8 @@ function turnPush(obj) {
 		var pp = (parseInt(myGet('UNIVERSAL_PENALTY', obj.get("represents"), 0)) + parseInt(myGet('ENCUMBRANCE', obj.get("represents"), 0))) * 5;
 	}
 	obj.set('lastmove', obj.get('left') + ',' + obj.get('top'))
-
-	if (obj.get('status_sleepy')) {
+    sm = obj.get("statusmarkers");
+	if (sm.includes(config['shock_marker'])) {
 		var initml = 0;
 	} else {
 		if (myGet("IS_MOUNTED", obj.get("represents"), 0) == "on") {
