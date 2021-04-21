@@ -9,14 +9,14 @@ Harnmaster roll20 API scripts and custom character sheet
 1. From your game landing page (the one with the "launch game" button) 
    go to Settings->Game Settings
 1. For Character Sheet Template, select Custom
-1. copy & paste the file ``roll20harn.html`` into the HTML Layout tab
+1. Copy & paste the file ``roll20harn.html`` into the HTML Layout tab
 1. Press Save changes
-1. copy & paste the file ``roll20harn.css`` into the CSS Styling tab.
+1. Copy & paste the file ``roll20harn.css`` into the CSS Styling tab.
 1. Press Save changes
 1. From your game landing page (the one with the "launch game" button) 
    go to Settings->API Scripts
 1. Create a new script. It doesn't matter what it is named. 
-1. copy & paste the contents of all the .js files into your new script tab.
+1. Copy & paste the contents of all the .js files into your new script tab. **Alternatively** copy the content from `full.txt` to the new script tab.
 1. Save it.
 
 ### Installing from publish.ps1 script [Windows]
