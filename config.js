@@ -5,7 +5,7 @@
 //
 var trace = true; // trace entry and exit for debugging
 var config = {
-    serial: 2, // Increase this by one every time you add/rename/delete an attribute.
+    serial: 1, // Increase this by one every time you add/rename/delete an attribute.
     generate_item_list: true, //generate the item, weapon, and armor lists for the inventory tab on startup
     skill_list_on: true, //regenerate skill list ability on change to skill tab and skill name change
     weapon_list_on: true, //regenerate weapon list ability on change to weapontab and weapon name change
