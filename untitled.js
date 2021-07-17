@@ -1541,6 +1541,7 @@ function turnPush(obj) {
 		} else {
 			var initml = parseInt(myGet("INITIATIVE_ML", obj.get("represents"), 0)) - pp + initRoll();
 		}
+    initml = Math.max(initml, config.emlmin)
 	}
 
 	turnorder.push({
