@@ -810,7 +810,7 @@ function handle_pickskill(args, msg) {
 
 function handle_improveskill(args, msg) {
 	char = getObj("character", args[1]);
-	skill_att_name = findSkill(char, args[2]);
+	skill_att_name = findSkill(char, msg.content.slice(34));
 	var d = new Date();
 	var n = d.toLocaleString();
 	var ml = parseInt(myGet(skill_att_name.slice(0, -4) + "ML", char.id, 0));

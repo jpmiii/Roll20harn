@@ -138,7 +138,7 @@ function generate_tables(pid=0) {
 	})[0];
 	if (scdata) {
 		scdata.get("notes", function(scda) {
-			tables = JSON.parse(scda.substring(5, scda.indexOf('</pre>')));
+			tables = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
 		    if (trace) { log(`API table loaded`) }
 		});
 

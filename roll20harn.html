@@ -426,7 +426,7 @@
     </div>
 </div>
 <hr class="sheet-hr">
-        
+
         <button type='roll' value='!calcsb @{character_id}' name='roll_calcSB'>Calculate SB</button>
 
         <button type='roll' value='!pickskill @{character_id} @{character_name}' name='pickskill'>Skill Improvement Roll</button>
@@ -957,9 +957,9 @@ props:
                 <td class="sheet-success">Marginal Success.</td>
             </tr>
             {{/rollTotal() rollsuccess 2}}
-            
-    
-    
+
+
+
             {{#rollTotal() rollsuccess 0}}
             <tr>
                 <td class="sheet-crit-failure">Critical Failure!!</td>
@@ -970,7 +970,7 @@ props:
                 <td class="sheet-failure">Marginal Failure.</td>
             </tr>
             {{/rollTotal() rollsuccess 1}}
-            
+
         {{/rollsuccess}}
         {{#drollresult}}<tr><td>Defender<br>{{#drolltarget}}{{drolltarget}}{{/drolltarget}}{{drollresult}}</td></tr>{{/drollresult}}
 
@@ -986,9 +986,9 @@ props:
                 <td class="sheet-success">Marginal Success.</td>
             </tr>
             {{/rollTotal() drollsuccess 2}}
-            
-    
-    
+
+
+
             {{#rollTotal() drollsuccess 0}}
             <tr>
                 <td class="sheet-crit-failure">Critical Failure!!</td>
@@ -999,7 +999,7 @@ props:
                 <td class="sheet-failure">Marginal Failure.</td>
             </tr>
             {{/rollTotal() drollsuccess 1}}
-            
+
         {{/drollsuccess}}
         {{#result}}
         <tr><th><span class="tcat">Result: </span>{{result}}</th></tr>
@@ -1019,7 +1019,7 @@ props:
 
 <rolltemplate class="sheet-rolltemplate-harn-defend">
     <table>
-        
+
         {{#rollresult}}<tr><td>{{#rolltarget}}{{rolltarget}}{{/rolltarget}}{{rollresult}}</td></tr>{{/rollresult}}
         {{#info}}
         <tr>
@@ -1031,7 +1031,7 @@ props:
             <td class="sheet-note">{{def}}</td>
         </tr>
         {{/def}}
-        
+
         {{#rollsuccess}}
             {{#rollTotal() rollsuccess 3}}
             <tr>
@@ -1043,9 +1043,9 @@ props:
                 <td class="sheet-success">Marginal Success.</td>
             </tr>
             {{/rollTotal() rollsuccess 2}}
-            
-    
-    
+
+
+
             {{#rollTotal() rollsuccess 0}}
             <tr>
                 <td class="sheet-crit-failure">Critical<br><br>Failure!!</td>
@@ -1056,7 +1056,7 @@ props:
                 <td class="sheet-failure">Marginal Failure.</td>
             </tr>
             {{/rollTotal() rollsuccess 1}}
-            
+
         {{/rollsuccess}}
         {{#aresult}}<tr><td>{{aresult}}</td></tr>{{/aresult}}
         {{#rolldesc}}<tr><th><img src="https://jpmiii.github.io/Roll20harn/harnfancy/break.png"><br><span class="sheet-tcat">{{rolldesc}}</span><br><img src="https://jpmiii.github.io/Roll20harn/harnfancy/break.png"></th></tr>{{/rolldesc}}
@@ -1074,9 +1074,9 @@ props:
                 <td class="sheet-success">Marginal Success.</td>
             </tr>
             {{/rollTotal() drollsuccess 2}}
-            
-    
-    
+
+
+
             {{#rollTotal() drollsuccess 0}}
             <tr>
                 <td class="sheet-crit-failure">Critical<br><br>Failure!!</td>
@@ -1087,7 +1087,7 @@ props:
                 <td class="sheet-failure">Marginal Failure.</td>
             </tr>
             {{/rollTotal() drollsuccess 1}}
-            
+
         {{/drollsuccess}}
         {{#dresult}}<tr><td>{{dresult}}</td></tr>{{/dresult}}
         {{#result}}
@@ -1098,7 +1098,7 @@ props:
             <td class="sheet-note">{{note}}</td>
         </tr>
         {{/note}}
-       
+
     </table>
 </rolltemplate>
 
@@ -1128,7 +1128,7 @@ props:
 
         {{^rollsuccess}}
 
-    
+
             {{#^rollGreater() rollresult rolltarget}}
             {{#rollWasCrit() rollresult }}
             <tr>
@@ -1141,7 +1141,7 @@ props:
             </tr>
             {{/^rollWasCrit() rollresult }}
             {{/^rollGreater() rollresult rolltarget}}
-    
+
             {{#rollGreater() rollresult rolltarget}}
             {{#rollWasCrit() rollresult }}
             <tr>
@@ -1170,9 +1170,9 @@ props:
                 <td class="sheet-success">Marginal Success.</td>
             </tr>
             {{/rollTotal() rollsuccess 2}}
-            
-    
-    
+
+
+
             {{#rollTotal() rollsuccess 0}}
             <tr>
                 <td class="sheet-crit-failure">Critical Failure!!</td>
@@ -1183,7 +1183,7 @@ props:
                 <td class="sheet-failure">Marginal Failure.</td>
             </tr>
             {{/rollTotal() rollsuccess 1}}
-            
+
         {{/rollsuccess}}
 
 
@@ -1296,7 +1296,7 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
 <!-- SPELLS EML /-->
 <script type="text/worker">
     on("change:repeating_magicskill:magicskill_ml sheet:opened", function() {
-        
+
         getSectionIDs("repeating_magicskill", function(IDArray) {
             var str1 = "";
             var spellskills = {};
@@ -1307,7 +1307,7 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
             }
             getAttrs(f, function(values) {
             	for (var i=0; i < IDArray.length; i++) {
-                    spellskills[values["repeating_magicskill_" + IDArray[i] + "_MAGICSKILL_NAME"]] = 
+                    spellskills[values["repeating_magicskill_" + IDArray[i] + "_MAGICSKILL_NAME"]] =
                         parseInt(values["repeating_magicskill_" + IDArray[i] + "_MAGICSKILL_ML"])||0;
                     str1 += values["repeating_magicskill_" + IDArray[i] + "_MAGICSKILL_NAME"] +": "+spellskills[values["repeating_magicskill_" + IDArray[i] + "_MAGICSKILL_NAME"]]+"\n";
 
@@ -1322,13 +1322,13 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
                     getAttrs(f2, function(v) {
                     	for (var i=0; i < IDArray2.length; i++) {
                     	    var ml =  parseInt(spellskills[v["repeating_spells_" + IDArray2[i] + "_SPELL_CONVOCATION"]])||0;
-                    	    var eml = (parseInt(v["repeating_spells_" + IDArray2[i] + "_SPELL_EML"]) - 
+                    	    var eml = (parseInt(v["repeating_spells_" + IDArray2[i] + "_SPELL_EML"]) -
                     	        parseInt(v["repeating_spells_" + IDArray2[i] + "_SPELL_ML"]) +
                     	        parseInt(spellskills[v["repeating_spells_" + IDArray2[i] + "_SPELL_CONVOCATION"]]))||0;
                             setAttrs({
                                 ["repeating_spells_" + IDArray2[i] + "_SPELL_ML"]: ml,
                                 ["repeating_spells_" + IDArray2[i] + "_SPELL_EML"]: eml
-                                
+
                             });
                     	}
                     });
@@ -1343,7 +1343,7 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
 <!-- RITUAL EML /-->
 <script type="text/worker">
     on("change:repeating_ritualskill:ritualskill_ml sheet:opened", function() {
-        
+
         getSectionIDs("repeating_ritualskill", function(IDArray) {
             var ritualskills = {};
             var f = [];
@@ -1353,7 +1353,7 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
             }
             getAttrs(f, function(values) {
             	for (var i=0; i < IDArray.length; i++) {
-                    ritualskills[values["repeating_ritualskill_" + IDArray[i] + "_RITUALSKILL_NAME"]] = 
+                    ritualskills[values["repeating_ritualskill_" + IDArray[i] + "_RITUALSKILL_NAME"]] =
                         parseInt(values["repeating_ritualskill_" + IDArray[i] + "_RITUALSKILL_ML"])||0;
             	}
             	var f2 = [];
@@ -1366,13 +1366,13 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
                     getAttrs(f2, function(v) {
                     	for (var i=0; i < IDArray2.length; i++) {
                     	    var ml =  parseInt(ritualskills[v["repeating_rituals_" + IDArray2[i] + "_RITUAL_RELIGION"]]);
-                    	    var eml = parseInt(v["repeating_rituals_" + IDArray2[i] + "_RITUAL_EML"]) - 
+                    	    var eml = parseInt(v["repeating_rituals_" + IDArray2[i] + "_RITUAL_EML"]) -
                     	        parseInt(v["repeating_rituals_" + IDArray2[i] + "_RITUAL_ML"]) +
                     	        parseInt(ritualskills[v["repeating_rituals_" + IDArray2[i] + "_RITUAL_RELIGION"]]);
                             setAttrs({
                                 ["repeating_rituals_" + IDArray2[i] + "_RITUAL_ML"]: ml,
                                 ["repeating_rituals_" + IDArray2[i] + "_RITUAL_EML"]: eml
-                                
+
                             });
                     	}
                     });
@@ -1492,7 +1492,7 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
 			"repeating_inventoryitems_" + IDArray[i] + "_INVENTORY_WORN"]
 			);
 		}
-		
+
 
         var atotal = 0.0;
         var wtotal = 0.0;
@@ -1508,8 +1508,8 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
                     itotal += ((parseFloat(values["repeating_inventoryitems_" + IDArray[x] + "_INVENTORY_WGT"])||0.0) * (parseFloat(values["repeating_inventoryitems_" + IDArray[x] + "_INVENTORY_QUANTITY"])||1.0));
                 }
     			x++;
-    				
-    			
+
+
     			itotal.toFixed(2);
     			setAttrs({
     				"LOAD_INVENTORY_TOTAL": itotal
@@ -1523,7 +1523,7 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
     				"LOAD_WEAPONS_TOTAL": wtotal
     			});
             });
-            
+
         }
 	});
 });
