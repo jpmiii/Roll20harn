@@ -819,13 +819,13 @@ function handle_improveskill(args, msg) {
 	if (roll >= ml) {
 		mySet(skill_att_name.slice(0, -4) + "ML", char.id, (ml + 1));
 		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>"
-			+ "<br>" + " roll " + roll + ": SUCCESS<br>" + args[2] + " ML increases to " + (ml + 1));
-		charLog(char.id, ": Skill Improvement Roll: " + args[2] + " "
+			+ "<br>" + " roll " + roll + ": SUCCESS<br>" + msg.content.slice(34) + " ML increases to " + (ml + 1));
+		charLog(char.id, ": Skill Improvement Roll: " + msg.content.slice(34) + " "
 			+ roll + ": SUCCESS: ML = " + (ml + 1), config.realtime, config.gametime);
 	} else {
-		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>" + args[2]
-			+ "<br>" + " roll " + roll + ": FAIL<br> " + args[2] + " ML stays at " + ml);
-		charLog(char.id, ": Skill Improvement Roll: " + args[2] + " "
+		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>" + msg.content.slice(34)
+			+ "<br>" + " roll " + roll + ": FAIL<br> " + msg.content.slice(34) + " ML stays at " + ml);
+		charLog(char.id, ": Skill Improvement Roll: " + msg.content.slice(34) + " "
 			+ roll + ": FAIL: ML = " + ml, config.realtime, config.gametime);
 	}
 }
