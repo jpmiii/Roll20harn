@@ -829,7 +829,7 @@ function handle_improveskill(args, msg) {
 			+ roll + ": FAIL: ML = " + ml, config.realtime, config.gametime);
 	}
 }
-
+//newbranchtest
 
 function rollshock(charid, token, unipenalty) {
 	var shockstr = "";
