@@ -2154,9 +2154,9 @@ function out(charid) {
 
 	logout += "\nSex:         	" + myGet("GENDER", charid, 0);
 	logout += "\nAge:         	" + myGet("AGE", charid, 0);
-	logout += "\nBirth Month: 	" + myGet("BIRTHDATE", charid, 0).split()[0];
-	logout += "\nBirth Day:   	" + myGet("BIRTHDATE", charid, 0).split()[1];
-	logout += "\nBirth Year:  	" + myGet("BIRTHDATE", charid, 0).split()[2];
+	logout += "\nBirth Month: 	" + myGet("BIRTHDATE", charid, 0).trim().split(" ")[0];
+	logout += "\nBirth Day:   	" + myGet("BIRTHDATE", charid, 0).trim().split(" ")[1];
+	logout += "\nBirth Year:  	" + myGet("BIRTHDATE", charid, 0).trim().split(" ")[2];
 	logout += "\nSunSign:     	" + myGet("SUNSIGN", charid, 0);
 
 	logout += "\nCulture:     	" + myGet("CULTURE", charid, 0);
