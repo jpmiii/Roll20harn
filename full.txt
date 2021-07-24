@@ -1,4 +1,5 @@
-
+//
+//  07/17/2021 16:09:15
 //
 //
 // CONFIGURATION
@@ -6,7 +7,7 @@
 //
 var trace = true; // trace entry and exit for debugging
 var config = {
-    serial: 2, // Increase this by one every time you add/rename/delete an attribute.
+    serial: 1, // Increase this by one every time you add/rename/delete an attribute.
     generate_item_list: true, //generate the item, weapon, and armor lists for the inventory tab on startup
     skill_list_on: true, //regenerate skill list ability on change to skill tab and skill name change
     weapon_list_on: true, //regenerate weapon list ability on change to weapontab and weapon name change
@@ -4129,6 +4130,7 @@ function turnPush(obj) {
 		} else {
 			var initml = parseInt(myGet("INITIATIVE_ML", obj.get("represents"), 0)) - pp + initRoll();
 		}
+    initml = Math.max(initml, config.emlmin)
 	}
 
 	turnorder.push({
@@ -4709,23 +4711,207 @@ function calcSB(char, msg) {
 function out(charid) {
 
 
-	var char = getObj("character", charid);
+
 	var atts = findObjs({
 		_characterid: charid,
 		_type: "attribute",
 
 	});
+	var has_spells=false;
+	var has_rituals=false;
+	var has_psi=false;
 	log("=================================")
-	_.each(atts, function(ob1) {
+	var logout = myGet("NAME", charid, 0);
+	logout += "\n    Strength    " + myGet("STR", charid, 0);
+	logout += "    Agility   " + myGet("AGL", charid, 0);
+	logout += "    Smell    " + myGet("SML", charid, 0);
+	logout += "    Will    " + myGet("WIL", charid, 0);
+	logout += "    Comeliness    " + myGet("CML", charid, 0);
+
+	logout += "\n    Stamina    " + myGet("STA", charid, 0);
+	logout += "    Eyesight    " + myGet("EYE", charid, 0);
+	logout += "    Voice    " + myGet("VOI", charid, 0);
+	logout += "    Aura    " + myGet("AUR", charid, 0);
+	logout += "    Endurance    " + myGet("END", charid, 0);
+
+	logout += "\n    Dexterity    " + myGet("DEX", charid, 0);
+	logout += "    Hearing    " + myGet("HRG", charid, 0);
+	logout += "    Intelligence    " + myGet("INT", charid, 0);
+	logout += "    Morality    " + myGet("MORAL", charid, 0);
+	logout += "    Move    10" ;
+	logout += "\nSpecies:     	" + myGet("SPECIES", charid, 0);
+
+	logout += "\nSex:         	" + myGet("GENDER", charid, 0);
+	logout += "\nAge:         	" + myGet("AGE", charid, 0);
+	logout += "\nBirth Month: 	" + myGet("BIRTHDATE", charid, 0).split()[0];
+	logout += "\nBirth Day:   	" + myGet("BIRTHDATE", charid, 0).split()[1];
+	logout += "\nBirth Year:  	" + myGet("BIRTHDATE", charid, 0).split()[2];
+	logout += "\nSunSign:     	" + myGet("SUNSIGN", charid, 0);
+
+	logout += "\nCulture:     	" + myGet("CULTURE", charid, 0);
+	logout += "\nSocial Class:	" + myGet("SOCIAL_CLASS", charid, 0);
+	logout += "\nSibling Rank:	" + myGet("SIBLING_RANK", charid, 0);
+	logout += "\nSiblings:    	";
+	logout += "\nParentage:   	" + myGet("PARENT", charid, 0);
+	logout += "\nOffspring:   	";
+	logout += "\nEstrangement:	" + myGet("ESTRANGEMENT", charid, 0);
+	logout += "\nClanhead:    	" + myGet("CLANHEAD", charid, 0);
+
+
+	logout += "\nHeight:      	" + myGet("HEIGHT", charid, 0);
+	logout += "\nFrame:       	" + myGet("FRAME", charid, 0);
+	logout += "\nWeight:      	" + myGet("WEIGHT", charid, 0);
+	logout += "\nSize:        	";
+	logout += "\nComeliness:  	" + myGet("CML", charid, 0);
+	logout += "\nComplexion:  	" + myGet("COMPLEXION", charid, 0);
+	logout += "\nHair Color:  	" + myGet("HAIR_COLORS", charid, 0);
+	logout += "\nEye Color:   	" + myGet("EYE_COLOR", charid, 0);
+	logout += "\nVoice:       	" + myGet("VOI", charid, 0);
+	logout += "\n\nMedical:     	" + myGet("PHYSICAL", charid, 0);
+	logout += "\n\nPsyche:      	" + myGet("MENTAL", charid, 0);
+	logout += "\nDiety:       	" + myGet("DIETY", charid, 0);
+	logout += "\nPiety:       	" + myGet("PIETY", charid, 0);
+
+	logout += "\n\nOccupation:  	" + myGet("OCCUPATION", charid, 0);
+	logout += "\n	Physical Skills:";
+	logout += "\n		                      CLIMBING / " + myGet("CLIMBING_ML", charid, 0) + " (SB:" + myGet("CLIMBING_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      CONDITION / " + myGet("CONDITION_ML", charid, 0) + " (SB:" + myGet("CONDITION_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      JUMPING / " + myGet("JUMPING_ML", charid, 0) + " (SB:" + myGet("JUMPING_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      STEALTH / " + myGet("STEALTH_ML", charid, 0) + " (SB:" + myGet("STEALTH_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      THROWING / " + myGet("THROWING_ML", charid, 0) + " (SB:" + myGet("THROWING_SB", charid, 0) + ")	 OML :0";
+
+	_.each(atts, function (ob1) {
 		ojn = ob1.get('name')
 		ojv = ob1.get('current')
-		log(ojn + " - " + ojv)
+		if (ojn.indexOf("PHYSICALSKILL_NAME") !== -1) {
 
+			logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+		}
+	});
+
+	logout += "\n	Communications Skills:";
+	logout += "\n		                      AWARENESS / " + myGet("AWARENESS_ML", charid, 0) + " (SB:" + myGet("AWARENESS_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      INTRIGUE / " + myGet("INTRIGUE_ML", charid, 0) + " (SB:" + myGet("INTRIGUE_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      ORATORY / " + myGet("ORATORY_ML", charid, 0) + " (SB:" + myGet("ORATORY_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      RHETORIC / " + myGet("RHETORIC_ML", charid, 0) + " (SB:" + myGet("RHETORIC_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      SINGING / " + myGet("SINGING_ML", charid, 0) + " (SB:" + myGet("SINGING_SB", charid, 0) + ")	 OML :0";
+	_.each(atts, function (ob1) {
+		ojn = ob1.get('name')
+		ojv = ob1.get('current')
+		if (ojn.indexOf("COMMUNICATIONSKILL_NAME") !== -1) {
+
+			logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+		}
+	});
+	
+	logout += "\n	Combat Skills:";
+	logout += "\n		                      INITIATIVE / " + myGet("INITIATIVE_ML", charid, 0) + " (SB:" + myGet("INITIATIVE_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      UNARMED / " + myGet("UNARMED_ML", charid, 0) + " (SB:" + myGet("UNARMED_SB", charid, 0) + ")	 OML :0";
+	
+	_.each(atts, function (ob1) {
+		ojn = ob1.get('name')
+		ojv = ob1.get('current')
+		if (ojn.indexOf("COMBATSKILL_NAME") !== -1) {
+
+			logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+		}
+	});
+
+	logout += "\n	Crafts & Lore Skills:";
+	_.each(atts, function (ob1) {
+		ojn = ob1.get('name')
+		ojv = ob1.get('current')
+		if (ojn.indexOf("LORESKILL_NAME") !== -1) {
+
+			logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+		}
+		if (ojn.indexOf("MAGICSKILL_NAME") !== -1) {has_spells=true};
+		if (ojn.indexOf("RITUALSKILL_NAME") !== -1) {has_rituals=true};
+		if (ojn.indexOf("TALENT_NAME") !== -1) {has_psi=true};
+	});
+
+
+	logout += "\n	Convocaton Skills:";
+	if (has_spells) {
+		_.each(atts, function (ob1) {
+			ojn = ob1.get('name')
+			ojv = ob1.get('current')
+			if (ojn.indexOf("MAGICSKILL_NAME") !== -1) {
+
+				logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+			}
+		});
+	} else {
+		logout += "\n		                          --none--";
+	}
+
+	logout += "\n	Psionics Skills:";
+	if (has_psi) {
+		_.each(atts, function (ob1) {
+			ojn = ob1.get('name')
+			ojv = ob1.get('current')
+			if (ojn.indexOf("TALENT_NAME") !== -1) {
+
+				logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"EML", charid, 0) + " (SB:0)	 OML :0";
+			}
+		});
+	} else {
+		logout += "\n		                          --none--";
+	}
+
+	logout += "\n	Ritual Skills:";
+	if (has_rituals) {
+		_.each(atts, function (ob1) {
+			ojn = ob1.get('name')
+			ojv = ob1.get('current')
+			if (ojn.indexOf("RITUALSKILL_NAME") !== -1) {
+
+				logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+			}
+		});
+	} else {
+		logout += "\n		                          --none--";
+	}
+	if (has_spells) {
+	logout += "\n    Spells:";
+	
+		_.each(atts, function (ob1) {
+			ojn = ob1.get('name')
+			ojv = ob1.get('current')
+			if (ojn.indexOf("SPELL_NAME") !== -1) {
+
+				logout += "\n		                      "+ ojv +"/" + myGet(ojn.slice(0,-4)+"LEVEL", charid, 0);
+			}
+		});
+	} 
+
+	if (has_rituals) {
+	logout += "\n	Invocations:";
+	
+		_.each(atts, function (ob1) {
+			ojn = ob1.get('name')
+			ojv = ob1.get('current')
+			if (ojn.indexOf("RITUAL_NAME") !== -1) {
+
+				logout += "\n		                      "+ ojv +"/" + myGet(ojn.slice(0,-4)+"LEVEL", charid, 0);
+			}
+		});
+	} 
+	logout += "\n\nMoney:	      			0d\nEquipment:"
+
+
+	_.each(atts, function (ob1) {
+		ojn = ob1.get('name')
+		ojv = ob1.get('current')
+		if (ojn.indexOf("INVENTORY_NAME") !== -1) {
+			logout += "\n   	             	" + ojv
+		}
 
 	});
+	mySet("TEXTAREA_LOG", charid, logout)
 }
 function invin(charid) {
-	var char = getObj("character", charid);
+	
 	var atts = findObjs({
 		_characterid: charid,
 		_type: "attribute",
