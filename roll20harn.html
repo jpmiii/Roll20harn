@@ -429,7 +429,6 @@
 
         <button type='roll' value='!calcsb @{character_id}' name='roll_calcSB'>Calculate SB</button>
 
-        <button type='roll' value='!pickskill @{character_id} @{character_name}' name='pickskill'>Skill Improvement Roll</button>
 
 </div><div class='sheet-combat'>
 
@@ -905,6 +904,9 @@
 <textarea name="attr_TEXTAREA_NOTE"></textarea>
 <br/>Log<br/>
 <textarea name="attr_TEXTAREA_LOG"></textarea>
+<br/>Sheet<br/>
+<textarea name="attr_TEXTAREA_SHEET"></textarea>
+    <br> Option Rule: Endurance = Condition / 5 <input type="checkbox" name="attr_OPTIONAL_RULE_1">
 </div>
 </div>
 
@@ -1429,16 +1431,24 @@ on("change:repeating_injury:injury_level remove:repeating_injury sheet:opened", 
 <!-- ENDURANCE /-->
 <script type="text/worker">
     on("change:str change:sta change:wil change:condition_ml sheet:opened", function() {
-        getAttrs(["STR", "STA", "WIL","CONDITION_ML"], function(values) {
-            var statTotal = parseInt(values["STR"])||0;
-            statTotal += parseInt(values["STA"])||0;
-            statTotal += parseInt(values["WIL"])||0;
+        getAttrs(["STR", "STA", "WIL","CONDITION_ML", "OPTIONAL_RULE_1"], function(values) {
+            if(values.OPTIONAL_RULE_1 != 0) {
+                var statTotal = parseInt(values["CONDITION_ML"])||0;
+                var endurance = Math.round(statTotal / 5)||0;
+                setAttrs({
+                    "COMBAT_ENDURANCE": endurance
+                });
+            } else {
+                var statTotal = parseInt(values["STR"])||0;
+                statTotal += parseInt(values["STA"])||0;
+                statTotal += parseInt(values["WIL"])||0;
 
 
-            var endurance = Math.round(statTotal / 3)||0;
-            setAttrs({
-                "COMBAT_ENDURANCE": endurance
-        	});
+                var endurance = Math.round(statTotal / 3)||0;
+                setAttrs({
+                    "COMBAT_ENDURANCE": endurance
+                });
+            }
         });
     });
 </script>

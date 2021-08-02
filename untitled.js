@@ -1920,8 +1920,8 @@ function skillList(charid) {
 function findSkill(char, skillname) {
 
 	var nameout = "False"
-	if (skillname.toUpperCase() in tables.autoskills) {
-		nameout = skillname.toUpperCase() + "_NAME"
+	if (skillname.trim().toUpperCase() in tables.autoskills) {
+		nameout = skillname.trim().toUpperCase() + "_NAME"
 	} else {
 		var atts = findObjs({
 			_characterid: char.id,
@@ -2319,14 +2319,14 @@ function out(charid) {
 		}
 
 	});
-	mySet("TEXTAREA_LOG", charid, logout)
+	mySet("TEXTAREA_SHEET", charid, logout)
 }
 function invin(charid) {
 	
 	var atts = findObjs({
 		_characterid: charid,
 		_type: "attribute",
-		name: "TEXTAREA_NOTE"
+		name: "TEXTAREA_SHEET"
 	});
 
 	if (atts[0]) {
@@ -2352,7 +2352,7 @@ function xin(charid) {
 	var atts = findObjs({
 		_characterid: charid,
 		_type: "attribute",
-		name: "TEXTAREA_NOTE"
+		name: "TEXTAREA_SHEET"
 	});
 
 	if (atts[0]) {
