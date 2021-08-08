@@ -1,5 +1,5 @@
 //
-//  07/17/2021 16:09:15
+//  08/03/2021 19:19:40
 //
 //
 // CONFIGURATION
@@ -26,6 +26,7 @@ var config = {
     additional_target_locations: false, //add additional target locations e.g. neck for faster combat resolution
 
 };
+
 
 
 
@@ -130,7 +131,7 @@ on("change:attribute:current", function(obj, prev) {
 	} else if (obj.get('name').includes("WEAPON_NAME") && config.weapon_list_on) {
 		setWeaponsList(obj.get("_characterid"));
 	} else if (obj.get('name').includes("SKILL_NAME") && config.skill_list_on) {
-		settables.skilllist(obj.get("_characterid"));
+		setSkilllist(obj.get("_characterid"));
 	} else if (obj.get('name') == "sheetTab") {
 		if (obj.get('current') == "skills" && config.skill_list_on) {
 			setSkilllist(obj.get("_characterid"));
@@ -166,7 +167,7 @@ function generate_tables(pid=0) {
 	})[0];
 	if (scdata) {
 		scdata.get("notes", function(scda) {
-			tables = JSON.parse(scda.substring(5, scda.indexOf('</pre>')));
+			tables = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
 		    if (trace) { log(`API table loaded`) }
 		});
 
@@ -2668,13 +2669,13 @@ var dispatch_table = {
     "!invin": {
         "action": (args, msg) => { handle_invin(args, msg); },
         "re_syntax": /^!invin [-_a-zA-Z0-9]{20}$/,
-        "hr_syntax": "!invin character_id<br/>Inputs character inventory in HârnMaster Character Utility text format from character note."
+        "hr_syntax": "!invin character_id<br/>Inputs character inventory in HÃ¢rnMaster Character Utility text format from character note."
 
     },
     "!xin": {
         "action": (args, msg) => { handle_xin(args, msg); },
         "re_syntax": /^!xin( [-_a-zA-Z0-9]{20})?$/,
-        "hr_syntax": "!xin [character_id]<br/>Imports a character in HârnMaster Character Utility text format from the character note."
+        "hr_syntax": "!xin [character_id]<br/>Imports a character in HÃ¢rnMaster Character Utility text format from the character note."
 
     },
     "!ca": {
@@ -3399,7 +3400,7 @@ function handle_pickskill(args, msg) {
 
 function handle_improveskill(args, msg) {
 	char = getObj("character", args[1]);
-	skill_att_name = findSkill(char, args[2]);
+	skill_att_name = findSkill(char, msg.content.slice(34));
 	var d = new Date();
 	var n = d.toLocaleString();
 	var ml = parseInt(myGet(skill_att_name.slice(0, -4) + "ML", char.id, 0));
@@ -3408,13 +3409,13 @@ function handle_improveskill(args, msg) {
 	if (roll >= ml) {
 		mySet(skill_att_name.slice(0, -4) + "ML", char.id, (ml + 1));
 		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>"
-			+ "<br>" + " roll " + roll + ": SUCCESS<br>" + args[2] + " ML increases to " + (ml + 1));
-		charLog(char.id, ": Skill Improvement Roll: " + args[2] + " "
+			+ "<br>" + " roll " + roll + ": SUCCESS<br>" + msg.content.slice(34) + " ML increases to " + (ml + 1));
+		charLog(char.id, ": Skill Improvement Roll: " + msg.content.slice(34) + " "
 			+ roll + ": SUCCESS: ML = " + (ml + 1), config.realtime, config.gametime);
 	} else {
-		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>" + args[2]
-			+ "<br>" + " roll " + roll + ": FAIL<br> " + args[2] + " ML stays at " + ml);
-		charLog(char.id, ": Skill Improvement Roll: " + args[2] + " "
+		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>" + msg.content.slice(34)
+			+ "<br>" + " roll " + roll + ": FAIL<br> " + msg.content.slice(34) + " ML stays at " + ml);
+		charLog(char.id, ": Skill Improvement Roll: " + msg.content.slice(34) + " "
 			+ roll + ": FAIL: ML = " + ml, config.realtime, config.gametime);
 	}
 }
@@ -3770,7 +3771,7 @@ function handle_ca(args, msg) {
 }
 
 /**
- * Import a character generated with HârnMaster Character Utility from https://www.lythia.com/game_aides/harnchar/
+ * Import a character generated with HÃ¢rnMaster Character Utility from https://www.lythia.com/game_aides/harnchar/
  * @param {Message} msg the message representing the command, with arguments separated by spaces
  */
 function handle_xin(args, msg) {
@@ -4509,8 +4510,8 @@ function skillList(charid) {
 function findSkill(char, skillname) {
 
 	var nameout = "False"
-	if (skillname.toUpperCase() in tables.autoskills) {
-		nameout = skillname.toUpperCase() + "_NAME"
+	if (skillname.trim().toUpperCase() in tables.autoskills) {
+		nameout = skillname.trim().toUpperCase() + "_NAME"
 	} else {
 		var atts = findObjs({
 			_characterid: char.id,
@@ -4743,9 +4744,9 @@ function out(charid) {
 
 	logout += "\nSex:         	" + myGet("GENDER", charid, 0);
 	logout += "\nAge:         	" + myGet("AGE", charid, 0);
-	logout += "\nBirth Month: 	" + myGet("BIRTHDATE", charid, 0).split()[0];
-	logout += "\nBirth Day:   	" + myGet("BIRTHDATE", charid, 0).split()[1];
-	logout += "\nBirth Year:  	" + myGet("BIRTHDATE", charid, 0).split()[2];
+	logout += "\nBirth Month: 	" + myGet("BIRTHDATE", charid, 0).trim().split(" ")[0];
+	logout += "\nBirth Day:   	" + myGet("BIRTHDATE", charid, 0).trim().split(" ")[1];
+	logout += "\nBirth Year:  	" + myGet("BIRTHDATE", charid, 0).trim().split(" ")[2];
 	logout += "\nSunSign:     	" + myGet("SUNSIGN", charid, 0);
 
 	logout += "\nCulture:     	" + myGet("CULTURE", charid, 0);
@@ -4908,14 +4909,14 @@ function out(charid) {
 		}
 
 	});
-	mySet("TEXTAREA_LOG", charid, logout)
+	mySet("TEXTAREA_SHEET", charid, logout)
 }
 function invin(charid) {
 	
 	var atts = findObjs({
 		_characterid: charid,
 		_type: "attribute",
-		name: "TEXTAREA_NOTE"
+		name: "TEXTAREA_SHEET"
 	});
 
 	if (atts[0]) {
@@ -4941,7 +4942,7 @@ function xin(charid) {
 	var atts = findObjs({
 		_characterid: charid,
 		_type: "attribute",
-		name: "TEXTAREA_NOTE"
+		name: "TEXTAREA_SHEET"
 	});
 
 	if (atts[0]) {
