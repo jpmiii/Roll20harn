@@ -111,7 +111,7 @@ var dispatch_table = {
     "!out": {
         "action": (args, msg) => { handle_out(args, msg); },
         "re_syntax": /^!out.*$/,
-        "hr_syntax": "!out token_id<br/> outputs character data to log"
+        "hr_syntax": "!out character_id<br/> outputs character data to log"
     },
     "!attack_melee_table": {
         "action": (args, msg) => { handle_tables.attack_melee_table(args, msg); },
@@ -1114,8 +1114,9 @@ function handle_attack_melee_table(args, msg) {
 
 function handle_out(args, msg) {
 	if (trace) { log(`handle_out(${args},${msg.content})`) }
-	var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
-	out(g.get("represents"));
+	//var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
+	//out(g.get("represents"));
+	out(args[1]);
 }
 
 /**
