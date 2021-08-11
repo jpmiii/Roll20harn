@@ -58,3 +58,10 @@ Harnmaster roll20 API scripts and custom character sheet
 1. If you want to have your own house rule settings, copy config.js to campaign_config.js and publish with
    ```campaign_publish.sh -l campaign.txt -f campaign_config.js```
 
+### Some Info
+
+Also when using the Calculate SB button it will...
+if the number in the ML box  is less than SB it will multiply the number in the ML box times the calculated SB and put it in the ML box (it will treat it as an OML)  then put the calculated SB in the SB box. If there's nothing in the ML box it will use the OML from the skills table.
+
+The occupation command uses the occupation box on the character sheet and the character_id. It will add the skills for that occupation to the character and OVERWRITE the ML of that skill with the OML for that occupation. To use it you would make a one shot ability that said "!occupation @{character_id}" or, if your character has a token, select the token and type "!occupation @{selected|character_id}" in the chat.
+
