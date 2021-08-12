@@ -163,6 +163,16 @@ var dispatch_table = {
 	    "action": (args, msg) => { handle_pickskill(args, msg); },
         "re_syntax": /^!pickskill [-_a-zA-Z0-9]{20}.*$/,
         "hr_syntax": "!pickskill character_id prompt title<br/>Prompts the user to pick a valid skill to improve"
+    },
+    "!ut": {
+        "action": (args, msg) => { handle_update_tables(); },
+        "re_syntax": /^!ut.*$/,
+        "hr_syntax": "!ut - outputs clean table handouts from data"
+    },
+    "!reload": {
+        "action": (args, msg) => { handle_reload_tables(); },
+        "re_syntax": /^!reload.*$/,
+        "hr_syntax": "!reload - reloads table data from handouts"
     }
 }
 
@@ -1905,11 +1915,12 @@ function skillList(charid) {
 		ojv = ob1.get('current')
 
 		if ((ojv) && (ojn.indexOf("SKILL_NAME") !== -1)) {
-			_.each(_.keys(tables.skilllist), function(obj) {
-				if (ojv.indexOf(obj) !== -1) {
-					slist.push(ojv);
-				}
-			});
+//			_.each(_.keys(tables.skilllist), function(obj) {
+//				if (ojv.indexOf(obj) !== -1) {
+//
+//				}
+//			});
+			slist.push(ojv);
 		}
 	});
 	return slist;
@@ -1936,11 +1947,15 @@ function findSkill(char, skillname) {
 			ojv = ob1.get('current')
 
 			if (ojn.indexOf("SKILL_NAME") !== -1) {
-				_.each(_.keys(tables.skilllist), function(obj) {
-					if ((ojv.indexOf(obj) !== -1) && (skillname.indexOf(obj) !== -1)) {
-						nameout = ojn;
-					}
-				});
+//				_.each(_.keys(tables.skilllist), function(obj) {
+//					if ((ojv.indexOf(obj) !== -1) && (skillname.indexOf(obj) !== -1)) {
+//						nameout = ojn;
+//					}
+//				});
+//log(ojv+", "+skillname)
+                if (ojv == skillname.trim()) {
+                    nameout = ojn;
+                }
 			}
 		});
 	}

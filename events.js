@@ -128,6 +128,52 @@ on("change:campaign:turnorder", function(obj, prev) {
 	}
 
 });
+
+function handle_update_tables() {
+	var scdata = findObjs({
+		name: "API_tables",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		var ostr = "{\n";
+    	for (k in {'default_macros':'','default_abilities':'','skilllist':'','autoskills':'','autoskillsnames':'','attack_melee':'','attack_missile':'','coverage2loc':'','hit_location_table':'','hit_loc_penalty':'','armor_coverage':'','armor_prot':'','weapons_table':'','missile_range':''}) {
+    		//log(k);
+    		ostr += `\"${k}\": ${JSON.stringify(tables[k],null,2)},\n\n`
+    	}
+    	ostr += `\"months\": ${JSON.stringify(tables['months'],null,2)}\n}`
+
+    	scdata.set('notes', `<pre>${ostr}</pre>`);
+	}
+
+
+    var scdata = findObjs({
+		name: "API_occupation",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+
+		var ostr = `\"occupational_skills\": ${JSON.stringify(tables['occupational_skills'],null,2)},\n\n`;
+
+		ostr += `\"occupation_time\": ${JSON.stringify(tables['occupation_time'],null,2)}\n`
+
+	    scdata.set('notes', `<pre>{\n${ostr}\n}</pre>`);
+
+		if (trace) { log(`API table added`) }
+	}
+	var scdata = findObjs({
+		name: "API_prices",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+
+
+
+	    scdata.set('notes', `<pre>${JSON.stringify(tables.prices, null, 2)}</pre>`);
+		if (trace) { log(`API table added`) }
+	    log("updated---")
+    }
+    }
+
 function generate_tables(pid=0) {
 	
 
@@ -140,6 +186,7 @@ function generate_tables(pid=0) {
 		scdata.get("notes", function(scda) {
 			tables = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
 		    if (trace) { log(`API table loaded`) }
+
 		});
 
 	} else {
@@ -156,17 +203,17 @@ function generate_tables(pid=0) {
 	ostr += `\"months\": ${JSON.stringify(tables['months'],null,2)}\n}`
 		
 	    handout.set('notes', `<pre>${ostr}</pre>`);
-	    handout.set('gmnotes', 'GM notes.');
+	    handout.set('gmnotes', 'GM notes2.');
 		//initializeTables(pid);
 		if (trace) { log(`API table added`) }
 	}
-var scdata = findObjs({
+    var scdata = findObjs({
 		name: "API_occupation",
 		_type: "handout",
 	})[0];
 	if (scdata) {
 		scdata.get("notes", function(scda) {
-			var t_in = JSON.parse(scda.substring(5, scda.indexOf('</pre>')));
+			var t_in = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
 			tables.occupational_skills = t_in.occupational_skills;
 			tables.occupation_time = t_in.occupation_time;
 			//initializeTables(pid);
@@ -194,7 +241,7 @@ var scdata = findObjs({
 	})[0];
 	if (scdata) {
 		scdata.get("notes", function(scda) {
-			tables.prices = JSON.parse(scda.substring(5, scda.indexOf('</pre>')));
+			tables.prices = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
 			initializeTables(pid);
 		    if (trace) { log(`API table loaded`) }
 		});
@@ -207,10 +254,54 @@ var scdata = findObjs({
 	    });
 
 		
-	    handout.set('notes', `<pre>${JSON.stringify(tables.prices)}</pre>`);
+	    handout.set('notes', `<pre>${JSON.stringify(tables.prices, null, 2)}</pre>`);
 	    handout.set('gmnotes', 'GM notes.');
 		initializeTables(pid);
 		if (trace) { log(`API table added`) }
+	}
+}
+
+function handle_reload_tables() {
+
+
+
+	var scdata = findObjs({
+		name: "API_tables",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			tables = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
+		    if (trace) { log(`API table loaded`) }
+
+		});
+
+	}
+    var scdata = findObjs({
+		name: "API_occupation",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			var t_in = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
+			tables.occupational_skills = t_in.occupational_skills;
+			tables.occupation_time = t_in.occupation_time;
+			//initializeTables(pid);
+		    if (trace) { log(`API table loaded`) }
+		});
+
+	}
+	var scdata = findObjs({
+		name: "API_prices",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			tables.prices = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
+
+		    if (trace) { log(`API table loaded`) }
+		});
+
 	}
 }
 
