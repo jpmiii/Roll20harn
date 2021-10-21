@@ -1710,10 +1710,10 @@ function calcArmor(charid) {
 							newa[arl[i]]["COV"] += " " + art[0];
 							aq = parseInt(myGet(ojn.slice(0, -4) + "Q", charid, 0))
 							newa[arl[i]]["AQ"] += aq;
-							newa[arl[i]]["B"] += Math.max(parseInt(art[1]) + Math.min(aq, parseInt(art[1])), 1);
-							newa[arl[i]]["E"] += Math.max(parseInt(art[2]) + Math.min(aq, parseInt(art[2])), 1);
-							newa[arl[i]]["P"] += Math.max(parseInt(art[3]) + Math.min(aq, parseInt(art[3])), 1);
-							newa[arl[i]]["F"] += Math.max(parseInt(art[4]) + Math.min(aq, parseInt(art[4])), 1);
+							newa[arl[i]]["B"] += parseInt(art[1]) + aq;
+							newa[arl[i]]["E"] += parseInt(art[2]) + aq;
+							newa[arl[i]]["P"] += parseInt(art[3]) + aq;
+							newa[arl[i]]["F"] += parseInt(art[4]) + aq;
 						}
 					}
 				}
