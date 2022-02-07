@@ -1522,11 +1522,11 @@ function handle_newturn(args, msg) {
 			if (msg.selected) {
 				for (i = 0; i < msg.selected.length; i++) {
 					if (obj.id == msg.selected[i]["_id"]) {
-						turnPush(obj);
+						turnPush(obj, msg);
 					}
 				}
 			} else {
-				turnPush(obj);
+				turnPush(obj ,msg);
 			}
 		}
 	});
@@ -1536,7 +1536,7 @@ function handle_newturn(args, msg) {
 	sendChat("New Round", getHarnTimeStr(state.MainGameNS.GameTime));
 }
 
-function turnPush(obj) {
+function turnPush(obj, msg) {
 	if (obj.get('bar3_value')) {
 		var pp = (parseInt(obj.get('bar3_value')) + parseInt(myGet('ENCUMBRANCE', obj.get("represents"), 0))) * 5;
 	} else {
@@ -1558,7 +1558,8 @@ function turnPush(obj) {
 	turnorder.push({
 		id: obj.id,
 		pr: initml,
-		custom: ""
+		custom: "",
+		_pageid: getSelectedPage(msg)
 	});
 }
 
