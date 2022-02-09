@@ -220,7 +220,7 @@ function handle_attack(atk, msg) {
 	log("Roll: " + aroll);
 
 	if (ctype !== 0) {
-		for (i = 0; i < (ctype * -1); i++) {
+		for (i = 0; i < Math.abs(ctype); i++) {
 			var broll = randomInteger(300);
 			log("cheat: " + aroll + " " + broll);
 			if (broll < aroll) {
@@ -351,7 +351,8 @@ function handle_defend(def, msg) {
 
 	log("Def roll: " + droll);
 	if (ctype !== 0) {
-		for (i = 0; i < (ctype * -1); i++) {
+
+		for (i = 0; i < Math.abs(ctype); i++) {
 			var broll = randomInteger(300);
 			log("cheat: " + aroll + " " + broll);
 			if (broll < droll) {
@@ -1410,7 +1411,59 @@ function getWep(charid) {
 		}
 	});
 }
+function doBloodloss(charid) {
 
+	injury_list = filterObjs(function(obj) {
+		obn = obj.get('name');
+		if (obn) {
+			if (obn.includes("_INJURY_HEALINGROLL")
+				&& (obj.get("_characterid") == charid)) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	});
+	injury_list.forEach(function(w) {
+                		healing_rate = myGet(w.get('name'), charid, "");
+                		if (healing_rate == "") {
+
+                		    injury_points = parseInt(myGet(w.get('name').slice(0,-19)+ "_INJURY_LEVEL", charid, ""));
+                		    injury_severity = myGet(w.get('name').slice(0,-19)+ "_INJURY_SEVERITY", charid, "");
+                		    injury_location = myGet(w.get('name').slice(0,-19)+ "_INJURY_LOCATION", charid, "");
+
+                		    obl = parseInt(myGet('BLOODLOSS', charid, 0));
+                		    bloodloss = 0;
+
+                		    bloodloss = bloodloss + injury_points - 2;
+
+                		    if (injury_location.startsWith('E ')) {
+                		        bloodloss = bloodloss +  2;
+                		    }
+                		    if (injury_location.startsWith('P ')) {
+                		        bloodloss = bloodloss +  1;
+                		    }
+                		    if (injury_severity == "G") {
+                		        bloodloss = bloodloss +  2;
+                		    }
+                		    if (injury_severity == "K") {
+                		        bloodloss = bloodloss +  4;
+                		    }
+                		    if (bloodloss < 0) {
+                		        bloodloss = 0;
+                		    }
+                		    if ((obl + bloodloss) >= config.bleedspeed) {
+                		        addinjury('Bloodloss', 'M1', charid)
+                		        bloodloss = bloodloss - config.bleedspeed;
+                		        sendChat("Bloodloss", myGet('NAME', charid, 0));
+                		    }
+                		    mySet('BLOODLOSS', charid, (obl + bloodloss));
+
+                		}
+                	})
+}
 function setWeaponsList(charid) {
 	//if (trace) log("Macro helper-Weapons");
 	var out2 = "";
@@ -1516,9 +1569,11 @@ function handle_newturn(args, msg) {
 	});
 
 	_.each(currentPageGraphics, function(obj) {
-
 		if (obj.get('represents').startsWith('-M') && (obj.get('layer') == 'objects') && !obj.get('status_skull')) {
 
+			if (config.bleedspeed > 0 && obj.get('bar3_link')){
+			    doBloodloss(obj.get('represents'));
+			 }
 			if (msg.selected) {
 				for (i = 0; i < msg.selected.length; i++) {
 					if (obj.id == msg.selected[i]["_id"]) {
@@ -1526,7 +1581,7 @@ function handle_newturn(args, msg) {
 					}
 				}
 			} else {
-				turnPush(obj ,msg);
+				turnPush(obj, msg);
 			}
 		}
 	});
