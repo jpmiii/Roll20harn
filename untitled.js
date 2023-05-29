@@ -2837,7 +2837,7 @@ function chatParser(msg) {
 		if (char) {
 			var d = new Date();
 			var n = d.toLocaleString();
-			if (msg.content.includes("rolldesc=rolls ")) {
+			if (msg.content.includes("rolldesc=rolls ") && !msg.content.includes("Weapon Break:")) {
 				if (msg.inlinerolls[3].results.total % 5 == 0) {
 	
 					if (msg.inlinerolls[1].results.total >= msg.inlinerolls[3].results.total) {
