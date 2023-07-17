@@ -225,8 +225,9 @@
             <input type="hidden" name="attr_STEED_INIT" class="sheet-skill-value" value="0">
             <input type="hidden" name="attr_RIDER" class="sheet-skill-value" value="0">
             <button type="roll"
-                    value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=rolls @{RIDING_NAME}}} {{rolltarget=[[[[(@{RIDING_ML} + @{STEED_INIT})/2]] - [[(@{PHYSICAL_PENALTY})*5]] + ?{Target Modifier?|0}]]}} {{penalty=[[(@{PHYSICAL_PENALTY})*5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{RIDING_ML}}}"
+                    value="&{template:rollcheck} {{character_name=@{NAME}}} {{rolldesc=rolls @{RIDING_NAME}}} {{rolltarget=[[[[(@{RIDING_ML}- [[(@{PHYSICAL_PENALTY})5]] + @{STEED_INIT})/2]] +.5 + ?{Target Modifier?|0}]]}} {{penalty=[[(@{PHYSICAL_PENALTY})5]]}} {{rollresult=[[1d100cs5cs10cs15cs20cs25cs30cs35cs40cs45cs50cs55cs60cs65cs70cs75cs80cs85cs90cs95cs100]]}} {{targetmod=[[?{Target Modifier?|0}]]}} {{ml=@{RIDING_ML}}}"
                     name="roll_RidingCheck"></button>
+
         </div>
         <fieldset class="repeating_combatskill">
             <div>
