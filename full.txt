@@ -1,1 +1,5625 @@
-out of date
+//
+//
+// CONFIGURATION
+//
+//
+var trace = true; // trace entry and exit for debugging
+var config = {
+    serial: 2, // Increase this by one every time you add/rename/delete an attribute.
+    generate_item_list: true, //generate the item, weapon, and armor lists for the inventory tab on startup
+    skill_list_on: true, //regenerate skill list ability on change to skill tab and skill name change
+    weapon_list_on: true, //regenerate weapon list ability on change to weapontab and weapon name change
+    realtime: true, //character sheet log shows real time 
+    gametime: true, //character sheet log shows game time 
+    attack_template: "harn-fancy", // sets the roll template (harn-fancy or harnroll) for the attack function
+    defend_template: "harn-defend", // sets the roll template (harn-defend or harnroll) for the defend function
+    shock_marker: "sleepy",
+    //
+    // House rules - default should always be canon rules
+    //
+    missle_close_range_mod: 0, // house rule close range mod (0 is canon) adds an extra range column for close vs short range
+    randomize_init_roll: false, // adds 3d6 to the init for randomness
+    emlmax: 95, // canon 95, house rule 97
+    emlmin: 5, // canon 5, house rule 4
+    additional_target_locations: false, //add additional target locations e.g. neck for faster combat resolution
+    bleedspeed: 20, // bleed points per injury point, 0 to disable
+
+};
+
+
+
+
+
+on("ready", function() {
+	if (!state.MainGameNS) {
+		state.MainGameNS = { GameTime: 0 };
+	}
+	expectedSerial = 1;
+	if (config.serial != expectedSerial) {
+		sendChat("API", `Unexpected config serial number. Expected ${expectedSerial} but got ${config.serial}`);
+	}
+	
+	log("trace: " + trace);
+	//Object.assign(generate_tables(),tables)
+	//
+	
+	//log(getHarnTimeStr(state.MainGameNS.GameTime));
+
+	started = true;
+	generate_tables();
+	//if (trace) { log(`API table : ${JSON.stringify(tables,null,4)}`) }
+});
+
+
+
+
+
+
+
+on("chat:message", function(msg) {
+	if (trace) { log(`>chat:message(${msg.content})`); }
+	if (msg.type == "api") {
+		var args = msg.content.split(" ");
+		if (dispatch_table.hasOwnProperty(args[0])) {
+			var commandMap = dispatch_table[args[0]];
+			try {
+				// First, test the syntax regular expression if it has one
+				if (commandMap.hasOwnProperty("re_syntax")) {
+					log(`comparing syntax to ${commandMap.re_syntax}`)
+					if (!commandMap.re_syntax.test(msg.content)) {
+						var errorMessage = `&{template:default} {{name=Syntax error}} {{Received=${msg.content}}}`;
+						if (commandMap.hasOwnProperty("hr_syntax")) {
+							errorMessage += `{{Expected=${commandMap.hr_syntax}}}`;
+						}
+						sendChat("API", errorMessage);
+						return;
+					}
+				}
+				// syntax check passed or doesn't exist. Execute the action if it exists.
+				if (commandMap.hasOwnProperty("action")) {
+					commandMap.action(args, msg)
+				} else {
+					sendChat("API Error", `No action defined for ${args[0]}`)
+				}
+			} catch (err) {
+				// Something went wrong. Log it, alert in chat and prevent the sandbox from bailing.
+				log(err.stack);
+				sendChat("API Error", err.message);
+			}
+		} else {
+			log(`No such command ${msg.content}`);
+			sendChat("API Error", `&{template:default} {{name=Unknown command}} {{Received=${msg.content}}}`)
+
+		}
+
+	} else {
+		chatParser(msg);
+	}
+
+
+	if (trace) { log("<chat:message") }
+});
+
+
+
+
+
+
+
+on("change:attribute:current", function(obj, prev) {
+
+	if ((obj.get('name') == "INITIATIVE_ML") || (obj.get('name') == "UNIVERSAL_PENALTY") || (obj.get('name') == "ENCUMBRANCE") || (obj.get('name') == "RIDER")) {
+
+		charid = obj.get("_characterid");
+
+		var rideratt = findObjs({
+			name: 'RIDER',
+			_type: "attribute",
+			_characterid: charid,
+		})[0];
+		if (rideratt) {
+			var rider = findObjs({
+				name: rideratt.get('current'),
+				_type: "character",
+			})[0];
+			if (rider) {
+				mySet('STEED_INIT', rider.id, (parseInt(myGet('INITIATIVE_ML', charid, 0)) - (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0)) * 5) - (parseInt(myGet('ENCUMBRANCE', charid, 0)) * 5)));
+
+			}
+		}
+	} else if (obj.get('name').includes("WEAPON_NAME") && config.weapon_list_on) {
+		setWeaponsList(obj.get("_characterid"));
+	} else if (obj.get('name').includes("SKILL_NAME") && config.skill_list_on) {
+		setSkilllist(obj.get("_characterid"));
+	} else if (obj.get('name') == "sheetTab") {
+		if (obj.get('current') == "skills" && config.skill_list_on) {
+			setSkilllist(obj.get("_characterid"));
+		} else if (obj.get('current') == "combat" && config.weapon_list_on) {
+			setWeaponsList(obj.get("_characterid"));
+		}
+	}
+});
+
+on("change:campaign:turnorder", function(obj, prev) {
+
+	if (Campaign().get("turnorder") !== "") {
+		if (prev["turnorder"] !== "") {
+			var turnorder = JSON.parse(Campaign().get("turnorder"));
+			var oldturnorder = JSON.parse(prev["turnorder"]);
+			if (turnorder.length > 0) {
+				if (turnorder[0]["id"] !== oldturnorder[0]["id"]) {
+					toke = getObj("graphic", turnorder[0]["id"]);
+					sendGMPing(toke.get('left'), toke.get('top'), toke.get('pageid'), "", true);
+				}
+			}
+		}
+	}
+
+});
+
+function handle_update_tables() {
+	var scdata = findObjs({
+		name: "API_tables",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		var ostr = "{\n";
+    	for (k in {'default_macros':'','default_abilities':'','skilllist':'','autoskills':'','autoskillsnames':'','attack_melee':'','attack_missile':'','coverage2loc':'','hit_location_table':'','hit_loc_penalty':'','armor_coverage':'','armor_prot':'','weapons_table':'','missile_range':''}) {
+    		//log(k);
+    		ostr += `\"${k}\": ${JSON.stringify(tables[k],null,2)},\n\n`
+    	}
+    	ostr += `\"months\": ${JSON.stringify(tables['months'],null,2)}\n}`
+
+    	scdata.set('notes', `<pre>${ostr}</pre>`);
+	}
+
+
+    var scdata = findObjs({
+		name: "API_occupation",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+
+		var ostr = `\"occupational_skills\": ${JSON.stringify(tables['occupational_skills'],null,2)},\n\n`;
+
+		ostr += `\"occupation_time\": ${JSON.stringify(tables['occupation_time'],null,2)}\n`
+
+	    scdata.set('notes', `<pre>{\n${ostr}\n}</pre>`);
+
+		if (trace) { log(`API table added`) }
+	}
+	var scdata = findObjs({
+		name: "API_prices",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+
+
+
+	    scdata.set('notes', `<pre>${JSON.stringify(tables.prices, null, 2)}</pre>`);
+		if (trace) { log(`API table added`) }
+	    log("updated---")
+    }
+    }
+
+function generate_tables(pid=0) {
+	
+
+
+	var scdata = findObjs({
+		name: "API_tables",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			tables = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
+		    if (trace) { log(`API table loaded`) }
+
+		});
+
+	} else {
+	    var handout = createObj("handout", {
+            name: "API_tables",
+            inplayerjournals: "all",
+            archived: false
+	    });
+	var ostr = "{\n";
+	for (k in {'default_macros':'','default_abilities':'','skilllist':'','autoskills':'','autoskillsnames':'','attack_melee':'','attack_missile':'','coverage2loc':'','hit_location_table':'','hit_loc_penalty':'','armor_coverage':'','armor_prot':'','weapons_table':'','missile_range':''}) { 
+		//log(k);
+		ostr += `\"${k}\": ${JSON.stringify(tables[k],null,2)},\n\n`
+	}
+	ostr += `\"months\": ${JSON.stringify(tables['months'],null,2)}\n}`
+		
+	    handout.set('notes', `<pre>${ostr}</pre>`);
+	    handout.set('gmnotes', 'GM notes2.');
+		//initializeTables(pid);
+		if (trace) { log(`API table added`) }
+	}
+    var scdata = findObjs({
+		name: "API_occupation",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			var t_in = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
+			tables.occupational_skills = t_in.occupational_skills;
+			tables.occupation_time = t_in.occupation_time;
+			//initializeTables(pid);
+		    if (trace) { log(`API table loaded`) }
+		});
+
+	} else {
+	    var handout = createObj("handout", {
+            name: "API_occupation",
+            inplayerjournals: "all",
+            archived: false
+	    });
+		var ostr = `\"occupational_skills\": ${JSON.stringify(tables['occupational_skills'],null,2)},\n\n`;
+
+		ostr += `\"occupation_time\": ${JSON.stringify(tables['occupation_time'],null,2)}\n`
+		
+	    handout.set('notes', `<pre>{\n${ostr}\n}</pre>`);
+	    handout.set('gmnotes', 'GM notes.');
+		//initializeTables(pid);
+		if (trace) { log(`API table added`) }
+	}
+	var scdata = findObjs({
+		name: "API_prices",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			tables.prices = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
+			initializeTables(pid);
+		    if (trace) { log(`API table loaded`) }
+		});
+
+	} else {
+	    var handout = createObj("handout", {
+            name: "API_prices",
+            inplayerjournals: "all",
+            archived: false
+	    });
+
+		
+	    handout.set('notes', `<pre>${JSON.stringify(tables.prices, null, 2)}</pre>`);
+	    handout.set('gmnotes', 'GM notes.');
+		initializeTables(pid);
+		if (trace) { log(`API table added`) }
+	}
+}
+
+function handle_reload_tables() {
+
+
+
+	var scdata = findObjs({
+		name: "API_tables",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			tables = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
+		    if (trace) { log(`API table loaded`) }
+
+		});
+
+	}
+    var scdata = findObjs({
+		name: "API_occupation",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			var t_in = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
+			tables.occupational_skills = t_in.occupational_skills;
+			tables.occupation_time = t_in.occupation_time;
+			//initializeTables(pid);
+		    if (trace) { log(`API table loaded`) }
+		});
+
+	}
+	var scdata = findObjs({
+		name: "API_prices",
+		_type: "handout",
+	})[0];
+	if (scdata) {
+		scdata.get("notes", function(scda) {
+			tables.prices = JSON.parse(scda.replace(/(<([^>]+)>)/gi, ""));
+
+		    if (trace) { log(`API table loaded`) }
+		});
+
+	}
+}
+
+function house_remove(house_remove, canon, description) {
+	house_remove.forEach((k) => {
+		if (trace)
+			log(`Removing ${description} ${k}`);
+		delete canon[k];
+	});
+}
+
+function house_add(house_add, canon, description) {
+	Object.keys(house_add).forEach((k) => {
+		canon[k] = house_add[k];
+		if (trace)
+			log(`Adding house rule ${description}: ${k}`);
+	});
+}
+
+
+
+//
+//
+// TABLES
+//
+//
+var tables = {
+
+
+"default_macros": {"helper-Physician-roll":"?{Treatment Bonus|Minor cut - Clean & Dress,30|Serious cut - Surgery,20|Grevious cut - Surgery,10|Minor stab - Clean & Dress,25|Serious stab - Clean & Dress,15|Grevious stab - Surgery,5|Minor bruise - Compress,30|Serious blunt fracture - Splint,20|Grevious blunt crush -Surgery/Splint,10|Bleeding wound - Tourniquet,50|No Bonus,0}",
+			"Random-Char":"!rand"},
+"default_abilities": {
+    "Atk":`!attack @{selected|token_id} ?{aim zone|mid|high|low${config.additional_target_locations?"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin":""}} ?{Aspect|H|B|E|P|F} ?{Attack Type|melee|missile} ?{Mod|0} @{target|token_id} %{@{character_name}|helper-Weapons}`,
+    "Fumble":"&{template:check-lt} {{character_name=@{selected|token_name}}} {{rolldesc=rolls Fumble}} {{rolltarget=[[@{COMBAT_DEX}]]}} {{rollresult=[[[[3d6]] + @{selected|bar3} + @{ENCUMBRANCE}]]}} {{base=@{COMBAT_DEX}}} {{rolltype=3d6+[[@{selected|bar3} + @{ENCUMBRANCE}]]}} {{penalty=[[0]]}}",
+    "Stumble":"&{template:check-lt} {{character_name=@{selected|token_name}}} {{rolldesc=rolls Stumble}} {{rolltarget=[[@{COMBAT_AGL}]]}} {{rollresult=[[[[3d6]] + @{selected|bar3} + @{ENCUMBRANCE}]]}} {{base=@{COMBAT_AGL}}} {{rolltype=3d6+[[@{selected|bar3} + @{ENCUMBRANCE}]]}} {{penalty=[[0]]}}",
+    "ImproveSkill":"!improveskill @{character_id} %{@{character_name}|helper-Skilllist}"
+},
+
+"skilllist": {
+    "Acrobatics": { "type": "PHYSICAL", "sba": ["STR", "AGL", "AGL"], "ssm": { "Nad": "2", "Hir": "1" }, "oml": "2", "notes": "Trapeze, Tumbling, Vaulting, etc." },
+    "CLIMBING": { "type": "PHYSICAL", "sba": ["STR", "DEX", "AGL"], "ssm": { "Ula": "2", "Ara": "2" }, "oml": "4", "notes": "None." },
+    "CONDITION": { "type": "PHYSICAL", "sba": ["STR", "STA", "WIL"], "ssm": { "Ula": "1", "Lad": "1" }, "oml": "5", "notes": "None." },
+    "Dancing": { "type": "PHYSICAL", "sba": ["DEX", "AGL", "AGL"], "ssm": { "Tar": "2", "Hir": "1", "Tai": "1" }, "oml": "2", "notes": "Different styles may be specialties." },
+    "DODGE": { "type": "PHYSICAL", "sba": ["AGL", "AGL", "AGL"], "ssm": {}, "oml": "5", "notes": "Different styles may be specialties." },
+    "JUMPING": { "type": "PHYSICAL", "sba": ["STR", "AGL", "AGL"], "ssm": { "Nad": "2", "Hir": "2" }, "oml": "4", "notes": "High Jump, Long Jump." },
+    "Legerdemain": { "type": "PHYSICAL", "sba": ["DEX", "DEX", "WIL"], "ssm": { "Sko": "2", "Tai": "2", "Tar": "2" }, "oml": "1", "notes": "Pursecutting, Conjuring, etc." },
+    "Searching": { "type": "PHYSICAL", "sba": ["DEX", "EYE", "INT"], "ssm": {}, "oml": "2", "notes": "Used to find hidden or secret doors or things." },
+    "Skiing": { "type": "PHYSICAL", "sba": ["STR", "DEX", "AGL"], "ssm": { "Mas": "2", "Sko": "1", "Lad": "1" }, "oml": "1", "notes": "None." },
+    "STEALTH": { "type": "PHYSICAL", "sba": ["AGL", "HRG", "WIL"], "ssm": { "Hir": "2", "Tar": "2", "Tai": "2" }, "oml": "3", "notes": "None." },
+    "Swimming": { "type": "PHYSICAL", "sba": ["STA", "DEX", "AGL"], "ssm": { "Sko": "1", "Mas": "3", "Lad": "3" }, "oml": "1", "notes": "None." },
+    "THROWING": { "type": "PHYSICAL", "sba": ["STR", "DEX", "EYE"], "ssm": { "Hir": "2", "Tar": "1", "Nad": "1" }, "oml": "4", "notes": "None." },
+    "Acting": { "type": "COMMUNICATION", "sba": ["AGL", "VOI", "INT"], "ssm": { "Tar": "1", "Tai": "1" }, "oml": "2", "notes": "None." },
+    "AWARENESS": { "type": "COMMUNICATION", "sba": ["EYE", "HRG", "SML"], "ssm": { "Hir": "2", "Tar": "2" }, "oml": "4", "notes": "None." },
+    "INTRIGUE": { "type": "COMMUNICATION", "sba": ["INT", "AUR", "WIL"], "ssm": { "Tai": "1", "Tar": "1", "Sko": "1" }, "oml": "3", "notes": "None." },
+    "Lovecraft": { "type": "COMMUNICATION", "sba": ["CML", "AGL", "VOI"], "ssm": { "Mas": "1", "Ang": "1" }, "oml": "3", "notes": "GM Discretion." },
+    "MentalConflict": { "type": "COMMUNICATION", "sba": ["AUR", "WIL", "WIL"], "ssm": {}, "oml": "3", "notes": "None." },
+    "Musician": { "type": "COMMUNICATION", "sba": ["DEX", "HRG", "HRG"], "ssm": { "Mas": "1", "Ang": "1" }, "oml": "1", "notes": "Each instrument is a separate skill." },
+    "ORATORY": { "type": "COMMUNICATION", "sba": ["CML", "VOI", "INT"], "ssm": { "Tar": "1" }, "oml": "2", "notes": "None." },
+    "RHETORIC": { "type": "COMMUNICATION", "sba": ["VOI", "INT", "WIL"], "ssm": { "Tai": "1", "Tar": "1", "Sko": "1" }, "oml": "3", "notes": "Command, Diplomacy, Intimidation." },
+    "SINGING": { "type": "COMMUNICATION", "sba": ["HRG", "VOI", "VOI"], "ssm": { "Mas": "1" }, "oml": "3", "notes": "Different styles may be specialties." },
+    "Tactics": { "type": "COMMUNICATION", "sba": ["INT", "INT", "WIL"], "ssm": {}, "oml": "1", "notes": "Small unit tactics successful roll gives advantages in skirmish." },
+    "Language": { "type": "COMMUNICATION", "sba": ["VOI", "INT", "WIL"], "ssm": { "Tai": "1" }, "oml": "5", "notes": "11 Each Language is a separate skill." },
+    "Script": { "type": "COMMUNICATION", "sba": ["DEX", "EYE", "INT"], "ssm": { "Tar": "1", "Tai": "1" }, "oml": "6", "notes": "Each Script is a separate skill" },
+    "Agrik": { "type": "RITUAL", "sba": ["VOI", "INT", "STR"], "ssm": { "Nad": "2", "Ang": "1", "Ahn": "1" }, "oml": "1", "notes": "Liturgy, Theology, Scriptor" },
+    "Halea": { "type": "RITUAL", "sba": ["VOI", "INT", "CML"], "ssm": { "Tar": "2", "Hir": "1", "Mas": "1" }, "oml": "1", "notes": "Liturgy, Theology, Scriptor" },
+    "Ilvir": { "type": "RITUAL", "sba": ["VOI", "INT", "AUR"], "ssm": { "Sko": "2", "Tai": "1", "Ula": "1" }, "oml": "1", "notes": "Liturgy, Theology, Scriptor" },
+    "Larani": { "type": "RITUAL", "sba": ["VOI", "INT", "WIL"], "ssm": { "Ang": "2", "Ahn": "1", "Fen": "1" }, "oml": "1", "notes": "Liturgy, Theology, Scriptor" },
+    "Morgath": { "type": "RITUAL", "sba": ["VOI", "INT", "AUR"], "ssm": { "Lad": "2", "Ahn": "1", "Mas": "1" }, "oml": "1", "notes": "Liturgy, Theology, Scriptor" },
+    "Naveh": { "type": "RITUAL", "sba": ["VOI", "INT", "WIL"], "ssm": { "Mas": "2", "Sko": "1", "Tar": "1" }, "oml": "1", "notes": "Liturgy, Theology, Scriptor" },
+    "Peoni": { "type": "RITUAL", "sba": ["VOI", "INT", "DEX"], "ssm": { "Ara": "2", "Ang": "1", "Ula": "1" }, "oml": "1", "notes": "Liturgy, Theology, Scriptor" },
+    "Sarajin": { "type": "RITUAL", "sba": ["VOI", "INT", "STR"], "ssm": { "Fen": "2", "Ara": "1", "Lad": "1" }, "oml": "1", "notes": "Liturgy, Theology, Scriptor" },
+    "Save-Knor": { "type": "RITUAL", "sba": ["VOI", "INT", "INT"], "ssm": { "Tai": "2", "Sko": "1", "Tar": "1" }, "oml": "1", "notes": "Liturgy, Theology, Scriptor" },
+    "Siem": { "type": "RITUAL", "sba": ["VOI", "INT", "AUR"], "ssm": { "Hir": "2", "Fen": "1", "Ula": "1" }, "oml": "1", "notes": "Liturgy, Theology, Scriptor" },
+    "INITIATIVE": { "type": "COMBAT", "sba": ["AGL", "WIL", "WIL"], "ssm": {}, "oml": "4", "notes": "None." },
+    "UNARMED": { "type": "COMBAT", "sba": ["STR", "DEX", "AGL"], "ssm": { "Ang": "2", "Mas": "2", "Lad": "2", "Ula": "2" }, "oml": "4", "notes": "Brawling, Wrestling, Martial Arts." },
+    "Riding": { "type": "COMBAT", "sba": ["DEX", "AGL", "WIL"], "ssm": { "Ula": "1", "Ara": "1" }, "oml": "1", "notes": "Always averaged with Steed Initiative." },
+    "RIDING": { "type": "COMBAT", "sba": ["DEX", "AGL", "WIL"], "ssm": { "Ula": "1", "Ara": "1" }, "oml": "1", "notes": "Always averaged with Steed Initiative." },
+    "Axe": { "type": "COMBAT", "sba": ["STR", "STR", "DEX"], "ssm": { "Ahn": "1", "Fen": "1", "Ang": "1" }, "oml": "3", "notes": "Battleaxe, Handaxe, Shorkana, Pickaxe, Sickle, Warhammer." },
+    "Blowgun": { "type": "COMBAT", "sba": ["STA", "DEX", "EYE"], "ssm": { "Hir": "2", "Tar": "1", "Nad": "1" }, "oml": "4", "notes": "None." },
+    "Bow": { "type": "COMBAT", "sba": ["STR", "DEX", "EYE"], "ssm": { "Hir": "1", "Tar": "1", "Nad": "1" }, "oml": "2", "notes": "Crossbow, Hartbow, Longbow, Shortbow." },
+    "Club": { "type": "COMBAT", "sba": ["STR", "STR", "DEX"], "ssm": { "Ula": "1", "Ara": "1" }, "oml": "4", "notes": "Club, Mace, Maul, Morningstar." },
+    "Dagger": { "type": "COMBAT", "sba": ["DEX", "DEX", "EYE"], "ssm": { "Ang": "2", "Nad": "2" }, "oml": "3", "notes": "Dagger, Keltan, Knife, Taburi." },
+    "Flail": { "type": "COMBAT", "sba": ["DEX", "DEX", "DEX"], "ssm": { "Hir": "1", "Tar": "1", "Nad": "1" }, "oml": "1", "notes": "Ball & Chain, Grainflail, Nachakas, Warflail." },
+    "Net": { "type": "COMBAT", "sba": ["DEX", "DEX", "EYE"], "ssm": { "Mas": "1", "Sko": "1", "Lad": "1" }, "oml": "1", "notes": "Cloak, Net, etc." },
+    "Polearm": { "type": "COMBAT", "sba": ["STR", "STR", "DEX"], "ssm": { "Ang": "1", "Ara": "1" }, "oml": "2", "notes": "Lance, Glaive/Bill, Jousting Pole, Pike, Poleaxe." },
+    "Shield": { "type": "COMBAT", "sba": ["STR", "DEX", "DEX"], "ssm": { "Ula": "1", "Lad": "1", "Mas": "1" }, "oml": "3", "notes": "Buckler, Kite, Knight, Round, Tower shields." },
+    "Sling": { "type": "COMBAT", "sba": ["DEX", "DEX", "EYE"], "ssm": { "Hir": "1", "Tar": "1", "Nad": "1" }, "oml": "1", "notes": "Sling, Staffsling." },
+    "Spear": { "type": "COMBAT", "sba": ["STR", "STR", "DEX"], "ssm": { "Ara": "1", "Fen": "1", "Ula": "1" }, "oml": "3", "notes": "Javelin, Staff, Trident." },
+    "Sword": { "type": "COMBAT", "sba": ["STR", "DEX", "DEX"], "ssm": { "Ang": "3", "Ahn": "1", "Nad": "1" }, "oml": "3", "notes": "Bastard Sword, Battlesword, Broadsword, Estoc, Falchion, Longknife, Mang, Mankar, Shortsword." },
+    "Whip": { "type": "COMBAT", "sba": ["DEX", "DEX", "EYE"], "ssm": { "Hir": "1", "Nad": "1" }, "oml": "1", "notes": "Isagra, Whip." },
+    "Agriculture": { "type": "LORE", "sba": ["STR", "STA", "WIL"], "ssm": { "Ula": "2", "Ara": "2" }, "oml": "2", "notes": "Different crops may be specialties." },
+    "Alchemy": { "type": "LORE", "sba": ["SML", "INT", "AUR"], "ssm": { "Sko": "3", "Tai": "2", "Mas": "2" }, "oml": "1", "notes": "Different techniques may be specialties." },
+    "Animalcraft": { "type": "LORE", "sba": ["AGL", "VOI", "WIL"], "ssm": { "Ula": "1", "Ara": "1" }, "oml": "1", "notes": "Horsecraft, Oxcraft, Birdcraft, etc." },
+    "Astrology": { "type": "LORE", "sba": ["EYE", "INT", "AUR"], "ssm": { "Tar": "1" }, "oml": "1", "notes": "Astromancy, Astronomy." },
+    "Brewing": { "type": "LORE", "sba": ["DEX", "SML", "SML"], "ssm": { "Sko": "3", "Tai": "2", "Mas": "2" }, "oml": "2", "notes": "Different beverage types may be specialties." },
+    "Ceramics": { "type": "LORE", "sba": ["DEX", "DEX", "EYE"], "ssm": { "Ula": "2", "Ara": "2" }, "oml": "2", "notes": "Different artistic styles may be specialties." },
+    "Cookery": { "type": "LORE", "sba": ["DEX", "SML", "SML"], "ssm": { "Sko": "1" }, "oml": "3", "notes": "Cultural, religious, and regional specialties." },
+    "Drawing": { "type": "LORE", "sba": ["DEX", "EYE", "EYE"], "ssm": { "Sko": "1", "Tai": "1" }, "oml": "2", "notes": "Cartography, Painting, Sketching, etc." },
+    "Driving": { "type": "LORE", "sba": ["DEX", "AGL", "WIL"], "ssm": { "Ula": "1", "Ara": "1" }, "oml": "1", "notes": "Must specialize wagon or cart." },
+    "Embalming": { "type": "LORE", "sba": ["DEX", "EYE", "SML"], "ssm": { "Sko": "1", "Ula": "1" }, "oml": "1", "notes": "Cultural, religious, and regional specialties." },
+    "Engineering": { "type": "LORE", "sba": ["DEX", "INT", "INT"], "ssm": { "Ula": "2", "Ara": "2", "Fen": "1" }, "oml": "1", "notes": "Fortifications, Mills, Siege Engines, etc" },
+    "Fishing": { "type": "LORE", "sba": ["DEX", "EYE", "WIL"], "ssm": { "Mas": "2", "Lad": "2" }, "oml": "3", "notes": "Different techniques may be specialties." },
+    "Hidework": { "type": "LORE", "sba": ["DEX", "DEX", "EYE"], "ssm": { "Hir": "2", "Tar": "1", "Nad": "1" }, "oml": "1", "notes": "Bowyer, Fletcher." },
+    "Folklore": { "type": "LORE", "sba": ["VOI", "INT", "INT"], "ssm": { "Tai": "2" }, "oml": "3", "notes": "Cultural and/or regional specialties." },
+    "Foraging": { "type": "LORE", "sba": ["DEX", "SML", "INT"], "ssm": { "Ula": "2", "Ara": "2" }, "oml": "3", "notes": "Different climate/terrain types may be specialties." },
+    "Glasswork": { "type": "LORE", "sba": ["DEX", "EYE", "WIL"], "ssm": { "Fen": "2" }, "oml": "1", "notes": "Different styles may be specialties." },
+    "Heraldry": { "type": "LORE", "sba": ["DEX", "EYE", "WIL"], "ssm": { "Sko": "1", "Tai": "1" }, "oml": "1", "notes": "Cultural and/or regional specialties." },
+    "Herblore": { "type": "LORE", "sba": ["EYE", "SML", "INT"], "ssm": { "Ula": "3", "Ara": "2" }, "oml": "1", "notes": "Different climate/terrain types may be specialties." },
+    "Hidework": { "type": "LORE", "sba": ["DEX", "SML", "WIL"], "ssm": { "Ula": "1", "Ara": "1" }, "oml": "2", "notes": "Tanning, Parchment, Taxidermy, Leatherworking, etc." },
+    "Jewelcraft": { "type": "LORE", "sba": ["DEX", "EYE", "WIL"], "ssm": { "Fen": "3", "Tar": "1", "Ara": "1" }, "oml": "1", "notes": "Goldsmith, Silversmith, Gemcutter, Designer, etc." },
+    "Law": { "type": "LORE", "sba": ["VOI", "INT", "WIL"], "ssm": { "Tar": "1", "Tai": "1" }, "oml": "1", "notes": "Cultural and/or regional specialties." },
+    "Lockcraft": { "type": "LORE", "sba": ["DEX", "EYE", "WIL"], "ssm": { "Fen": "1" }, "oml": "1", "notes": "Lockmaker, Lockpicker, Fine Mechanician, etc." },
+    "Masonry": { "type": "LORE", "sba": ["STR", "DEX", "INT"], "ssm": { "Ula": "2", "Ara": "2" }, "oml": "1", "notes": "Architect, Builder, Stonecutter, Sculptor, etc." },
+    "Mathematics": { "type": "LORE", "sba": ["INT", "INT", "WIL"], "ssm": { "Tai": "3", "Tar": "1", "Sko": "1" }, "oml": "1", "notes": "Algebra, Bookkeeping, Geometry, etc." },
+    "Metalcraft": { "type": "LORE", "sba": ["STR", "DEX", "WIL"], "ssm": { "Fen": "3", "Ahn": "1", "Ang": "1" }, "oml": "1", "notes": "Different metal types (Tinsmith, Coppersmith, etc.)." },
+    "Milling": { "type": "LORE", "sba": ["STR", "DEX", "SML"], "ssm": { "Ula": "1" }, "oml": "2", "notes": "Baking, Milling." },
+    "Mining": { "type": "LORE", "sba": ["STR", "EYE", "INT"], "ssm": { "Ula": "2", "Ara": "2", "Fen": "1" }, "oml": "1", "notes": "Different mineral/metal types." },
+    "Packing": { "type": "LORE", "sba": ["DEX", "EYE", "INT"], "ssm": { "Fen": "1", "Ula": "2", "Ara": "2" }, "oml": "1", "notes": "Pack to maximize available space and knot tying." },
+    "Perfumery": { "type": "LORE", "sba": ["SML", "SML", "INT"], "ssm": { "Hir": "1", "Sko": "1", "Tar": "1" }, "oml": "1", "notes": "Incense, Scented Oils, Soap, etc." },
+    "Physician": { "type": "LORE", "sba": ["DEX", "EYE", "INT"], "ssm": { "Mas": "2", "Sko": "1", "Tai": "1" }, "oml": "1", "notes": "Homeopathy, Surgery, etc." },
+    "PHYSICIAN": { "type": "LORE", "sba": ["DEX", "EYE", "INT"], "ssm": { "Mas": "2", "Sko": "1", "Tai": "1" }, "oml": "1", "notes": "Homeopathy, Surgery, etc." },
+    "Piloting": { "type": "LORE", "sba": ["DEX", "EYE", "INT"], "ssm": { "Lad": "3", "Mas": "1" }, "oml": "1", "notes": "Navigation, Sailing, Specific Waterways, etc." },
+    "Runecraft": { "type": "LORE", "sba": ["INT", "AUR", "AUR"], "ssm": { "Tai": "2", "Sko": "1" }, "oml": "1", "notes": "Regional styles may be specialties." },
+    "Seamanship": { "type": "LORE", "sba": ["STR", "DEX", "AGL"], "ssm": { "Lad": "3", "Mas": "1", "Sko": "1" }, "oml": "2", "notes": "Rowing, Sailing (small boats), Sculling." },
+    "Shipwright": { "type": "LORE", "sba": ["STR", "DEX", "INT"], "ssm": { "Lad": "3", "Mas": "1" }, "oml": "1", "notes": "Naval Architecture, Sailmaking, etc." },
+    "Survival": { "type": "LORE", "sba": ["STR", "DEX", "INT"], "ssm": { "Ula": "2", "Ara": "1" }, "oml": "3", "notes": "Different climate/terrain types may be specialties." },
+    "Tarotry": { "type": "LORE", "sba": ["INT", "AUR", "WIL"], "ssm": { "Tar": "2", "Tai": "2", "Sko": "1", "Hir": "1" }, "oml": "1", "notes": "Regional styles may be specialties." },
+    "Textilecraft": { "type": "LORE", "sba": ["DEX", "DEX", "EYE"], "ssm": { "Ula": "1", "Ara": "1" }, "oml": "2", "notes": "Embroidery, Needlework, Tailoring, Weaving, etc." },
+    "Timbercraft": { "type": "LORE", "sba": ["STR", "DEX", "AGL"], "ssm": { "Ula": "3", "Ara": "1" }, "oml": "2", "notes": "Cutting, Felling, Tree Care, etc." },
+    "Tracking": { "type": "LORE", "sba": ["EYE", "SML", "WIL"], "ssm": { "Ula": "3", "Ara": "3" }, "oml": "2", "notes": "Specialist for any race or creature type." },
+    "Trap/Hunt": { "type": "LORE", "sba": ["EYE", "SML", "WIL"], "ssm": { "Ula": "3", "Ara": "3" }, "oml": "1", "notes": "Specialist for any race or creature type." },
+    "Weaponcraft": { "type": "LORE", "sba": ["STR", "DEX", "WIL"], "ssm": { "Fen": "3", "Ahn": "1", "Ang": "1" }, "oml": "1", "notes": "Weapon or Armour group (eg. Swords or Mailcraft)." },
+    "Weatherlore": { "type": "LORE", "sba": ["INT", "EYE", "SML"], "ssm": { "Hir": "1", "Tar": "1", "Mas": "1", "Lad": "1" }, "oml": "3", "notes": "Different climate types may be specialties." },
+    "Woodcraft": { "type": "LORE", "sba": ["DEX", "DEX", "WIL"], "ssm": { "Ula": "2", "Ara": "1", "Lad": "1" }, "oml": "2", "notes": "Cabinetry, Carpentry, Cooper, Carving, Wheelwright." },
+    "Lyahvi": { "type": "MAGIC", "sba": ["AUR", "AUR", "EYE"], "ssm": { "Ula": "-3", "Ara": "-2", "Fen": "-1", "Ang": "1", "Nad": "2", "Nir": "3", "Tar": "2", "Tai": "1", "Mas": "-1", "Lad": "-2" }, "oml": "1", "notes": "none" },
+    "Peleahn": { "type": "MAGIC", "sba": ["AUR", "AUR", "AGL"], "ssm": { "Ula": "-1", "Fen": "1", "Ahn": "2", "Ang": "3", "Nad": "2", "Nir": "1", "Tai": "-1", "Sko": "-2", "Mas": "-3", "Lad": "-2" }, "oml": "1", "notes": "none" },
+    "Jmorvi": { "type": "MAGIC", "sba": ["AUR", "AUR", "STR"], "ssm": { "Ula": "1", "Ara": "2", "Fen": "3", "Ahn": "2", "Ang": "1", "Nir": "-1", "Tar": "-2", "Tai": "-3", "Sko": "-2", "Mas": "-1" }, "oml": "1", "notes": "none" },
+    "Fyvria": { "type": "MAGIC", "sba": ["AUR", "AUR", "SML"], "ssm": { "Ula": "3", "Ara": "2", "Fen": "1", "Ang": "-1", "Nad": "-2", "Hir": "-3", "Tar": "-2", "Tai": "-1", "Mas": "1", "Lad": "2" }, "oml": "1", "notes": "none" },
+    "Odivshe": { "type": "MAGIC", "sba": ["AUR", "AUR", "DEX"], "ssm": { "Ula": "1", "Fen": "-1", "Ahn": "-2", "Ang": "-3", "Nad": "-2", "Hir": "-1", "Tai": "1", "Sko": "2", "Mas": "3", "Lad": "2" }, "oml": "1", "notes": "none" },
+    "Savorya": { "type": "MAGIC", "sba": ["AUR", "AUR", "INT"], "ssm": { "Ula": "-1", "Ara": "-2", "Fen": "-3", "Ahn": "-2", "Ang": "-1", "Hir": "1", "Tar": "2", "Tai": "3", "Sko": "2", "Mas": "1" }, "oml": "1", "notes": "none" },
+    "Neutral": { "type": "MAGIC", "sba": ["AUR", "AUR", "WIL"], "ssm": { "Ula": "0" }, "oml": "1", "notes": "none" }
+},
+
+
+
+"autoskills": {"CLIMBING":"ML","CONDITION":"ML","DODGE":"ML","JUMPING":"ML","STEALTH":"ML","INITIATIVE":"ML","UNARMED":"ML","THROWING":"ML","RIDING":"ML","AWARENESS":"ML","INTRIGUE":"ML","ORATORY":"ML","RHETORIC":"ML","SINGING":"ML","PHYSICIAN":"ML"},
+"autoskillsnames": ["Initiative","Unarmed","Dodge","Riding","Climbing","Condition","Jumping","Stealth","Throwing","Awareness","Intrigue","Oratory","Rhetoric","Singing","Physician"],
+//
+//
+//
+
+
+"prices": {
+    "Ailettes, kurbul":{"price":20,"weight":1.0},
+    "Ailettes, plate":{"price":100,"weight":3.2},
+    "Alchemical Recipe book":{"price":150,"weight":5.0},
+    "Alchemist's kit":{"price":72,"weight":10},
+    "Anklet, Bone/Horn":{"price":3,"weight":0.125},
+    "Anklet, Copper":{"price":5,"weight":0.125},
+    "Anklet, Gold with gem":{"price":3000,"weight":0.125},
+    "Anklet, Gold":{"price":2400,"weight":0.125},
+    "Anklet, Silver":{"price":120,"weight":0.125},
+    "Armor Repair kit":{"price":24,"weight":10},
+    "Arrow, dozen":{"price":15,"weight":2},
+    "Axe(Battleaxe)":{"price":100,"weight":6},
+    "Axe(Handaxe)":{"price":72,"weight":3},
+    "Axe(Warhammer)":{"price":90,"weight":5},
+    "Axe, wood handle":{"price":12,"weight":3},
+    "Backbag, medium, leather":{"price":12,"weight":1},
+    "Backbag, small, canvas":{"price":4,"weight":0.5},
+    "Backplate, kurbul":{"price":60,"weight":3.0},
+    "Backplate, plate":{"price":300,"weight":9.6},
+    "Beaver Hide":{"price":30,"weight":5},
+    "Bell, hand":{"price":5,"weight":0.2},
+    "Belt, leather":{"price":10,"weight":1},
+    "Beltpouch, buckram":{"price":5,"weight":0.25},
+    "Beltpouch, leather":{"price":3,"weight":0.5},
+    "Beltpouch, leather":{"price":3,"weight":0.5},
+    "Beltpouch, silk":{"price":35,"weight":0.25},
+    "Beltpouch, silk":{"price":35,"weight":0.2},
+    "Body, fur":{"price":0,"weight":0},
+    "Body, mail":{"price":0,"weight":0},
+    "Body, nat1":{"price":0,"weight":0},
+    "Body, plate ":{"price":0,"weight":0},
+    "Boots, calf, cloth":{"price":38,"weight":2.2},
+    "Boots, calf, leather":{"price":64,"weight":3.2},
+    "Boots, knee, cloth":{"price":44,"weight":2.8},
+    "Boots, knee, leather":{"price":76,"weight":3.8},
+    "Bow(Crossbow)":{"price":600,"weight":5.0},
+    "Bow(Hartbow)":{"price":96,"weight":2},
+    "Bow(Longbow)":{"price":36,"weight":3},
+    "Bow(Shortbow)":{"price":24,"weight":2},
+    "Breastplate, kurbul":{"price":60,"weight":3.0},
+    "Breastplate, plate":{"price":300,"weight":9.6},
+    "Breastplate-Backplate, kurbul":{"price":120,"weight":6.0},
+    "Broach, Bone/Horn":{"price":1,"weight":0.03},
+    "Broach, Copper":{"price":3,"weight":0.03},
+    "Broach, Gold with gem":{"price":1000,"weight":0.03},
+    "Broach, Gold":{"price":600,"weight":0.03},
+    "Broach, Silver":{"price":30,"weight":0.03},
+    "Brush, hair":{"price":3,"weight":0.2},
+    "Byrnie, mail":{"price":660,"weight":22.0},
+    "Byrnie, ring":{"price":308,"weight":17.6},
+    "Byrnie, scale":{"price":440,"weight":30.8},
+    "Cage, wood, small":{"price":7,"weight":2},
+    "Calf Hide":{"price":16,"weight":10},
+    "Camp cooking kit":{"price":24,"weight":5},
+    "Cap, quilt":{"price":16,"weight":1.2},
+    "Carpentry kit":{"price":36,"weight":10},
+    "Circlet, Bone/Horn":{"price":10,"weight":0.3125},
+    "Circlet, Copper":{"price":20,"weight":0.3125},
+    "Circlet, Gold with gem":{"price":7000,"weight":0.3125},
+    "Circlet, Gold":{"price":6000,"weight":0.3125},
+    "Circlet, Silver with gem":{"price":600,"weight":0.3125},
+    "Circlet, Silver":{"price":300,"weight":0.3125},
+    "Cloak, beaver":{"price":302,"weight":10},
+    "Cloak, buckram":{"price":101,"weight":6.6},
+    "Cloak, canvas":{"price":45,"weight":6.6},
+    "Cloak, ermine":{"price":670,"weight":10},
+    "Cloak, leather":{"price":134,"weight":9},
+    "Cloak, linen":{"price":67,"weight":6.6},
+    "Cloak, russet":{"price":201,"weight":6.6},
+    "Cloak, sealskin":{"price":335,"weight":12},
+    "Cloak, serge":{"price":78,"weight":6.6},
+    "Cloak, silk":{"price":614,"weight":5.6},
+    "Cloak, waxed canvas":{"price":90,"weight":6.6},
+    "Cloak, worsted":{"price":312,"weight":6.6},
+    "Club":{"price":12,"weight":3},
+    "Club(Mace)":{"price":84,"weight":4},
+    "Club(Maul)":{"price":24,"weight":7},
+    "Club(Morningstar)":{"price":48,"weight":5},
+    "Comb, ivory":{"price":20,"weight":0.1},
+    "Comb, wood":{"price":2,"weight":0.1},
+    "Coudes, kurbul":{"price":10,"weight":0.5},
+    "Coudes, plate":{"price":50,"weight":1.6},
+    "Cow Hide":{"price":10,"weight":20},
+    "Cowl, long, mail":{"price":135,"weight":6.0},
+    "Cowl, long, ring":{"price":63,"weight":4.0},
+    "Cowl, quilt":{"price":32,"weight":2.4},
+    "Cowl, short, mail":{"price":120,"weight":4.0},
+    "Cowl, short, ring":{"price":42,"weight":3.6},
+    "Cowl/hood, beaver":{"price":27,"weight":1.6},
+    "Cowl/hood, buckram":{"price":9,"weight":0.8},
+    "Cowl/hood, canvas":{"price":4,"weight":0.8},
+    "Cowl/hood, ermine":{"price":60,"weight":1.6},
+    "Cowl/hood, leather":{"price":12,"weight":1.6},
+    "Cowl/hood, linen":{"price":6,"weight":0.8},
+    "Cowl/hood, russet":{"price":18,"weight":0.8},
+    "Cowl/hood, sealskin":{"price":30,"weight":2.4},
+    "Cowl/hood, serge":{"price":7,"weight":0.8},
+    "Cowl/hood, silk":{"price":55,"weight":0.8},
+    "Cowl/hood, waxed canvas":{"price":9,"weight":0.8},
+    "Cowl/hood, worsted":{"price":28,"weight":0.8},
+    "Cuirass, kurbul":{"price":120,"weight":6.0},
+    "Cuirass, plate":{"price":600,"weight":19.2},
+    "Dagger":{"price":24,"weight":1},
+    "Deer Hide":{"price":6,"weight":7},
+    "Doshenkana, 1 dose":{"price":21,"weight":0.1},
+    "Doshenkana, 10 doses":{"price":175,"weight":1.0},
+    "Dress, lightlinen":{"price":81,"weight":2.1},
+    "Dress, lightsilk":{"price":1719,"weight":1.5},
+    "Earing, Bone/Horn":{"price":1,"weight":0.01},
+    "Earing, Copper":{"price":1,"weight":0.01},
+    "Earing, Gold with gem":{"price":425,"weight":0.01},
+    "Earing, Gold":{"price":225,"weight":0.01},
+    "Earing, Silver":{"price":15,"weight":0.01},
+    "Elprequir, 1 dose":{"price":18,"weight":0.1},
+    "Fishhooks, dozen":{"price":2,"weight":0.1},
+    "Fishing line, 50'":{"price":10,"weight":0.5},
+    "Flail(Ball & Chain)":{"price":60,"weight":4},
+    "Flail(Grainflail)":{"price":12,"weight":2},
+    "Flail(Warflail)":{"price":60,"weight":5},
+    "Flask of oil (metal)":{"price":7,"weight":1},
+    "Flint & steel":{"price":2,"weight":0.1},
+    "Flute":{"price":3,"weight":0.5},
+    "Frankincense, oz, jar":{"price":80,"weight":0.25},
+    "Gambeson, quilt":{"price":200,"weight":19.5},
+    "Gauntlets, ring":{"price":28,"weight":1.6},
+    "Gittern":{"price":150,"weight":5},
+    "Gloves, buckram":{"price":8,"weight":0.4},
+    "Gloves, leather":{"price":10,"weight":0.6},
+    "Gloves, russet":{"price":15,"weight":0.4},
+    "Gloves, silk":{"price":46,"weight":0.3},
+    "Gold Crown":{"price":320,"weight":.06},
+    "Gorget, kurbul":{"price":5,"weight":0.5},
+    "Greathelm, plate":{"price":275,"weight":8.8},
+    "Greaves, kurbul":{"price":50,"weight":2.5},
+    "Greaves, plate":{"price":250,"weight":8.8},
+    "Habergeon, mail":{"price":345,"weight":25.0},
+    "Habergeon, scale":{"price":430,"weight":41.2},
+    "Halfhelm, kurbul":{"price":20,"weight":1.0},
+    "Halfhelm, plate":{"price":100,"weight":3.2},
+    "Halfhelm, ring":{"price":28,"weight":1.0},
+    "Harp":{"price":300,"weight":10},
+    "Hat/Cap, beaver":{"price":18,"weight":0.8},
+    "Hat/Cap, buckram":{"price":6,"weight":0.4},
+    "Hat/Cap, ermine":{"price":40,"weight":0.8},
+    "Hat/Cap, leather":{"price":8,"weight":0.8},
+    "Hat/Cap, russet":{"price":12,"weight":0.4},
+    "Hat/Cap, sealskin":{"price":20,"weight":1.2},
+    "Hat/Cap, serge":{"price":5,"weight":0.4},
+    "Hat/Cap, silk":{"price":36,"weight":0.4},
+    "Hat/Cap, worsted":{"price":19,"weight":0.4},
+    "Hatchet":{"price":12,"weight":2},
+    "Hatchet":{"price":6,"weight":1},
+    "Hauberk, long, mail":{"price":900,"weight":27.0},
+    "Hauberk, long, mail+2":{"price":9000,"weight":27.0},
+    "Hauberk, long, ring":{"price":420,"weight":26},
+    "Hauberk, long, scale":{"price":600,"weight":50},
+    "Hauberk, mail":{"price":855900,"weight":27.0},
+    "Hauberk, short, mail":{"price":855,"weight":26.0},
+    "Hauberk, short, ring":{"price":399,"weight":24},
+    "Hauberk, short, scale":{"price":570,"weight":45.5},
+    "Hideworking kit":{"price":24,"weight":5},
+    "Hoe":{"price":3,"weight":2},
+    "Holy Symbol, brass":{"price":12,"weight":0.1},
+    "Holy Symbol, gold":{"price":120,"weight":0.1},
+    "Holy Symbol, iron":{"price":18,"weight":0.1},
+    "Holy Symbol, silver":{"price":32,"weight":0.1},
+    "Holy Symbol, wood":{"price":8,"weight":0.1},
+    "Inkwell, glass":{"price":30,"weight":0.5},
+    "Iron, branding":{"price":18,"weight":5},
+    "Jar, glass, large":{"price":18,"weight":1.0},
+    "Keltan":{"price":36,"weight":2},
+    "Kneecops, kurbul":{"price":15,"weight":0.8},
+    "Kneecops, plate":{"price":75,"weight":2.4},
+    "Knife":{"price":6,"weight":1},
+    "Ladder, 20'":{"price":15,"weight":30},
+    "Lambskin":{"price":3,"weight":5},
+    "Lantern, metal":{"price":12,"weight":1},
+    "Leggings, beaver":{"price":207,"weight":8.8},
+    "Leggings, buckram":{"price":69,"weight":4.4},
+    "Leggings, canvas":{"price":15,"weight":4.4},
+    "Leggings, leather":{"price":92,"weight":8.8},
+    "Leggings, linen":{"price":46,"weight":4.4},
+    "Leggings, mail":{"price":615,"weight":22.0},
+    "Leggings, quilt":{"price":184,"weight":9.2},
+    "Leggings, ring":{"price":308,"weight":17.6},
+    "Leggings, russet":{"price":141,"weight":4.4},
+    "Leggings, sealskin":{"price":230,"weight":9.2},
+    "Leggings, serge":{"price":54,"weight":4.4},
+    "Leggings, silk":{"price":419,"weight":3.5},
+    "Leggings, waxed canvas":{"price":30,"weight":4.4},
+    "Leggings, worsted":{"price":200,"weight":4.4},
+    "Lockpick kit":{"price":24,"weight":1},
+    "Longshirt, ring":{"price":350,"weight":22.2},
+    "Lute":{"price":200,"weight":5},
+    "Lyre":{"price":120,"weight":5},
+    "Mang":{"price":150,"weight":3},
+    "Mankar":{"price":150,"weight":2},
+    "Mason's kit":{"price":36,"weight":15},
+    "Metalcrafter's kit":{"price":24,"weight":10},
+    "Mirror, bronze":{"price":12,"weight":0.25},
+    "Mirror, silver":{"price":300,"weight":0.25},
+    "Mittens, mail":{"price":60,"weight":2.0},
+    "Necklace, Bone/Horn":{"price":5,"weight":0.25},
+    "Necklace, Copper":{"price":8,"weight":0.25},
+    "Necklace, Gold with gem":{"price":6000,"weight":0.25},
+    "Necklace, Gold":{"price":4800,"weight":0.25},
+    "Necklace, Silver":{"price":240,"weight":0.25},
+    "Net, 2 fathom":{"price":120,"weight":5},
+    "Notebook":{"price":50,"weight":2.0},
+    "Opiates, 1 oz":{"price":106,"weight":0.1},
+    "Pants, cloth":{"price":100,"weight":4.0},
+    "Pants, mail":{"price":184,"weight":20.5},
+    "Pants, quilt":{"price":174,"weight":8.6},
+    "Pants, ring":{"price":280,"weight":16.4},
+    "Papercase, leather":{"price":180,"weight":3},
+    "Pen, metal":{"price":4,"weight":0.1},
+    "Pen, quill":{"price":1,"weight":0.1},
+    "Pence":{"price":1,"weight":.004},
+    "Pendant, Bone/Horn":{"price":5,"weight":0.05},
+    "Pendant, Copper":{"price":8,"weight":0.05},
+    "Pendant, Gold with gem":{"price":1400,"weight":0.05},
+    "Pendant, Gold":{"price":900,"weight":0.05},
+    "Pendant, Silver":{"price":45,"weight":0.05},
+    "Perfume, oz, bottle":{"price":11,"weight":0.25},
+    "Physician's Bag":{"price":186,"weight":10},
+    "Pick":{"price":8,"weight":5},
+    "Pipe, smoking":{"price":2,"weight":0.1},
+    "Pipes":{"price":60,"weight":1},
+    "Pitchfork":{"price":6,"weight":3},
+    "Polearm(Lance)":{"price":120,"weight":8},
+    "Polearm(Pike)":{"price":96,"weight":12},
+    "Polearm(Poleaxe)":{"price":96,"weight":8},
+    "Portable writing kit":{"price":25,"weight":5},
+    "Quiver":{"price":8,"weight":1},
+    "Rasakile, 1 dose":{"price":12,"weight":0.1},
+    "Recorder":{"price":4,"weight":0.5},
+    "Rerebraces, kurbul":{"price":30,"weight":1.5},
+    "Rerebraces, plate":{"price":150,"weight":4.8},
+    "Ring, Bone/Horn":{"price":1,"weight":0.03},
+    "Ring, Copper":{"price":1,"weight":0.03},
+    "Ring, Gold with gem":{"price":900,"weight":0.03},
+    "Ring, Gold":{"price":600,"weight":0.03},
+    "Ring, Silver":{"price":30,"weight":0.03},
+    "Robe, beaver":{"price":356,"weight":15.6},
+    "Robe, buckram":{"price":119,"weight":7.8},
+    "Robe, ermine":{"price":786,"weight":15.6},
+    "Robe, lightlinen":{"price":41,"weight":2.4},
+    "Robe, linen":{"price":41,"weight":7.8},
+    "Robe, russet":{"price":242,"weight":7.8},
+    "Robe, sealskin":{"price":395,"weight":19},
+    "Robe, serge":{"price":93,"weight":7.8},
+    "Robe, silk":{"price":719,"weight":7},
+    "Robe, worsted":{"price":373,"weight":7.8},
+    "Rope, hemp, light, 100'":{"price":100,"weight":5},
+    "Runestones, Set":{"price":40,"weight":2},
+    "Sandals, leather":{"price":8,"weight":1},
+    "Saw, hack":{"price":10,"weight":2},
+    "Scabbard, battlesword":{"price":150,"weight":3},
+    "Scabbard, dagger":{"price":12,"weight":0.5},
+    "Scabbard, sword":{"price":48,"weight":1},
+    "Scale/balance":{"price":72,"weight":5},
+    "Scythe":{"price":24,"weight":6},
+    "Sheep Hide":{"price":4,"weight":7},
+    "Shield(Buckler)":{"price":24,"weight":3},
+    "Shield(Kite)":{"price":72,"weight":7},
+    "Shield(Knight)":{"price":60,"weight":5},
+    "Shield(Round)":{"price":42,"weight":6},
+    "Shield(Tower)":{"price":96,"weight":8},
+    "Shirt(Long), leather":{"price":300,"weight":13.4},
+    "Shirt, beaver":{"price":194,"weight":8},
+    "Shirt, buckram":{"price":65,"weight":3.6},
+    "Shirt, ermine":{"price":428,"weight":8},
+    "Shirt, leather":{"price":120,"weight":8},
+    "Shirt, linen":{"price":43,"weight":3.6},
+    "Shirt, ring":{"price":301,"weight":22.4},
+    "Shirt, russet":{"price":132,"weight":3.6},
+    "Shirt, sealskin":{"price":215,"weight":11},
+    "Shirt, serge":{"price":51,"weight":3.6},
+    "Shirt, silk":{"price":391,"weight":3.4},
+    "Shirt, worsted":{"price":203,"weight":3.6},
+    "Shoes, cloth ":{"price":12,"weight":1},
+    "Shoes, leather":{"price":24,"weight":1.2},
+    "Skull":{"price":0,"weight":0},
+    "Spade":{"price":8,"weight":5},
+    "Spear(Javelin)":{"price":48,"weight":3},
+    "Spear(Spear)":{"price":60,"weight":5},
+    "Spear(Staff)":{"price":36,"weight":4},
+    "Spear(Trident)":{"price":72,"weight":6},
+    "Spoon, pewter":{"price":4,"weight":0.1},
+    "Spoon, wood":{"price":2,"weight":0.1},
+    "Surcoat, buckram":{"price":81,"weight":5.2},
+    "Surcoat, leather":{"price":151,"weight":10.4},
+    "Surcoat, linen":{"price":51,"weight":5.2},
+    "Surcoat, silk":{"price":491,"weight":5},
+    "Sword(Bastard Sword)":{"price":180,"weight":5},
+    "Sword(Battlesword)":{"price":230,"weight":8},
+    "Sword(Broadsword)":{"price":150,"weight":3},
+    "Sword(Falchion)":{"price":120,"weight":4},
+    "Sword(Longknife)":{"price":96,"weight":1},
+    "Sword(Shortsword)":{"price":90,"weight":2},
+    "Sword(StarSteel)":{"price":150,"weight":2},
+    "Tabol":{"price":20,"weight":2},
+    "Taburi":{"price":20,"weight":1},
+    "Tankard, pewter":{"price":4,"weight":0.25},
+    "Tankard, wood":{"price":2,"weight":0.25},
+    "Tarot Cards, deck":{"price":75,"weight":0.5},
+    "Textbook":{"price":150,"weight":3},
+    "Textilcraft kit":{"price":24,"weight":5},
+    "Three-quarter helm, plate":{"price":175,"weight":5.6},
+    "Tinderbox":{"price":6,"weight":0.5},
+    "Torch":{"price":1,"weight":0.5},
+    "Tunic, beaver":{"price":257,"weight":8.8},
+    "Tunic, buckram":{"price":86,"weight":4.4},
+    "Tunic, canvas":{"price":12,"weight":4.4},
+    "Tunic, ermine":{"price":567,"weight":8.8},
+    "Tunic, leather":{"price":114,"weight":8.8},
+    "Tunic, lightlinen":{"price":57,"weight":1.4},
+    "Tunic, linen":{"price":57,"weight":4.4},
+    "Tunic, quilt":{"price":176,"weight":13.2},
+    "Tunic, russet":{"price":174,"weight":4.4},
+    "Tunic, sealskin":{"price":285,"weight":13.2},
+    "Tunic, serge":{"price":67,"weight":4.4},
+    "Tunic, silk":{"price":519,"weight":4.2},
+    "Tunic, waxed canvas":{"price":24,"weight":4.4},
+    "Tunic, worsted":{"price":269,"weight":4.4},
+    "Unarmed(Kick)":{"price":0,"weight":0,},
+    "Unarmed(Punch)":{"price":0,"weight":0},
+    "Vambraces, kurbul":{"price":25,"weight":1.3},
+    "Vambraces, plate":{"price":125,"weight":4.0},
+    "Vellum, 10 sheets":{"price":20,"weight":0.1},
+    "Vest, beaver":{"price":122,"weight":5.6},
+    "Vest, buckram":{"price":41,"weight":2.8},
+    "Vest, ermine":{"price":269,"weight":5.6},
+    "Vest, leather":{"price":54,"weight":5.6},
+    "Vest, linen":{"price":27,"weight":2.8},
+    "Vest, ring":{"price":196,"weight":14.0},
+    "Vest, russet":{"price":83,"weight":2.8},
+    "Vest, scale":{"price":280,"weight":19.6},
+    "Vest, sealskin":{"price":135,"weight":7},
+    "Vest, serge":{"price":32,"weight":2.8},
+    "Vest, silk":{"price":246,"weight":2.5},
+    "Vest, worsted":{"price":127,"weight":2.8},
+    "Vial, glass":{"price":24,"weight":0.1},
+    "Wax, sealing":{"price":4,"weight":0.2},
+    "Wineskin, small":{"price":6,"weight":6},
+    "Woodcarving kit":{"price":24,"weight":5},
+    "q1":{"price":1,"weight":1.0}    
+},
+
+
+"attack_melee": {
+    "block": [
+        ["BF", "AF", "DTA", "DTA"],
+        ["DF", "Block", "DTA", "DTA"],
+        ["A*2", "A*1", "Block", "DTA"],
+        ["A*3", "A*2", "A*1", "Block"]
+    ],
+    "counterstrike": [
+        ["BF", "AF", "D*2", "D*3"],
+        ["DF", "Block", "D*1", "D*2"],
+        ["A*3", "A*2", "B*1", "D*1"],
+        ["A*4", "A*3", "A*1", "B*2"]
+    ],
+    "dodge": [
+        ["BS", "AS", "DTA", "DTA"],
+        ["DS", "miss", "miss", "DTA"],
+        ["A*2", "A*1", "miss", "miss"],
+        ["A*3", "A*2", "A*1", "miss"]
+    ],
+    "ignore": [
+        ["DTA"],
+        ["A*1"],
+        ["A*3"],
+        ["A*4"]]
+},
+
+
+"attack_missile": {
+    "block": [
+        ["Wild", "Wild", "Wild", "Wild"],
+        ["miss", "miss", "miss", "miss"],
+        ["M*2", "M*1", "Block", "Block"],
+        ["M*3", "M*2", "M*1", "Block"]
+    ],
+    "dodge": [
+        ["Wild", "Wild", "Wild", "Wild"],
+        ["miss", "miss", "miss", "miss"],
+        ["M*2", "M*1", "miss", "miss"],
+        ["M*3", "M*2", "M*1", "miss"]
+    ],
+    "ignore": [
+        ["Wild"],
+        ["miss"],
+        ["M*2"],
+        ["M*3"]
+    ],
+    "counterstrike": [
+        ["Wild", "Wild", "Wild", "Wild"],
+        ["miss", "miss", "miss", "miss"],
+        ["M*2", "M*2", "M*2", "M*2"],
+        ["M*3", "M*3", "M*3", "M*3"]
+    ]
+},
+
+"coverage2loc": {
+    "Sk": { "LOC": "SKULL", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Fa": { "LOC": "FACE", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Nk": { "LOC": "NECK", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Sh": { "LOC": "SHOULDER", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Ua": { "LOC": "UPPERARM", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "El": { "LOC": "ELBOW", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Fo": { "LOC": "FOREARM", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Ha": { "LOC": "HAND", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Tx": { "LOC": "THORAX", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Ab": { "LOC": "ABDOMEN", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Gr": { "LOC": "GROIN", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Hp": { "LOC": "HIP", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Th": { "LOC": "THIGH", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Kn": { "LOC": "KNEE", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Ca": { "LOC": "CALF", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 },
+    "Ft": { "LOC": "FOOT", "COV": "", "AQ": 0, "B": 0, "E": 0, "P": 0, "F": 0 }
+},
+
+
+
+"hit_location_table": [
+    ["01-15", "01-05", "-", "SKULL", "M1", "S2", "S3", "K4", "K5", "Sk", "-", "-", "-", "-", "01-56", "01-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+    ["16-30", "06-10", "-", "FACE", "M1", "S2", "S3", "G4", "K5", "Fa", "-", "-", "-", "-", "57-87", "-", "-", "01-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+    ["31-45", "11-15", "-", "NECK", "M1", "S2", "S3", "K4", "K5Amp", "Nk", "01-00", "-", "-", "-", "88-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+    ["46-57", "16-27", "-", "SHOULDER", "FumM1", "FumS2", "FumS3", "FumG4", "FumK4", "Sh", "-", "-", "-", "01-09", "-", "-", "-", "-", "-", "01-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+    ["58-69", "28-33", "-", "UPPERARM", "FumM1", "FumM1", "FumS2", "FumS3", "FumG4Amp", "Ua", "-", "01-45", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "01-00", "-", "-", "-", "-"],
+    ["70-73", "34-35", "-", "ELBOW", "FumM1", "FumS2", "FumS3", "FumG4", "FumG5Amp", "El", "-", "46-50", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "01-00", "-", "-", "-"],
+    ["74-81", "36-39", "01-06", "FOREARM", "FumM1", "FumM1", "FumS2", "FumS3", "FumG4Amp", "Fo", "-", "51-91", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "01-00", "-", "-"],
+    ["82-85", "40-43", "07-12", "HAND", "FumM1", "FumS2", "FumS3", "FumG4", "FumG5Amp", "Ha", "-", "92-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "01-00", "-"],
+    ["86-95", "44-60", "13-19", "THORAX", "M1", "S2", "S3", "G4", "K5", "Tx", "-", "-", "-", "10-49", "-", "-", "-", "-", "01-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+    ["95-00", "61-70", "20-29", "ABDOMEN", "M1", "S2", "S3", "K4", "K5", "Ab", "-", "-", "-", "50-72", "-", "-", "01-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+    ["-", "71-74", "30-35", "GROIN", "M1", "S2", "S3", "G4", "G5Amp", "Gr", "-", "-", "-", "73-83", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "01-00"],
+    ["-", "75-80", "36-49", "HIP", "StuM1", "StuS2", "StuS3", "StuG4", "StuK4", "Hp", "-", "-", "-", "84-00", "-", "-", "-", "-", "-", "-", "01-00", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+    ["-", "81-88", "50-70", "THIGH", "StuM1", "StuS2", "StuS3", "StuG4", "StuK4Amp", "Th", "-", "-", "01-49", "-", "-", "-", "-", "-", "-", "-", "-", "01-00", "-", "-", "-", "-", "-", "-", "-", "-"],
+    ["-", "89-90", "71-78", "KNEE", "StuM1", "StuS2", "StuS3", "StuG4", "StuG5Amp", "Kn", "-", "-", "50-54", "-", "-", "-", "-", "-", "-", "-", "-", "-", "01-00", "-", "-", "-", "-", "-", "-", "-"],
+    ["-", "91-96", "79-92", "CALF", "StuM1", "StuM1", "StuS2", "StuS3", "StuG4Amp", "Ca", "-", "-", "55-85", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "01-00", "-", "-", "-", "-", "-", "-"],
+    ["-", "97-00", "93-00", "FOOT", "StuM1", "StuS2", "StuS3", "StuG4", "StuG5Amp", "Ft", "-", "-", "86-00", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "01-00", "-", "-", "-", "-", "-"]
+],
+
+"hit_loc_penalty": {
+    "high": { "index": 0, "penalty": 10 },
+    "mid": { "index": 1, "penalty": 0 },
+    "low": { "index": 2, "penalty": 10 },
+    "arms": { "index": 11, "penalty": 20 },
+    "legs": { "index": 12, "penalty": 20 },
+    "torso": { "index": 13, "penalty": 20 },
+    "head": { "index": 14, "penalty": 25 },
+    "neck": { "index": 10, "penalty": 35 },
+    "skull": { "index": 15, "penalty": 30 },
+    "abdomen": { "index": 16, "penalty": 25 },
+    "face": { "index": 17, "penalty": 35 },
+    "thorax": { "index": 18, "penalty": 25 },
+    "shoulder": { "index": 19, "penalty": 25 },
+    "hip": { "index": 20, "penalty": 25 },
+    "thigh": { "index": 21, "penalty": 25 },
+    "knee": { "index": 22, "penalty": 30 },
+    "calf": { "index": 23, "penalty": 25 },
+    "foot": { "index": 24, "penalty": 30 },
+    "upper_arm": { "index": 25, "penalty": 25 },
+    "elbow": { "index": 26, "penalty": 30 },
+    "forearm": { "index": 27, "penalty": 25 },
+    "hand": { "index": 28, "penalty": 30 },
+    "groin": { "index": 29, "penalty": 35 }
+},
+                        
+
+"armor_coverage": {
+    "Ailettes":{"zone":"aile","coverage":["Sh"]},
+    "Backplate":{"zone":"thor","coverage":["Tx","Ab"]},
+    "Body":{"zone":"body","coverage":["Sk","Nk","Fa","Ft","Ha","Ua","Sh","Tx","Ab","Hp","Gr","Fo","El","Th","Kn","Ca"]},
+    "Boots, calf":{"zone":"feet","coverage":["Ca","Ft"]},
+    "Boots, knee":{"zone":"feet","coverage":["Kn","Ca","Ft"]},
+    "Breastplate":{"zone":"thor","coverage":["Tx","Ab"]},
+    "Breastplate-Backplate":{"zone":"thor","coverage":["Tx","Ab"]},
+    "Byrnie":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr"]},
+    "Byrnie, long":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+    "Cap":{"zone":"head","coverage":["Sk"]},
+    "Cloak":{"zone":"clok","coverage":["Sh","Tx","Hp","Ua","Gr"]},
+    "Cloak(Long), hood":{"zone":"body","coverage":["Sk","Nk","Sh","Tx","Ab","Hp","Gr","Th","Kn","Ua"]},
+    "Coudes":{"zone":"coud","coverage":["El"]},
+    "Cowl":{"zone":"head","coverage":["Sk","Nk"]},
+    "Cowl, long":{"zone":"head","coverage":["Sk","Nk","Sh"]},
+    "Cowl, short":{"zone":"head","coverage":["Sk","Nk"]},
+    "Cowl/hood":{"zone":"head","coverage":["Sk","Nk"]},
+    "Cuirass":{"zone":"thor","coverage":["Tx"]},
+    "Dress":{"zone":"robe","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th","Kn","Ca"]},
+    "Gambeson":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+    "Gauntlets":{"zone":"hand","coverage":["Ha"]},
+    "Gloves":{"zone":"hand","coverage":["Ha"]},
+    "Gorget":{"zone":"head","coverage":["Nk"]},
+    "Greathelm":{"zone":"head","coverage":["Sk","Fa","Nk"]},
+    "Greaves":{"zone":"grev","coverage":["Ca"]},
+    "Halfhelm":{"zone":"head","coverage":["Sk"]},
+    "Hat/Cap":{"zone":"head","coverage":["Sk"]},
+    "Haubergeon":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr"]},
+    "Hauberk":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+    "Hauberk, long":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th","Kn"]},
+    "Hauberk, short":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+    "Hood":{"zone":"head","coverage":["Sk","Nk"]},
+    "Kneecops":{"zone":"knee","coverage":["Kn"]},
+    "Leggings":{"zone":"legs","coverage":["Hp","Gr","Th","Kn","Ca","Ft"]},
+    "Mittens":{"zone":"hand","coverage":["Ha"]},
+    "Pants":{"zone":"legs","coverage":["Hp","Gr","Th","Kn","Ca"]},
+    "Rerebraces":{"zone":"rere","coverage":["Ua"]},
+    "Robe":{"zone":"robe","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Fo","El","Th","Kn","Ca"]},
+    "Sandals":{"zone":"feet","coverage":["Ft"]},
+    "Shirt":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr"]},
+    "Shirt(Long)":{"zone":"body","coverage":["Fo","El","Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+    "Shoes":{"zone":"feet","coverage":["Ft"]},
+    "ShortSleeveShirt":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr"]},
+    "ShortSleeveShirt(long)":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+    "Skirt, long":{"zone":"thor","coverage":["Hp", "Gr","Th"]},
+    "Skirt, short":{"zone":"thor","coverage":["Hp","Gr"]},
+    "Skull":{"zone":"head","coverage":["Sk","Fa"]},
+    "Surcoat":{"zone":"robe","coverage":["Sh","Tx","Ab","Hp","Gr","Th"]},
+    "Three-quarter helm":{"zone":"head","coverage":["Sk","Fa"]},
+    "Tunic":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr"]},
+    "Tunic, long":{"zone":"body","coverage":["Ua","Sh","Tx","Ab","Hp","Gr","Th"]},
+    "Vambraces":{"zone":"vamb","coverage":["Fo"]},
+    "Vest":{"zone":"body","coverage":["Sh","Tx","Ab"]},    
+},
+
+
+"armor_prot": {
+    "Brown bear": ["nat", "6", "4", "3", "5"],
+    "Dire wolf": ["nat", "5", "4", "2", "4"],
+    "beaver": ["leather", "2", "4", "3", "3"],
+    "buckram": ["cloth", "1", "1", "1", "1"],
+    "canvas": ["cloth", "1", "1", "1", "1"],
+    "cloth": ["cloth", "1", "1", "1", "1"],
+    "dog": ["nat", "4", "3", "1", "3"],
+    "ermine": ["leather", "2", "4", "3", "3"],
+    "fur(light)": ["fur", "3", "2", "2", "3"],
+    "fur(thick)": ["fur", "5", "3", "2", "4"],
+    "gargun": ["nat", "4", "3", "1", "3"],
+    "horse": ["nat", "4", "3", "1", "3"],
+    "kurbul": ["kurbul", "4", "5", "4", "3"],
+    "kurbul+1": ["kurbul+1", "5", "6", "5", "4"],
+    "leather": ["leather", "2", "4", "3", "3"],
+    "leather+1": ["leather+1", "3", "5", "4", "4"],
+    "leather+2": ["leather+2", "4", "6", "5", "5"],
+    "lightlinen": ["cloth", "0", "1", "0", "1"],
+    "lightsilk": ["cloth", "0", "1", "0", "0"],
+    "linen": ["cloth", "1", "1", "1", "1"],
+    "mail": ["mail", "2", "8", "5", "1"],
+    "mail+1": ["mail+1", "3", "9", "6", "2"],
+    "mail+2": ["mail+2", "4", "10", "7", "3"],
+    "mail+3": ["mail+3", "5", "11", "8", "4"],
+    "nat1": ["nat1", "1", "1", "1", "1"],
+    "nat2": ["nat2", "2", "2", "2", "2"],
+    "nat3": ["nat3", "3", "3", "3", "3"],
+    "plate": ["plate", "6", "10", "6", "2"],
+    "plate+1": ["plate+1", "7", "11", "7", "3"],
+    "plate+2": ["plate+2", "8", "12", "8", "4"],
+    "quilt": ["quilt", "5", "3", "2", "4"],
+    "quilt+1": ["quilt+1", "6", "4", "3", "5"],
+    "ring": ["ring", "3", "6", "4", "3"],
+    "ring+1": ["ring+1", "4", "7", "5", "4"],
+    "ring+2": ["ring+2", "5", "8", "6", "5"],
+    "russet": ["cloth", "1", "1", "1", "1"],
+    "scale": ["scale", "5", "9", "4", "5"],
+    "sealskin": ["quilt", "5", "3", "2", "5"],
+    "serge": ["cloth", "1", "1", "1", "1"],
+    "silk": ["cloth", "1", "1", "1", "1"],
+    "waxed canvas": ["cloth", "1", "1", "1", "1"],
+    "wolf": ["nat", "4", "3", "1", "3"],
+    "worsted": ["cloth", "1", "1", "1", "1"]
+},
+
+
+"weapons_table": {
+    "Shield(Round)":["13","5","20","0","2","-","-"],
+"Shield(Kite)":["14","5","25","0","3","-","-"],
+"Shield(Knight)":["13","5","20","0","2","-","-"],
+"Shield(Tower)":["14","5","25","0","3","-","-"],
+"Shield(Buckler)":["12","5","15","0","1","-","-"],
+"Dagger":["11","5","5","0","1","2","4"],
+"Keltan":["12","5","10","0","2","0","3"],
+"Knife":["10","5","0","0","0","1","4"],
+"Taburi":["10","5","0","0","0","-","4"],
+"Sword(Longknife)":["12","10","15","0","1","3","5"],
+"Sword(Shortsword)":["12","10","5","0","2","4","4"],
+"Mankar":["11","10","5","0","2","5","0"],
+"Mang":["11","15","10","-5","3","6","0"],
+"Sword(Broadsword)":["12","15","10","0","3","5","3"],
+"Sword(StarSteel)":["14","17","10","0","3","5","4"],
+"Sword(Estoc)":["11","15","10","0","3","0","6"],
+"Sword(Falchion)":["12","15","5","0","4","6","1"],
+"Sword(Bastard Sword)":["12","20","10","-10","4","7","4"],
+"Sword(Battlesword)":["13","25","10","-20","5","8","4"],
+"Club":["9","15","5","0","4","-","0"],
+"Club(Mace)":["11","15","5","0","6","-","0"],
+"Club(Morningstar)":["11","20","5","-10","0","-","5"],
+"Club(Maul)":["9","20","5","-20","7","-","0"],
+"Hatchet":["9","5","5","0","3","4","-"],
+"Axe(Handaxe)":["11","10","5","0","4","6","-"],
+"Axe(Warhammer)":["11","15","5","-5","6","-","-"],
+"Axe(Battleaxe)":["12","20","10","-15","6","9","-"],
+"Flail(Grainflail)":["9","20","5","0","5","-","-"],
+"Flail(Ball & Chain)":["12","20","10","0","8","-","-"],
+"Flail(Warflail)":["11","25","10","-20","9","-","-"],
+"Spear(Staff)":["11","20","15","-10","4","-","-"],
+"Spear(Javelin)":["10","15","5","-10","2","-","6"],
+"Spear(Spear)":["11","20","10","-10","4","-","7"],
+"Spear(Trident)":["12","20","15","-10","4","-","5"],
+"Polearm(Lance)":["11","25","5","-15","4","-","8"],
+"Polearm(Poleaxe)":["11","25","5","-15","6","9","6"],
+"Polearm(Pike)":["12","25","5","-25","4","-","8"],
+"q1":["11","25","5","-15","6","9","6"],
+"Lightsabre":["18","35","25","0","-","30","30"],
+"Bow(Crossbow)":["10","5","5","0","3","-","-"],
+"Bow(Longbow)":["11","5","5","0","2","-","-"],
+"Compound Bow":["13","5","5","0","1","-","-"],
+"Bow(Shortbow)":["10","5","5","0","1","-","-"],
+"Bow(Hartbow)":["13","5","5","0","1","-","-"],
+"Unarmed(Kick)":["0","5","5","0","1","-","-"],
+"Unarmed(Punch)":["0","0","15","0","0","-","-"],
+"Bow(Minicrossbow)":["10","5","5","0","1","-","-"]
+},
+
+
+
+"missile_range": {"Bow(Shortbow)":[[5,6],[20,6],[40,5],[80,4],[160,3]],
+"Bow(Longbow)":[[5,8],[25,8],[50,7],[100,6],[200,5]],
+"Bow(Hartbow)":[[10,10],[30,9],[60,8],[120,7],[240,6]],
+"Bow(Crossbow)":[[5,9],[20,8],[40,7],[80,6],[160,5]],
+"Compound(Bow)":[[10,10],[30,10],[60,9],[120,8],[240,7]],
+"Bow(Minicrossbow)":[[5,9],[20,8],[40,7],[80,6],[160,5]],
+"Blowgun":[[2,0],[5,0],[10,0],[20,0],[40,0]],
+"Sling":[[5,4],[15,4],[30,3],[60,2],[120,2]],
+"StaffSling":[[5,5],[25,5],[50,4],[100,3],[200,3]],
+"Taburi":[[2,4],[4,4],[8,3],[16,2],[32,2]],
+"Shorkana":[[2,5],[3,5],[6,4],[12,3],[24,3]],
+"Spear(Javelin)":[[3,7],[8,7],[16,6],[32,5],[64,4]],
+"Spear(Spear)":[[3,8],[6,8],[12,7],[24,6],[48,5]],
+"Spell(Ethereal Stone)":[[2,6],[5,6],[10,6],[20,6],[40,6]],
+"Melee":[[1,1],[2,1],[4,1],[8,1],[16,1]]
+},
+
+
+"months": [
+"Nuzyael",
+"Peonu",
+"Kelen",
+"Nolus",
+"Larane",
+"Agrazhar",
+"Azura",
+"Halane",
+"Savor",
+"Ilvin",
+"Navek",
+"Morgat"
+],
+
+"occupational_skills": {
+    "Alchemist": [
+        "Alchemy/4",
+        "Mathematics/3",
+        "Herblore/3",
+        "Mining/2",
+        "Physician/2",
+        "Script/5"
+    ],
+    "Animal Trainer": [
+        "Animalcraft/4",
+        "Hidework/2",
+        "RIDING/2"
+    ],
+    "Apothecary": [
+        "Herblore/4",
+        "Alchemy/2",
+        "Mathematics/2",
+        "Physician/2",
+        "Script/5"
+    ],
+    "Astrologer": [
+        "Astrology/4",
+        "Mathematics/3",
+        "Drawing/3",
+        "Tarotry/2",
+        "Script/5"
+    ],
+    "Baliff": [
+        "Law/3",
+        "Agriculture/2",
+        "INITIATIVE/6",
+        "Foraging/4",
+        "Survival/4",
+        "Physician/2",
+        "Heraldry/2",
+        "Weaponcraft/2",
+        "RIDING/6",
+        "Polearm(Lance)/6",
+        "Sword(Broadsword)/5",
+        "Axe(Handaxe)/5",
+        "Dagger/5",
+        "Shield(Knight)/6",
+        "Dancing/3"
+    ],
+    "Beggar": [
+        "RHETORIC/5",
+        "INTRIGUE/4",
+        "Dagger/4"
+    ],
+    "Cartographer/Artist": [
+        "Drawing/4",
+        "Mathematics/2",
+        "Script/5"
+    ],
+    "Chandler": [
+        "Brewing/3",
+        "Woodcraft/3",
+        "Hidework/3",
+        "Alchemy/2",
+        "Metalcraft/2",
+        "Script/5"
+    ],
+    "Charcoaler": [
+        "Timbercraft/3",
+        "Survival/3",
+        "Woodcraft/2",
+        "Metalcraft/2"
+    ],
+    "Chieftan": [
+        "Tracking/4",
+        "Bow/3",
+        "Spear/4",
+        "Dagger/4",
+        "STEALTH/4",
+        "Foraging/3",
+        "Survival/3",
+        "Hidework/2",
+        "Fletching/2",
+        "RHETORIC/4",
+        "INTRIGUE/4"
+    ],
+    "Clothier": [
+        "Textilecraft/4",
+        "Hidework/3",
+        "Jewelcraft/3",
+        "Script/5"
+    ],
+    "Cook/Servant": [
+        "INTRIGUE/4",
+        "RHETORIC/4",
+        "Cookery/4",
+        "Textilecraft/3",
+        "Herblore/2"
+    ],
+    "Courtesan": [
+        "Lovecraft/5",
+        "INTRIGUE/5",
+        "SINGING/5",
+        "Musician/3",
+        "Dancing/3",
+        "Script/5"
+    ],
+    "Embalmer": [
+        "Embalming/4",
+        "Woodcraft/2",
+        "Alchemy/2",
+        "Perfumery/2",
+        "Script/5"
+    ],
+    "Farmer": [
+        "Agriculture/4",
+        "Weatherlore/4",
+        "Animalcraft/3"
+    ],
+    "Fisherman": [
+        "Fishing/5",
+        "Seamanship/4",
+        "Weatherlore/4",
+        "Piloting/2",
+        "Shipwright/2"
+    ],
+    "Gladiator": [
+        "INITIATIVE/6",
+        "Sword/5",
+        "Shield/4",
+        "Spear/5",
+        "UNARMED/5",
+        "Physician/2"
+    ],
+    "Glassworker": [
+        "Glasswork/4",
+        "Ceramics/2",
+        "Alchemy/2",
+        "Script/5"
+    ],
+    "Harper/Skald": [
+        "SINGING/5",
+        "Folklore/4",
+        "ORATORY/4",
+        "Lute/4",
+        "Flute/3",
+        "Harp/3",
+        "Woodcraft/3",
+        "Script/5"
+    ],
+    "Herald": [
+        "Heraldry/4",
+        "ORATORY/4",
+        "RHETORIC/4",
+        "INTRIGUE/5",
+        "Drawing/4",
+        "Language/5",
+        "Script/5",
+        "INITIATIVE/6",
+        "Foraging/4",
+        "Survival/4",
+        "Physician/2",
+        "Weaponcraft/2",
+        "RIDING/6",
+        "Polearm(Lance)/6",
+        "Sword(Broadsword)/5",
+        "Axe(Handaxe)/5",
+        "Dagger/5",
+        "Shield(Knight)/6",
+        "Dancing/3"
+    ],
+    "Herdsman": [
+        "Animalcraft/4",
+        "Tracking/3",
+        "Survival/3",
+        "Weatherlore/4"
+    ],
+    "Hideworker": [
+        "Hidework/4",
+        "Textilecraft/2",
+        "Alchemy/2"
+    ],
+    "Hunter/Trapper": [
+        "Tracking/4",
+        "Bow/3",
+        "Dagger/4",
+        "Bow/4",
+        "STEALTH/4",
+        "Foraging/3",
+        "Survival/3",
+        "Hidework/2",
+        "Fletching/2"
+    ],
+    "Innkeeper": [
+        "Brewing/4",
+        "Cookery/4",
+        "RHETORIC/4",
+        "INTRIGUE/4",
+        "Language/3",
+        "Script/5"
+    ],
+    "Jeweler": [
+        "Jewelcraft/4",
+        "Metalcraft/3",
+        "Mining/2",
+        "Script/5"
+    ],
+    "Laborer/Longshoreman": [
+        "INTRIGUE/4",
+        "Seamanship/2"
+    ],
+    "Lady": [
+        "INTRIGUE/5",
+        "Folklore/4",
+        "Textilecraft(Needlework)/3",
+        "Dancing/3",
+        "Heraldry/3",
+        "Astrology/2",
+        "Drawing/2"
+    ],
+    "Lexigrapher": [
+        "Hidework(parchment&vellum)/4",
+        "Alchemy(Inkcraft)/4",
+        "Drawing/3",
+        "Script/5",
+        "Script/5"
+    ],
+    "Litigant": [
+        "Law/4",
+        "ORATORY/5",
+        "RHETORIC/5",
+        "INTRIGUE/5",
+        "Language/3",
+        "Script/5"
+    ],
+    "Locksmith": [
+        "Lockcraft/4",
+        "Metalcraft/3",
+        "Woodcraft/2",
+        "Script/5"
+    ],
+    "Mason": [
+        "Masonry/4",
+        "Woodcraft/3",
+        "Engineering/3",
+        "Mathematics/2",
+        "Script/5"
+    ],
+    "Mercantyler": [
+        "RHETORIC/5",
+        "INTRIGUE/5",
+        "Mathematics/3",
+        "Law/2",
+        "Dagger/2",
+        "Language/3",
+        "Script/5"
+    ],
+    "Metalsmith": [
+        "Metalcraft/4",
+        "Mining/2",
+        "Weaponcraft/2"
+    ],
+    "Miller/Millwright": [
+        "Milling/4",
+        "Engineering/3",
+        "Agriculture/3",
+        "Script/5"
+    ],
+    "Miner": [
+        "Mining/4",
+        "Engineering/3",
+        "Woodcraft/2",
+        "Metalcraft/2",
+        "Jewelcraft/1"
+    ],
+    "Ostler": [
+        "Animalcraft(Horsecraft)/4",
+        "RIDING/4",
+        "Hidework/3"
+    ],
+    "Perfumer": [
+        "Perfumery/4",
+        "Alchemy/3",
+        "Herblore/3",
+        "Embalming/2",
+        "Script/5"
+    ],
+    "Physician": [
+        "Physician/4",
+        "Herblore/3",
+        "Alchemy/3",
+        "Script/5"
+    ],
+    "Pilot": [
+        "Piloting/4",
+        "Weatherlore/4",
+        "Seamanship/3",
+        "Drawing/3",
+        "Bow/3",
+        "Shipwright/2",
+        "Mathematics/2",
+        "Script/5"
+    ],
+    "Potter": [
+        "Ceramics/4",
+        "Glasswork/2"
+    ],
+    "Prostitute/Pimp": [
+        "Lovecraft/4",
+        "INTRIGUE/4",
+        "Dagger/4"
+    ],
+    "Ratter": [
+        "Animalcraft(Rat)/5",
+        "Animalcraft(Dog)/4",
+        "Net/3",
+        "Club/5",
+        "Herblore/2"
+    ],
+    "Sage/Tutor": [
+        "Folklore/4",
+        "Mathematics/2",
+        "Language/3",
+        "Script/5",
+        "Script/5"
+    ],
+    "Salter": [
+        "Mining/3",
+        "Cookery/4",
+        "Survival/3",
+        "Fishing/3",
+        "Herblore/1"
+    ],
+    "Servant": [
+        "INTRIGUE/4",
+        "RHETORIC/4",
+        "Textilecraft/3"
+    ],
+    "Scribe": [
+        "Drawing/3",
+        "Mathematics/2",
+        "Language/3",
+        "Script/5",
+        "Script/5",
+        "Script/5"
+    ],
+    "Seaman": [
+        "Seamanship/4",
+        "CLIMBING/5",
+        "Club/5",
+        "Dagger/4",
+        "Fishing/3",
+        "Weatherlore/3",
+        "Piloting/2",
+        "Shipwright/2"
+    ],
+    "Shaman": [
+        "Ritual-Tribal/4",
+        "Folklore/4",
+        "INTRIGUE/4",
+        "MentalConflict/4",
+        "RHETORIC/4",
+        "Weatherlore/4",
+        "Dancing/3",
+        "Foraging/3",
+        "ORATORY/3",
+        "Embalming/2",
+        "Herblore/4",
+        "Physician/3",
+        "Survival/3",
+        "Tracking/2",
+        "Spear(Spear)/2"
+    ],
+    "Shipwright": [
+        "Shipwright/4",
+        "Woodcraft/3",
+        "Timbercraft/3",
+        "Metalcraft/2",
+        "Mathematics/2",
+        "Seamanship/2",
+        "Script/5"
+    ],
+    "Teamster": [
+        "RIDING/4",
+        "Animalcraft/3",
+        "Whip/3",
+        "Woodcraft/2"
+    ],
+    "Tentmaker": [
+        "Textilecraft/3",
+        "Hidework/3",
+        "Woodcraft/2"
+    ],
+    "Thatcher": [
+        "CLIMBING/5",
+        "Woodcraft/3",
+        "Engineering/2"
+    ],
+    "Thespian": [
+        "Acting/4",
+        "ORATORY/4",
+        "SINGING/4",
+        "Musician/3",
+        "Drawing/3"
+    ],
+    "Thief": [
+        "Legerdemain/4",
+        "AWARENESS/5",
+        "STEALTH/4",
+        "INTRIGUE/4",
+        "Lockcraft/3",
+        "Club/5",
+        "Dagger/4",
+        "Acrobatics/2"
+    ],
+    "Timberwright": [
+        "Timbercraft/4",
+        "Survival/3",
+        "Weatherlore/4",
+        "Woodcraft/3"
+    ],
+    "Toymaker": [
+        "Woodcraft/4",
+        "Lockcraft/3",
+        "Drawing/3",
+        "Hidework/2"
+    ],
+    "Weaponcrafter": [
+        "Weaponcraft/4",
+        "Sword/3",
+        "Bow/3",
+        "Metalcraft/3",
+        "Fletching/3",
+        "Mining/2"
+    ],
+    "Woodcrafter": [
+        "Woodcraft/5",
+        "Metalcraft/2",
+        "Hidework/2"
+    ],
+    "Cleric/Agrik": [
+        "Language(Azeryani)/3",
+        "Script(Zerin)",
+        "Ritual-Agrik/4",
+        "RHETORIC/4",
+        "INTRIGUE/4",
+        "MentalConflict/4",
+        "ORATORY/3",
+        "Folklore/3",
+        "Embalming/2",
+        "Physician/2",
+        "Law/2",
+        "Drawing/2",
+        "Script/5",
+        "INITIATIVE/6",
+        "UNARMED/4",
+        "Axe(Sickle)/4",
+        "Club(Mace)/4",
+        "Shield/4",
+        "Heraldry/3",
+        "Language(Surikal)/3"
+    ],
+    "Cleric/Halea": [
+        "Language(Karuia)/3",
+        "Script(Zerin)",
+        "Ritual-Halea/4",
+        "RHETORIC/4",
+        "INTRIGUE/4",
+        "MentalConflict/4",
+        "ORATORY/3",
+        "Folklore/3",
+        "Embalming/2",
+        "Physician/2",
+        "Law/2",
+        "Drawing/2",
+        "Heraldry/2",
+        "Script/5",
+        "Lovecraft/4",
+        "Dancing/3",
+        "Mathematics/2",
+        "Musician/2",
+        "Perfumery/2",
+        "Language/4",
+        "Script/5"
+    ],
+    "Cleric/Ilvir": [
+        "Language(Old Jarinese)/3",
+        "Script(Khruni)",
+        "Ritual-Ilvir/4",
+        "RHETORIC/4",
+        "INTRIGUE/4",
+        "MentalConflict/4",
+        "ORATORY/3",
+        "Folklore/3",
+        "Embalming/2",
+        "Law/2",
+        "Drawing/2",
+        "Heraldry/2",
+        "Script/5",
+        "Animalcraft(Ivashu)/4",
+        "Drawing/3",
+        "Physician/3",
+        "Tarotry/2",
+        "Herblore/2",
+        "Language(Ivashi)/3"
+    ],
+    "Cleric/Larani": [
+        "Language(Emela)/3",
+        "Script(Khruni)",
+        "Ritual-Larani/4",
+        "RHETORIC/4",
+        "INTRIGUE/4",
+        "MentalConflict/4",
+        "ORATORY/3",
+        "Folklore/3",
+        "Embalming/2",
+        "Physician/2",
+        "Law/2",
+        "Drawing/2",
+        "Script/5",
+        "INITIATIVE/6",
+        "UNARMED/4",
+        "Dagger/4",
+        "Sword/4",
+        "Shield/4",
+        "Heraldry/3"
+    ],
+    "Cleric/Morgath": [
+        "Language(Azeri)/3",
+        "Script(Nuvesarl)",
+        "Ritual-Morgath/4",
+        "RHETORIC/4",
+        "INTRIGUE/4",
+        "MentalConflict/4",
+        "ORATORY/3",
+        "Folklore/3",
+        "Physician/2",
+        "Law/2",
+        "Drawing/2",
+        "Heraldry/2",
+        "Script/5",
+        "Dagger/4",
+        "Embalming/3",
+        "Hidework(Human Skin)/2",
+        "Woodcraft(Masks)/2",
+        "Tarotry/2",
+        "Language(Ormauk)/3"
+    ],
+    "Cleric/Naveh": [
+        "Language(Besha)/3",
+        "Script(Neramic)",
+        "Ritual-Naveh/4",
+        "RHETORIC/4",
+        "INTRIGUE/4",
+        "MentalConflict/4",
+        "ORATORY/3",
+        "Folklore/3",
+        "Embalming/2",
+        "Physician/2",
+        "Law/2",
+        "Drawing/2",
+        "Heraldry/2",
+        "Script/5",
+        "INITIATIVE/6",
+        "UNARMED/5",
+        "STEALTH/5",
+        "Dagger/4",
+        "Acrobatics/3",
+        "Legerdemain/2",
+        "Lockcraft/2"
+    ],
+    "Cleric/Peoni": [
+        "Language(Emela)/3",
+        "Script(Khruni)",
+        "Ritual-Peoni/4",
+        "RHETORIC/4",
+        "INTRIGUE/4",
+        "MentalConflict/4",
+        "ORATORY/3",
+        "Folklore/3",
+        "Embalming/2",
+        "Law/2",
+        "Drawing/2",
+        "Heraldry/2",
+        "Script/5",
+        "Agriculture/4",
+        "Animalcraft/3",
+        "Herblore/3",
+        "Physician/3",
+        "Weatherlore/3",
+        "Textilecraft/2"
+    ],
+    "Cleric/Sarajin": [
+        "Language(Ivinian)/3",
+        "Script(Runic)",
+        "Ritual-Sarajin/4",
+        "RHETORIC/4",
+        "INTRIGUE/4",
+        "MentalConflict/4",
+        "ORATORY/3",
+        "Folklore/3",
+        "Embalming/2",
+        "Physician/2",
+        "Law/2",
+        "Drawing/2",
+        "Heraldry/2",
+        "Script/5",
+        "INITIATIVE/6",
+        "UNARMED/4",
+        "Axe/4",
+        "Dagger/4",
+        "Shield/4",
+        "Runecraft/3",
+        "Seamanship/2"
+    ],
+    "Cleric/Save-K'nor": [
+        "Language(Azeri)/3",
+        "Script(Tianta)",
+        "Ritual-Save-K'nor/4",
+        "RHETORIC/4",
+        "INTRIGUE/4",
+        "MentalConflict/4",
+        "ORATORY/3",
+        "Folklore/3",
+        "Embalming/2",
+        "Physician/2",
+        "Law/2",
+        "Drawing/2",
+        "Heraldry/2",
+        "Script/5",
+        "Drawing/3",
+        "Mathematics/3",
+        "Law/3",
+        "Heraldry/2",
+        "Language/4",
+        "Language/3",
+        "Script/5"
+    ],
+    "Cleric/Siem": [
+        "Language(Sindarin)/3",
+        "Script(Selenian)",
+        "Ritual-Siem/4",
+        "RHETORIC/4",
+        "INTRIGUE/4",
+        "MentalConflict/4",
+        "ORATORY/3",
+        "Folklore/3",
+        "Embalming/2",
+        "Physician/2",
+        "Law/2",
+        "Drawing/2",
+        "Heraldry/2",
+        "Script/5",
+        "Astrology/4",
+        "Runecraft/3",
+        "Foraging/3",
+        "Survival/3",
+        "Weatherlore/3",
+        "Tarotry/2",
+        "Musician/2",
+        "Herblore/2"
+    ],
+    "Feudal Militia": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/4",
+        "Shield(Round)/4"
+    ],
+    "Feudal Yeoman, Foot": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/5",
+        "Sword(Shortsword)/4",
+        "Dagger/4",
+        "Shield(Round)/4"
+    ],
+    "Feudal Guardsman, Light": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/6",
+        "Sword(Shortsword)/5",
+        "Dagger/5",
+        "Shield(Round)/5"
+    ],
+    "Feudal Guardsman, Heavy": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/6",
+        "Sword(Falchion)/5",
+        "Dagger/5",
+        "Shield(Round)/5"
+    ],
+    "Feudal Yeoman, Shortbow": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Bow(Shortbow)/5",
+        "Sword(Falchion)/5",
+        "Dagger/5",
+        "Shield(Buckler)/5"
+    ],
+    "Feudal Yeoman, Longbow": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Bow(Longbow)/5",
+        "Sword(Falchion)/5",
+        "Dagger/5",
+        "Shield(Buckler)/5"
+    ],
+    "Feudal Knight, Medium": [
+        "INITIATIVE/6",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "RIDING/6",
+        "Polearm(Lance)/6",
+        "Sword(Broadsword)/5",
+        "Axe(Handaxe)/5",
+        "Dagger/5",
+        "Shield(Knight)/6",
+        "Dancing/3"
+    ],
+    "Feudal Knight, Heavy": [
+        "INITIATIVE/6",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "RIDING/6",
+        "Polearm(Lance)/6",
+        "Sword(Bastard Sword)/5",
+        "Axe(Handaxe)/5",
+        "Dagger/5",
+        "Shield(Kite)/6",
+        "Dancing/3"
+    ],
+    "Order Infantry, Light": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/6",
+        "Sword(Shortsword)/5",
+        "Dagger/5",
+        "Shield(Round)/5"
+    ],
+    "Order Infantry, Heavy": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/6",
+        "Sword(Falchion)/5",
+        "Dagger/5",
+        "Shield(Round)/5"
+    ],
+    "Order Archer": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Bow(Shortbow)/5",
+        "Sword(Shortsword)/5",
+        "Dagger/5",
+        "Shield(Buckler)/5"
+    ],
+    "Order Knight, Medium": [
+        "INITIATIVE/6",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "RIDING/6",
+        "Polearm(Lance)/6",
+        "Sword(Broadsword)/5",
+        "Club(Mace)/5",
+        "Dagger/5",
+        "Shield(Knight)/6",
+        "Dancing/3"
+    ],
+    "Order Knight, Heavy": [
+        "INITIATIVE/6",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "RIDING/6",
+        "Polearm(Lance)/6",
+        "Sword(Bastard Sword)/5",
+        "Club(Mace)/5",
+        "Dagger/5",
+        "Shield(Kite)/6",
+        "Dancing/3"
+    ],
+    "Imperial Militia": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/4",
+        "Shield(Round)/4"
+    ],
+    "Imperial Legionnaire, Light": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/5",
+        "Sword(Shortsword)/4",
+        "Dagger/4",
+        "Shield(Tower)/5"
+    ],
+    "Imperial Legionnaire, Medium": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/6",
+        "Sword(Shortsword)/5",
+        "Dagger/4",
+        "Shield(Tower)/5"
+    ],
+    "Imperial Legionnaire, Shortbow": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Bow(Shortbow)/6",
+        "Sword(Shortsword)/5",
+        "Dagger/5",
+        "Shield(Buckler)/5"
+    ],
+    "Patrician": [
+        "INITIATIVE/6",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "RIDING/6",
+        "Polearm(Lance)/6",
+        "Sword(Broadsword)/5",
+        "Axe(Handaxe)/5",
+        "Dagger/5",
+        "Shield(Kite)/6",
+        "Dancing/3"
+    ],
+    "Viking Clansman, Unarmored": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/5",
+        "Shield(Round)/5",
+        "Dagger(Keltan)/4",
+        "Seamanship/3"
+    ],
+    "Viking Clansman, Light": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/6",
+        "Shield(Round)/6",
+        "Bow((Shortbow))/5",
+        "Dagger(Keltan)/5",
+        "Seamanship/3"
+    ],
+    "Viking Huscarl, Medium Foot": [
+        "INITIATIVE/6",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Axe(Battleaxe)/6",
+        "Sword(Broadsword)/5",
+        "Dagger(Keltan)/5",
+        "Shield(Round)/5",
+        "Seamanship/3",
+        "Piloting/2"
+    ],
+    "Viking Huscarl, Light Horse": [
+        "INITIATIVE/6",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "RIDING/6",
+        "Polearm(Lance)/6",
+        "Sword(Broadsword)/5",
+        "Shield(Round)/5",
+        "Seamanship/3",
+        "Piloting/2"
+    ],
+    "Khuzdul Clansman": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/6",
+        "Axe(Handaxe)/5",
+        "Shield(Round)/5"
+    ],
+    "Khuzdul Low Guard": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/6",
+        "Axe(Battleaxe)/5",
+        "Dagger/5",
+        "Shield(Round)/5"
+    ],
+    "Khuzdul High Guard": [
+        "INITIATIVE/6",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Polearm(Poleaxe)/6",
+        "Club(Mace)/5",
+        "Dagger/5",
+        "Shield(Round)/5"
+    ],
+    "Sindarin Ranger, Unarmored": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Bow(Hartbow)/6",
+        "Sword(Longknife)/5",
+        "Dagger/5",
+        "Shield(Buckler)/5"
+    ],
+    "Sindarin Ranger, Light": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Bow(Hartbow)/6",
+        "Sword(Longknife)/5",
+        "Dagger/5",
+        "Shield(Buckler)/5"
+    ],
+    "Sindarin Guardian": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "Spear/7",
+        "Sword(Longknife)/6",
+        "Dagger/5",
+        "Shield(Round)/6"
+    ],
+    "Sindarin Horsebow": [
+        "INITIATIVE/5",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "RIDING/6",
+        "Bow(Hartbow)/6",
+        "Polearm(Lance)/5",
+        "Sword(Longknife)/5",
+        "Shield(Knight)/6",
+        "Dancing/3",
+        "Musician/2"
+    ],
+    "Sindarin Knight": [
+        "INITIATIVE/6",
+        "Foraging/4",
+        "Survival/4",
+        "Heraldry/2",
+        "Physician/2",
+        "Weaponcraft/2",
+        "RIDING/7",
+        "Polearm(Lance)/7",
+        "Sword(Longknife)/6",
+        "Shield(Knight)/6",
+        "Dancing/3",
+        "Musician/2"
+    ],
+    "Shek-Pvar/Lyahvi*": [
+        "Lyahvi/2",
+        "Neutral/1",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Legerdemain/3",
+        "Glasswork/3",
+        "Jewelcraft/3"
+    ],
+    "Shek-Pvar/Lyahvi**": [
+        "Lyahvi/2",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Legerdemain/3",
+        "Glasswork/3",
+        "Jewelcraft/3"
+    ],
+    "Shek-Pvar/Lyahvi***": [
+        "Lyahvi/3",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Legerdemain/3",
+        "Glasswork/3",
+        "Jewelcraft/3"
+    ],
+    "Shek-Pvar/Lyahvi****": [
+        "Lyahvi/3",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Legerdemain/3",
+        "Glasswork/3",
+        "Jewelcraft/3"
+    ],
+    "Shek-Pvar/Lyahvi*****": [
+        "Lyahvi/4",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Legerdemain/3",
+        "Glasswork/3",
+        "Jewelcraft/3"
+    ],
+    "Shek-Pvar/Peleahn*": [
+        "Peleahn/2",
+        "Neutral/1",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Alchemy/3",
+        "Cookery/4",
+        "Metalcraft/1",
+        "Weaponcraft/1"
+    ],
+    "Shek-Pvar/Peleahn**": [
+        "Peleahn/2",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Alchemy/3",
+        "Cookery/4",
+        "Metalcraft/1",
+        "Weaponcraft/1"
+    ],
+    "Shek-Pvar/Peleahn***": [
+        "Peleahn/3",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Alchemy/3",
+        "Cookery/4",
+        "Metalcraft/1",
+        "Weaponcraft/1"
+    ],
+    "Shek-Pvar/Peleahn****": [
+        "Peleahn/3",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Alchemy/3",
+        "Cookery/4",
+        "Metalcraft/1",
+        "Weaponcraft/1"
+    ],
+    "Shek-Pvar/Peleahn*****": [
+        "Peleahn/4",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Alchemy/3",
+        "Cookery/4",
+        "Metalcraft/1",
+        "Weaponcraft/1"
+    ],
+    "Shek-Pvar/Jmorvi*": [
+        "Jmorvi/2",
+        "Neutral/1",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Metalcraft/3",
+        "Lockcraft/3",
+        "Mining(Mineralogy)/2",
+        "Weaponcraft/2"
+    ],
+    "Shek-Pvar/Jmorvi**": [
+        "Jmorvi/2",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Metalcraft/3",
+        "Lockcraft/3",
+        "Mining(Mineralogy)/2",
+        "Weaponcraft/2"
+    ],
+    "Shek-Pvar/Jmorvi***": [
+        "Jmorvi/3",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Metalcraft/3",
+        "Lockcraft/3",
+        "Mining(Mineralogy)/2",
+        "Weaponcraft/2"
+    ],
+    "Shek-Pvar/Jmorvi****": [
+        "Jmorvi/3",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Metalcraft/3",
+        "Lockcraft/3",
+        "Mining(Mineralogy)/2",
+        "Weaponcraft/2"
+    ],
+    "Shek-Pvar/Jmorvi*****": [
+        "Jmorvi/4",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Metalcraft/3",
+        "Lockcraft/3",
+        "Mining(Mineralogy)/2",
+        "Weaponcraft/2"
+    ],
+    "Shek-Pvar/Fyvria*": [
+        "Fyvria/2",
+        "Neutral/1",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Herblore/3",
+        "Agriculture/3",
+        "Animalcraft/3",
+        "Embalming/2",
+        "Foraging/3",
+        "Physician/2",
+        "Survival/3",
+        "Tracking/2"
+    ],
+    "Shek-Pvar/Fyvria**": [
+        "Fyvria/2",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Herblore/3",
+        "Agriculture/3",
+        "Animalcraft/3",
+        "Embalming/2",
+        "Foraging/3",
+        "Physician/2",
+        "Survival/3",
+        "Tracking/2"
+    ],
+    "Shek-Pvar/Fyvria***": [
+        "Fyvria/3",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Herblore/3",
+        "Agriculture/3",
+        "Animalcraft/3",
+        "Embalming/2",
+        "Foraging/3",
+        "Physician/2",
+        "Survival/3",
+        "Tracking/2"
+    ],
+    "Shek-Pvar/Fyvria****": [
+        "Fyvria/3",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Herblore/3",
+        "Agriculture/3",
+        "Animalcraft/3",
+        "Embalming/2",
+        "Foraging/3",
+        "Physician/2",
+        "Survival/3",
+        "Tracking/2"
+    ],
+    "Shek-Pvar/Fyvria*****": [
+        "Fyvria/4",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Herblore/3",
+        "Agriculture/3",
+        "Animalcraft/3",
+        "Embalming/2",
+        "Foraging/3",
+        "Physician/2",
+        "Survival/3",
+        "Tracking/2"
+    ],
+    "Shek-Pvar/Odivshe*": [
+        "Odivshe/2",
+        "Neutral/1",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Swimming/4",
+        "Fishing/3",
+        "Piloting/2",
+        "Seamanship/2",
+        "Brewing/2"
+    ],
+    "Shek-Pvar/Odivshe**": [
+        "Odivshe/2",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Swimming/4",
+        "Fishing/3",
+        "Piloting/2",
+        "Seamanship/2",
+        "Brewing/2"
+    ],
+    "Shek-Pvar/Odivshe***": [
+        "Odivshe/3",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Swimming/4",
+        "Fishing/3",
+        "Piloting/2",
+        "Seamanship/2",
+        "Brewing/2"
+    ],
+    "Shek-Pvar/Odivshe****": [
+        "Odivshe/3",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Swimming/4",
+        "Fishing/3",
+        "Piloting/2",
+        "Seamanship/2",
+        "Brewing/2"
+    ],
+    "Shek-Pvar/Odivshe*****": [
+        "Odivshe/4",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "Swimming/4",
+        "Fishing/3",
+        "Piloting/2",
+        "Seamanship/2",
+        "Brewing/2"
+    ],
+    "Shek-Pvar/Savorya*": [
+        "Savorya/2",
+        "Neutral/1",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "MentalConflict/5",
+        "Drawing/4",
+        "Runecraft/3",
+        "Tarotry/3"
+    ],
+    "Shek-Pvar/Savorya**": [
+        "Savorya/2",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "MentalConflict/5",
+        "Drawing/4",
+        "Runecraft/3",
+        "Tarotry/3"
+    ],
+    "Shek-Pvar/Savorya***": [
+        "Savorya/3",
+        "Neutral/2",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "MentalConflict/5",
+        "Drawing/4",
+        "Runecraft/3",
+        "Tarotry/3"
+    ],
+    "Shek-Pvar/Savorya****": [
+        "Savorya/3",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "MentalConflict/5",
+        "Drawing/4",
+        "Runecraft/3",
+        "Tarotry/3"
+    ],
+    "Shek-Pvar/Savorya*****": [
+        "Savorya/4",
+        "Neutral/3",
+        "Script/2",
+        "Folklore/4",
+        "Mathematics/2",
+        "MentalConflict/5",
+        "Drawing/4",
+        "Runecraft/3",
+        "Tarotry/3"
+    ]
+},
+
+
+////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////
+
+
+
+
+
+
+
+///////////////////////////////
+
+
+"occupation_time": {
+    "Alchemist": "7",
+    "Animal Trainer": "3",
+    "Apothecary": "6",
+    "Astrologer": "4",
+    "Baliff": "8",
+    "Beggar": "1",
+    "Cartographer/Artist": "5",
+    "Chandler": "4",
+    "Charcoaler": "3",
+    "Chieftan": "15",
+    "Clothier": "6",
+    "Cook/Servant": "3",
+    "Courtesan": "3",
+    "Embalmer": "7",
+    "Farmer": "4",
+    "Fisherman": "5",
+    "Gladiator": "4",
+    "Glassworker": "7",
+    "Harper/Skald": "7",
+    "Herald": "12",
+    "Herdsman": "2",
+    "Hideworker": "5",
+    "Hunter/Trapper": "5",
+    "Innkeeper": "5",
+    "Jeweler": "7",
+    "Laborer/Longshoreman": "1",
+    "Lady": "7",
+    "Lexigrapher": "5",
+    "Litigant": "7",
+    "Locksmith": "6",
+    "Mason": "7",
+    "Mercantyler": "6",
+    "Metalsmith": "6",
+    "Miller/Millwright": "6",
+    "Miner": "6",
+    "Ostler": "5",
+    "Perfumer": "6",
+    "Physician": "7",
+    "Pilot": "9",
+    "Potter": "6",
+    "Prostitute/Pimp": "1",
+    "Ratter": "3",
+    "Sage/Tutor": "5",
+    "Salter": "4",
+    "Servant": "1",
+    "Scribe": "5",
+    "Seaman": "5",
+    "Shaman": "8",
+    "Shipwright": "7",
+    "Teamster": "2",
+    "Tentmaker": "5",
+    "Thatcher": "4",
+    "Thespian": "7",
+    "Thief": "3",
+    "Timberwright": "6",
+    "Toymaker": "5",
+    "Weaponcrafter": "7",
+    "Woodcrafter": "7",
+    "Cleric/Agrik": "9",
+    "Cleric/Halea": "9",
+    "Cleric/Ilvir": "9",
+    "Cleric/Larani": "9",
+    "Cleric/Morgath": "9",
+    "Cleric/Naveh": "9",
+    "Cleric/Peoni": "9",
+    "Cleric/Sarajin": "9",
+    "Cleric/Save-K'nor": "9",
+    "Cleric/Siem": "9",
+    "Feudal Militia": "4",
+    "Feudal Yeoman, Foot": "5",
+    "Feudal Guardsman, Light": "5",
+    "Feudal Guardsman, Heavy": "5",
+    "Feudal Yeoman, Shortbow": "6",
+    "Feudal Yeoman, Longbow": "6",
+    "Feudal Knight, Medium": "7",
+    "Feudal Knight, Heavy": "7",
+    "Order Infantry, Light": "5",
+    "Order Infantry, Heavy": "5",
+    "Order Archer": "6",
+    "Order Knight, Medium": "7",
+    "Order Knight, Heavy": "7",
+    "Imperial Militia": "5",
+    "Imperial Legionnaire, Light": "5",
+    "Imperial Legionnaire, Medium": "5",
+    "Imperial Legionnaire, Shortbow": "6",
+    "Patrician": "7",
+    "Viking Clansman, Unarmored": "4",
+    "Viking Clansman, Light": "5",
+    "Viking Huscarl, Medium Foot": "6",
+    "Viking Huscarl, Light Horse": "6",
+    "Khuzdul Clansman": "15",
+    "Khuzdul Low Guard": "20",
+    "Khuzdul High Guard": "30",
+    "Sindarin Ranger, Unarmored": "10",
+    "Sindarin Ranger, Light": "11",
+    "Sindarin Guardian": "12",
+    "Sindarin Horsebow": "15",
+    "Sindarin Knight": "20",
+    "Shek-Pvar/Lyahvi*": "7",
+    "Shek-Pvar/Lyahvi**": "7",
+    "Shek-Pvar/Lyahvi***": "7",
+    "Shek-Pvar/Lyahvi****": "7",
+    "Shek-Pvar/Lyahvi*****": "7",
+    "Shek-Pvar/Peleahn*": "7",
+    "Shek-Pvar/Peleahn**": "7",
+    "Shek-Pvar/Peleahn***": "7",
+    "Shek-Pvar/Peleahn****": "7",
+    "Shek-Pvar/Peleahn*****": "7",
+    "Shek-Pvar/Jmorvi*": "7",
+    "Shek-Pvar/Jmorvi**": "7",
+    "Shek-Pvar/Jmorvi***": "7",
+    "Shek-Pvar/Jmorvi****": "7",
+    "Shek-Pvar/Jmorvi*****": "7",
+    "Shek-Pvar/Fyvria*": "7",
+    "Shek-Pvar/Fyvria**": "7",
+    "Shek-Pvar/Fyvria***": "7",
+    "Shek-Pvar/Fyvria****": "7",
+    "Shek-Pvar/Fyvria*****": "7",
+    "Shek-Pvar/Odivshe*": "7",
+    "Shek-Pvar/Odivshe**": "7",
+    "Shek-Pvar/Odivshe***": "7",
+    "Shek-Pvar/Odivshe****": "7",
+    "Shek-Pvar/Odivshe*****": "7",
+    "Shek-Pvar/Savorya*": "7",
+    "Shek-Pvar/Savorya**": "7",
+    "Shek-Pvar/Savorya***": "7",
+    "Shek-Pvar/Savorya****": "7",
+    "Shek-Pvar/Savorya*****": "7"
+}}
+
+
+/**
+ * Command dispatcher
+ */
+// commandname -> object with
+//                  "action" a function taking two args, args and msg, which implements the command.
+//                  "re_syntax" regular expression the command has to match
+//                  "hr_syntax" a more human understandable version of the command syntax
+
+// Regular expression tester: https://regex101.com/
+// Regular expression cheatsheet:
+// Character id: [-_a-zA-Z0-9]{20}
+// Number: [-+]?[0-9]+
+// one of the following: (high|mid|low|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin)
+
+var target_locations="(high|mid|low"+(config.additional_target_locations?"|arms|legs|torso|head|neck|skull|abdomen|face|thorax|shoulder|hip|thigh|knee|calf|foot|upper_arm|elbow|forearm|hand|groin":"")+")"
+
+var dispatch_table = {
+    "!calcsb": {
+        "action": (args, msg) => { handle_calcsb(args, msg); },
+        "re_syntax": /^!calcsb [-_a-zA-Z0-9]{20}$/,
+        "hr_syntax": "!calcsb character_id<br/>Calculate the skill bonus for the selected character."
+    },
+    "!cheat": {
+        "action": (args, msg) => { handle_cheat(args, msg); },
+        "re_syntax": /^!cheat [-+]?[0-9]+$/,
+        "hr_syntax": "!cheat number<br/>The next d100 roll will be the provided number."
+    },
+    "!mapsend": {
+        "action": (args, msg) => { handle_mapsend(args, msg); },
+        "re_syntax": /^!mapsend [^,]+,[^,]+$/,
+        "hr_syntax": "!mapsend player_name,page_name <br/>Sends the named player to the named map."
+    },
+    "!itemlist": {
+        "action": (args, msg) => { handle_itemlist(args, msg); },
+        "re_syntax": /^!itemlist$/,
+        "hr_syntax": "!itemlist<br/>Prepares the item lists for use by other macros."
+    },
+    "!occupation": {
+        "action": (args, msg) => { handle_occupation(args, msg); },
+        "re_syntax": /^!occupation [-_a-zA-Z0-9]{20}$/,
+        "hr_syntax": "!occupation character_id<br/>Adds the occupation skills to the character."
+    },
+    "!table": {
+        "action": (args, msg) => { handle_table(args, msg); },
+        "re_syntax": /^!table .+$/,
+        "hr_syntax": "!table [[inline roll]] [[inline roll]] character id<br/>Rolls a value on a specially formatted handout."
+    },
+    "!rollatts": {
+        "action": (args, msg) => { handle_rollatts(args, msg); },
+        "re_syntax": /^!rollatts [-_a-zA-Z0-9]{20}$/,
+        "hr_syntax": "!rollatts character_id<br/>Rolls a new character for you"
+    },
+    "!newturn": {
+        "action": (args, msg) => { handle_newturn(args, msg); },
+        "re_syntax": /^!newturn$/,
+        "hr_syntax": "!newturn<br/>Starts a new round and re-computes initiative"
+    },
+    "!tokendis": {
+        "action": (args, msg) => { handle_tokendis(args, msg); },
+        "re_syntax": /^!tokendis [-_a-zA-Z0-9]{20} [-_a-zA-Z0-9]{20}$/,
+        "hr_syntax": "!tokendis character_id1 character_id2<br/>Computes the distance between two characters"
+    },
+    "!sheetattack": {
+        "action": (args, msg) => { handle_sheetattack(args, msg); },
+        "re_syntax": new RegExp(`^(!sheetattack|!attack) [-_a-zA-Z0-9]{20} ${target_locations} (H|B|E|P|F) (melee|missile) [-+]?[0-9]+ [-_a-zA-Z0-9]{20} .+$`),
+        "hr_syntax": `![sheet]attack attacker_id ${target_locations} (H|B|E|P|F) (missile|melee) modifier defender_id weapon`
+    },
+    "!attack": {
+        "action": (args, msg) => { handle_attack(args, msg); },
+        "re_syntax": new RegExp(`^(!sheetattack|!attack) [-_a-zA-Z0-9]{20} ${target_locations} (H|B|E|P|F) (melee|missile) [-+]?[0-9]+ [-_a-zA-Z0-9]{20} .+$`),
+        "hr_syntax": `![sheet]attack attacker_id ${target_locations} (H|B|E|P|F) (missile|melee) modifier defender_id weapon`
+    },
+    "!defend": {
+        "action": (args, msg) => { handle_defend(args, msg); },
+        "re_syntax": /^!defend (ignore|dodge|block|counterstrike) (#zero|[-+]?[0-9]+) WeaponName:.*$/,
+        "hr_syntax": "!defend (block mod WeaponName: weapon_name|dodge mod|ignore|counterstrike mod WeaponName: weapon_name)<br/>defends against an attack"
+    },
+    "!invin": {
+        "action": (args, msg) => { handle_invin(args, msg); },
+        "re_syntax": /^!invin [-_a-zA-Z0-9]{20}$/,
+        "hr_syntax": "!invin character_id<br/>Inputs character inventory in HârnMaster Character Utility text format from character note."
+
+    },
+    "!xin": {
+        "action": (args, msg) => { handle_xin(args, msg); },
+        "re_syntax": /^!xin( [-_a-zA-Z0-9]{20})?$/,
+        "hr_syntax": "!xin [character_id]<br/>Imports a character in HârnMaster Character Utility text format from the character note."
+
+    },
+    "!ca": {
+        "action": (args, msg) => { handle_ca(args, msg); },
+        "re_syntax": /^!ca( [-_a-zA-Z0-9]{20})?$/,
+        "hr_syntax": "!ca [character_id]<br/>Calculates armor values at hit locations."
+    },
+    "!addItem": {
+        "action": (args, msg) => { handle_addItem(args, msg); },
+        "re_syntax": /^!addItem [-_a-zA-Z0-9]{20} .*$/,
+        "hr_syntax": "!addItem character_id Item name"
+    },
+    "!clearmove": {
+        "action": (args, msg) => { handle_clearmove(args, msg); },
+        "re_syntax": /^!clearmove.*$/,
+        "hr_syntax": "Does something"
+    },
+    "!tokemove": {
+        "action": (args, msg) => { handle_tokemove(args, msg); },
+        "re_syntax": /^!tokemove.*$/,
+        "hr_syntax": "Shows token move distance"
+    },
+    "!out": {
+        "action": (args, msg) => { handle_out(args, msg); },
+        "re_syntax": /^!out.*$/,
+        "hr_syntax": "!out character_id<br/> outputs character data to log"
+    },
+    "!attack_melee_table": {
+        "action": (args, msg) => { handle_tables.attack_melee_table(args, msg); },
+        "re_syntax": /^!attack_melee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]$/,
+        "hr_syntax": "!attack_meleee_table (block|counterstrike|dodge|ignore) [1-4] [1-4]<br/>Outputs the attack melee table "
+    },
+    "!loc": {
+        "action": (args, msg) => { handle_loc(args, msg); },
+        "re_syntax": /^!loc [0-9]+ [0-9]+$/,
+        "hr_syntax": "!loc result aim_index<br/>Gets the hit location for a die roll and aim"
+    },
+    "!time": {
+        "action": (args, msg) => { handle_time(args, msg); },
+        "re_syntax": /^!time$/,
+        "hr_syntax": "!time<br/>Outputs the current time"
+    },
+    "!settime": {
+        "action": (args, msg) => { handle_settime(args, msg); },
+        "re_syntax": /^!settime [0-9]{3,}( [0-9]{1,2}( [0-9]{1,2}( [0-9]{1,2}( [0-9]{1,2}( [0-9]{1,2})?)?)?)?)?$/,
+        "hr_syntax": "!settime YYY [MM [DD [HH [MM [SS]]]]]"
+    },
+    "!addtime": {
+        "action": (args, msg) => { handle_addtime(args, msg); },
+        "re_syntax": /^!addtime [+-]?[0-9]+$/,
+        "hr_syntax": "!addtime seconds<br/>Adds seconds to the time"
+    },
+    "!rand": {
+        "action": (args, msg) => { handle_rand(args, msg); },
+        "re_syntax": /^!rand.*$/,
+        "hr_syntax": "!rand selected characters<br/>Randomly choses one of all selected tokens."
+    },
+    "!gmrand": {
+        "action": (args, msg) => { handle_gmrand(args, msg); },
+        "re_syntax": /^!gmrand.*$/,
+        "hr_syntax": "!gmrand selected characters<br/>Randomly choses one of all selected tokens."
+
+    },
+    "!help": {
+        "action": (args, msg) => { handle_help(args, msg); },
+        "re_syntax": /^!help.*$/,
+        "hr_syntax": "!help command<br/>Show help strings."
+    },
+    "!improveskill": {
+        "action": (args, msg) => { handle_improveskill(args, msg); },
+        "re_syntax": /^!improveskill [-_a-zA-Z0-9]{20} .*$/,
+        "hr_syntax": "!improveskill character_id skill name<br/>Performs a skill improvement roll for the given character and skill."
+    },
+    "!pickskill": {
+	    "action": (args, msg) => { handle_pickskill(args, msg); },
+        "re_syntax": /^!pickskill [-_a-zA-Z0-9]{20}.*$/,
+        "hr_syntax": "!pickskill character_id prompt title<br/>Prompts the user to pick a valid skill to improve"
+    },
+    "!ut": {
+        "action": (args, msg) => { handle_update_tables(); },
+        "re_syntax": /^!ut.*$/,
+        "hr_syntax": "!ut - outputs clean table handouts from data"
+    },
+    "!reload": {
+        "action": (args, msg) => { handle_reload_tables(); },
+        "re_syntax": /^!reload.*$/,
+        "hr_syntax": "!reload - reloads table data from handouts"
+    }
+}
+
+/**
+ * Process an attack message
+ */
+function handle_attack(atk, msg) {
+	if (trace) { log(`handle_attack(${atk},${msg.content})`) }
+
+	if (atk[0] == "!sheetattack") {
+		var tokelist = findObjs({
+			represents: atk[1],
+			_pageid: getSelectedPage(msg),
+			_type: "graphic",
+		});
+		if (tokelist == null || tokelist.length < 1) {
+			sendChat(msg.who, "Move the player banner to this page.");
+			return;
+		}
+		atk[1] = tokelist[0].id;
+
+	}
+	var atoke = getObj("graphic", atk[1]);
+	var charid = atoke.get("represents")
+	var toke = getObj("graphic", atk[6]);
+	if (!toke.get("represents")) { sendChat(msg.who, "No defender"); return; }
+	var defcharid = toke.get("represents");
+
+
+	if (atoke && toke) {
+		var res = `Distance: ${tokendistance(atoke, toke)[0]}<br/>Attacker Move: ${tokemove(atoke)}<br/>Defender Move: ${tokemove(toke)}`;
+	}
+	// Use regular expression to get the string which starts after the 7th space delimited word
+	weapNameArray = msg.content.match(/^([^ ]+ ){7}(.*)$/);
+	var wepname = weapNameArray[weapNameArray.length - 1];
+	log(`selected weapon: ${wepname}`);
+
+	if (wepname == "") {
+		log(msg.content);
+		return;
+	}
+	aroll = randomInteger(100);
+	var ctype = parseInt(myGet('CType', charid, 0))
+
+	log("Roll: " + aroll);
+
+	if (ctype !== 0) {
+		for (i = 0; i < Math.abs(ctype); i++) {
+			var broll = randomInteger(300);
+			log("cheat: " + aroll + " " + broll);
+			if (broll < aroll) {
+				aroll = broll;
+			}
+		}
+		if (ctype > 0) {
+			aroll = 101 - aroll;
+		}
+		log("Cheat Roll: " + aroll);
+
+	}
+
+	if (state.MainGameNS["cheat"] > 0) {
+		if (state.MainGameNS["cheat"] > 100) {
+			aroll = 100 - state.MainGameNS["cheat"]
+		} else {
+			aroll = state.MainGameNS["cheat"]
+			state.MainGameNS["cheat"] = 0;
+		}
+
+	}
+
+
+	state.MainGameNS["aroll"] = aroll;
+	state.MainGameNS["wepname"] = wepname;
+	state.MainGameNS["attacker"] = atk;
+
+
+	var wep = getWep(defcharid);
+
+	var atkstr = `&{template:${config.attack_template}} \
+		{{rolldesc=${atoke.get('name')} ${atk[4]} attacks ${toke.get('name')} with a ${wepname}}} \
+		{{info=${res}}} \
+		{{def=${buttonMaker("!defend dodge ?{Mod|0} WeaponName:Dodge", "Dodge", null, null, 1.2)}${buttonMaker("!defend ignore #zero WeaponName:", "Ignore", null, null, 1.2)}`;
+	for (var i = 0; i < wep.length; i++) {
+		atkstr += buttonMaker("!defend ?{response|block|counterstrike} ?{Mod|0} WeaponName:" + myGet(wep[i].get('name'), defcharid, "").replace(')', '&#41;'), myGet(wep[i].get('name'), defcharid, ""), null, null, 1.2)
+	}
+	atkstr += "}}"
+
+	sendChat(msg.who, atkstr);
+
+}
+
+
+/**
+ * Process an defend message
+ */
+
+
+function handle_defend(def, msg) {
+
+	var atk = state.MainGameNS.attacker;
+	var wepname = state.MainGameNS.wepname
+	var atoke = getObj("graphic", atk[1]);
+
+	var toke = getObj("graphic", atk[6]);
+	if (!toke.get("represents")) { sendChat(msg.who, "No defender"); return; }
+	if (!toke.get("represents").startsWith("-M")) { sendChat(msg.who, "No defender -M"); return; }
+	var charid = atoke.get("represents")
+	var defcharid = toke.get("represents")
+	var defchar = getObj("character", defcharid);
+	var allowed = defchar.get("controlledby");
+	if (!playerIsGM(msg.playerid)) {
+		if (allowed.indexOf(msg.playerid) == -1 && allowed.indexOf("all") == -1) {
+			sendChat("API", msg.who + " is not in control")
+			return;
+		}
+	}
+	///////////////////////////////////////////////////////////////////////
+
+	var aojn = findWeapon(charid, wepname)[0].get('name');
+	if (!aojn) {
+		sendChat(msg.who, "Weapon " + wepname + " not found");
+		return;
+	}
+
+	var aeml = getMeleeEML(atoke, aojn.slice(0, -4), charid, atk[5], atk[2]);
+	var app = 0;
+	var appstr = "";
+
+	if (atk[4] == "missile") {
+		var missi;
+
+		({ missi, app, appstr } = missileAttack(tokendistance(atoke, toke), wepname, tokemove(atoke), charid));
+	}
+
+	var atkml = aeml.total + app;
+	if (!atkml) {
+		sendChat("API", "attack ml problem");
+		return;
+	}
+
+	appstr = `${aeml.targstr} ${appstr}`;
+
+
+	if (atkml > config.emlmax) { atkml = config.emlmax; };
+	if (atkml < config.emlmin) { atkml = config.emlmin; };
+	var { asuc, ais } = determineSuccess(atkml, state.MainGameNS.aroll);
+	///////////////////////////////////////////////////////////////////////
+
+	var deml = { 'total': 0, 'targstr': '' };
+
+	if (def[1] == "dodge") {
+		var deml = getDodgeEML(toke, defcharid, parseInt(def[2]),
+			((atk[4] == "missile") && (wepname.indexOf("Bow") !== -1)));
+	}
+
+	if ((def[1] == "block") || (def[1] == "counterstrike")) {
+		var defwepname = msg.content.slice((msg.content.indexOf("WeaponName:") + 11));
+
+		if (defwepname.length > 3) {
+
+			var defwep = findWeapon(defcharid, defwepname);
+			var ojn = defwep[0].get('name');
+
+			if (def[1] == "counterstrike") {
+				var deml = getMeleeEML(toke, ojn.slice(0, -4), defcharid, def[2], 'mid');
+			} else {
+				var deml = getMeleeEML(toke, ojn.slice(0, -4), defcharid, def[2], 'mid', true);
+			}
+		}
+	}
+
+	droll = randomInteger(100);
+
+	var ctype = parseInt(myGet('DCType', defcharid, 0))
+
+	log("Def roll: " + droll);
+	if (ctype !== 0) {
+
+		for (i = 0; i < Math.abs(ctype); i++) {
+			var broll = randomInteger(300);
+			log("cheat: " + aroll + " " + broll);
+			if (broll < droll) {
+				droll = broll
+			}
+		}
+		if (ctype > 0) {
+			droll = 101 - droll;
+		}
+		log("Cheat Def roll: " + droll);
+	}
+
+	if (state.MainGameNS["cheat"] > 0) {
+		if (state.MainGameNS["cheat"] > 100) {
+			droll = 100 - state.MainGameNS["cheat"]
+		} else {
+			droll = state.MainGameNS["cheat"]
+			state.MainGameNS["cheat"] = 0;
+		}
+	}
+
+	if (deml.total > config.emlmax) { deml.total = config.emlmax; };
+	if (deml.total < config.emlmin) { deml.total = config.emlmin; };
+
+	log("DefML: " + deml.total)
+
+	var { dsuc, dis } = determineDefSuccess(deml.total, droll);
+
+	if (def[1] == "ignore") {
+		dis = 0;
+	}
+
+	if (atk[4] == "missile") {
+		var r = tables.attack_missile[def[1]][ais][dis];
+	} else {
+		var r = tables.attack_melee[def[1]][ais][dis];
+	}
+
+	var ares = "";
+	var dres = "";
+
+	if ((r.indexOf("A*") == 0) || (r.indexOf("B*") == 0)
+		|| (r.indexOf("M*") == 0)) {
+		ares = doHit(parseInt(r.slice(2)), aojn.slice(0, -4),
+			charid, defcharid, atk[3], missi, atk[2], atoke, toke);
+	}
+
+	if ((r.indexOf("D*") == 0) || (r.indexOf("B*") == 0)) {
+		dres = doHit(parseInt(r.slice(2)), ojn.slice(0, -4),
+			defcharid, charid, 'H', null, 'mid', toke, atoke);
+	}
+
+	if (def[1] == "dodge") {
+		var rolldesc = `${toke.get('name')} attempts dodge`
+	} else if (def[1] == "ignore") {
+		var rolldesc = `${toke.get('name')} ignores`
+		dis = 5;
+	} else {
+		var rolldesc = `${toke.get('name')} ${def[1]}s with a ${defwepname}`
+	}
+
+	//log crits
+
+	if (asuc == "CS") {
+		charLog(charid, ": Attack CS " + wepname, config.realtime, config.gametime)
+	} else if (asuc == "CF") {
+		charLog(charid, ": Attack CF " + wepname, config.realtime, config.gametime)
+	}
+	if (dsuc == "CS") {
+		charLog(defcharid, ": Defend CS " + defwepname, config.realtime, config.gametime)
+	} else if (dsuc == "CF") {
+		charLog(defcharid, ": Defend CF " + defwepname, config.realtime, config.gametime)
+	}
+
+	sendChat(msg.who, defendTemplate(config.defend_template,
+		rolldesc,
+		labelMaker(`Roll d100: ${state.MainGameNS.aroll}`, null, null, 1.3),
+		labelMaker(`Target: ${atkml}`, appstr, null, 1.3),
+		ais,
+		labelMaker(`Roll d100: ${droll}`, null, null, 1.3),
+		labelMaker(`Target: ${deml.total}`, deml.targstr, null, 1.3),
+		dis, ares, dres, r));
+}
+
+
+
+
+
+//
+//
+//
+// CODE 
+//
+//
+
+
+var started = false;
+
+const getGMPlayers = (pageid) => findObjs({ type: 'player' })
+	.filter((p) => playerIsGM(p.id))
+	.filter((p) => undefined === pageid || p.get('lastpage') === pageid)
+	.map(p => p.id)
+	;
+
+const sendGMPing = (left, top, pageid, playerid = null, moveAll = false) => {
+	let players = getGMPlayers(pageid);
+	if (players.length) {
+		sendPing(left, top, pageid, playerid, moveAll, players);
+	}
+};
+
+function initRoll() {
+	if (config.randomize_init_roll) {
+		return randomInteger(6) + randomInteger(6) + randomInteger(6);
+	} else {
+		return 0; // canon
+	}
+
+}
+
+function buttonMaker(command, text, tip, style, size) {
+	let tipExtra = (tip ? `class="showtip tipsy" title="${tip}"` : '');
+	return `<a ${tipExtra} style="color:black;background-color:transparent;border: 1px solid #555555;border-radius:1em;display:inline-block;height:1em;line-height:1em;min-width:1em;padding:1px;margin:0;margin-left:.2em;text-align:center;font-size:${size}em;${style || ''}" href="${command}">${text}</a>`;
+}
+
+function labelMaker(text, tip, style, size = 1) {
+	let tipExtra = (tip ? `class="showtip tipsy" title="${tip}"` : '');
+	return `<a ${tipExtra} style="color:black;background-color:transparent;border: 1px solid #000000;display:inline-block;height:1em;line-height:1em;min-width:1em;padding:2px;margin:0;margin-left:.2em;text-align:center;font-size:${size}em;${style || ''}">${text}</a>`;
+}
+
+
+
+function getMeleeEML(toke, repeating_weapon_name, charid, mod = 0, loc = "mid", block = false) {
+	var x = 0;
+	var tot = parseInt(myGet(`${repeating_weapon_name}ML`, charid, 0));
+	var targstr = `<div style='width:180px;'>Mastery Level: ${tot}<br>`;
+	if (block) {
+		x = parseInt(myGet(`${repeating_weapon_name}DEF`, charid, 0));
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Defence Mod: ${x}<br>`;
+		}
+	} else {
+		x = parseInt(myGet(`${repeating_weapon_name}ATK`, charid, 0));
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Attack Mod: ${x}<br>`;
+		}
+	}
+	x = parseInt(myGet(`${repeating_weapon_name}HM`, charid, 0));
+	if (x !== 0) {
+		tot += x;
+		targstr = `${targstr}H Mod: ${x}<br>`;
+	}
+	if (toke.get('bar3_value')) {
+		x = (parseInt(toke.get('bar3_value'))) * -5;
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Universal: ${x}<br>`;
+		}
+	} else {
+		x = (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0))) * -5;
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Universal: ${x}<br>`;
+		}
+	}
+	x = parseInt(myGet('ENCUMBRANCE', charid, 0)) * -5;
+	if (x !== 0) {
+		tot += x;
+		targstr = `${targstr}Encumbrance: ${x}<br>`;
+	}
+	x = -1 * tables.hit_loc_penalty[loc]["penalty"];
+	if (x !== 0) {
+		tot += x;
+		targstr = `${targstr}Location ${loc}: ${x}<br>`;
+	}
+	x = parseInt(mod);
+	if (x !== 0) {
+		tot += x;
+		targstr = `${targstr}Situational Mod: ${x}<br>`;
+	}
+	var out = {}
+	out['total'] = tot;
+	out['targstr'] = `${targstr}</div>`;
+
+
+	return out;
+}
+
+
+
+function getDodgeEML(toke, charid, mod = 0, bow = false) {
+	var x = 0;
+	var tot = parseInt(myGet(`DODGE_ML`, charid, 0));
+	var targstr = `<div style='width:180px;'>Mastery Level: ${tot}<br>`;
+	if (bow) {
+		x = Math.round(tot / -2);
+		tot += x;
+		targstr = `${targstr}Bow Mod: ${x}<br>`;
+	}
+	if (toke.get('bar3_value')) {
+		x = (parseInt(toke.get('bar3_value'))) * -5;
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Universal: ${x}<br>`;
+		}
+	} else {
+		x = (parseInt(myGet('UNIVERSAL_PENALTY', charid, 0))) * -5;
+		if (x !== 0) {
+			tot += x;
+			targstr = `${targstr}Universal: ${x}<br>`;
+		}
+	}
+	x = parseInt(myGet('ENCUMBRANCE', charid, 0)) * -5;
+	if (x !== 0) {
+		tot += x;
+		targstr = `${targstr}Encumbrance: ${x}<br>`;
+	}
+	x = parseInt(mod);
+	if (x !== 0) {
+		tot += x;
+		targstr = `${targstr}Situational Mod: ${x}<br>`;
+	}
+	var out = {}
+	out['total'] = tot;
+	out['targstr'] = `${targstr}</div>`;
+
+
+	return out;
+}
+
+
+function computeAttackML(ojn, charid, app, mod) {
+
+	return parseInt(myGet(ojn.slice(0, -4) + "ML", charid, 0))
+		+ parseInt(myGet(ojn.slice(0, -4) + "ATK", charid, 0))
+		+ parseInt(myGet(ojn.slice(0, -4) + "HM", charid, 0))
+		+ parseInt(mod) - (app);
+}
+
+function getSelectedPage(msg) {
+	if (msg.selected) {
+		var obj = getObj("graphic", msg.selected[0]['_id']);
+		return obj.get("_pageid")
+	} else {
+		return getPlayerPage(msg.playerid)
+	}
+}
+
+function getImpact(base, repeating_weapon_name, charid, aspect = "H", missi = null) {
+
+	var out = {}
+	var wepimpact = getWeaponImpact(repeating_weapon_name, charid, aspect, missi);
+	out['impactstr'] = "";
+	out['total'] = 0;
+
+	var sides = 6;
+	var bm = 0;
+
+	var imd = "";
+	var attribute = findObjs({
+		type: 'attribute',
+		characterid: charid,
+		name: repeating_weapon_name + "NOTE"
+	})[0]
+
+	if (attribute) {
+		imd = attribute.get('current');
+
+	}
+
+	if (imd.length > 0) {
+		var t = imd.split(":!")
+
+		if (t.length > 1) {
+			var impactmod = t[1].split(":");
+			if (impactmod.length == 1) {
+				wepimpact.impact += parseInt(impactmod[0]);
+				log("Impact mod: " + impactmod[0]);
+			}
+			if (impactmod.length == 3) {
+				sides = parseInt(impactmod[1]);
+				bm = parseInt(impactmod[2]);
+				if (parseInt(impactmod[0]) > 0) {
+
+					for (i = 0; i < parseInt(impactmod[0]); i++) {
+						var ir = randomInteger(sides) + bm;
+						out.total += ir;
+						if (out.impactstr.length > 2) {
+							out.impactstr += " + " + ir;
+						} else {
+							let bmExtra = ((bm !== 0) ? `+${bm}` : '');
+							out.impactstr += `${base}+${impactmod[0]}(d${sides}${bmExtra}): ${ir}`;
+						}
+					}
+				}
+			}
+		}
+	}
+	for (i = 0; i < base; i++) {
+		var ir = randomInteger(sides) + bm;
+		out.total += ir
+		if (out.impactstr.length > 2) {
+			out.impactstr += " + " + ir;
+
+		} else {
+			let bmExtra = ((bm !== 0) ? `+${bm}` : '');
+			out.impactstr += `${base}(d${sides}${bmExtra}): ${ir}`;
+
+		}
+	}
+
+
+	out.total += wepimpact.impact;
+	out.impactstr += " + " + "<br>Weapon Impact: " + wepimpact.impact;
+	out.aspect = wepimpact.aspect;
+	return out;
+
+}
+
+function getWeaponImpact(repeating_weapon_name, charid, aspect = "H", missi = null) {
+	var out = {};
+
+
+	if (aspect == "H") {
+
+		var baspect = myGet(`${repeating_weapon_name}B`, charid, 0)
+		var easpect = myGet(`${repeating_weapon_name}E`, charid, 0)
+		var paspect = myGet(`${repeating_weapon_name}P`, charid, 0)
+		out['impact'] = 0;
+		if (baspect !== "-") {
+			out['impact'] = parseInt(baspect);
+			out['aspect'] = "B";
+		}
+		if (easpect !== "-") {
+			if (parseInt(easpect) >= out['impact']) {
+				out['impact'] = parseInt(easpect);
+				out['aspect'] = "E";
+			}
+		}
+		if (paspect !== "-") {
+			if (parseInt(paspect) >= out['impact']) {
+				out['impact'] = parseInt(paspect);
+				out['aspect'] = "P";
+			}
+		}
+	} else {
+		out['impact'] = parseInt(myGet(`${repeating_weapon_name}${aspect}`, charid, 0));
+		out['aspect'] = aspect;
+	}
+
+	if (missi) {
+		if (myGet(`${repeating_weapon_name}NAME`, charid, "") in tables.missile_range) {
+			out.impact = missi[1];
+		} else {
+			out.impact = Math.round(out.impact * parseFloat(missi[1]))
+		}
+	}
+	return out;
+
+}
+
+function getPlayerPage(player_id) {
+	var psp = Campaign().get("playerspecificpages");
+	if (psp) {
+		if (player_id in psp) {
+			return psp[player_id];
+		} else {
+			return Campaign().get("playerpageid");
+		}
+	} else {
+		return Campaign().get("playerpageid");
+	}
+}
+
+
+function determineSuccess(ml, roll) {
+	if (roll <= ml) {
+		if (roll % 5 == 0) {
+			return { asuc: "CS", ais: 3 };
+		} else {
+			return { asuc: "MS", ais: 2 };
+		}
+	} else {
+		if (roll % 5 !== 0) {
+			return { asuc: "MF", ais: 1 };
+		} else {
+			return { asuc: "CF", ais: 0 };
+		}
+	}
+}
+function determineDefSuccess(ml, roll) {
+	if (roll <= ml) {
+		if (roll % 5 == 0) {
+			return { dsuc: "CS", dis: 3 };
+		} else {
+			return { dsuc: "MS", dis: 2 };
+		}
+	} else {
+		if (roll % 5 !== 0) {
+			return { dsuc: "MF", dis: 1 };
+		} else {
+			return { dsuc: "CF", dis: 0 };
+		}
+	}
+}
+
+
+function findWeapon(charid, weaponname) {
+	return filterObjs(function(obj) {
+		obn = obj.get('name');
+		if (obn) {
+			if ((obn.indexOf("WEAPON_NAME")) !== -1
+				&& (obj.get("_characterid") == charid)
+				&& (obj.get("current") == weaponname)) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	});
+}
+
+function missileAttack(dist, wepname, atkmov, charid) {
+	var missi = getrange(wepname, dist[0]);
+
+	var app = -1 * missi[0];
+	var appstr = `Missile Range: ${app}<br>`;
+
+	if (atkmov < 5) {
+		app = app + Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5);
+		appstr = `${appstr}No Movement: ${Math.round(parseInt(myGet('ENCUMBRANCE', charid, 0)) * 2.5)}<br>`;
+	}
+	if (atkmov > 5) {
+		app = app - 10;
+		appstr = `${appstr}Movement: -10<br>`;
+	}
+	if (myGet('IS_MOUNTED', charid, 0) == 'on') {
+		app = app - 10;
+		appstr = `${appstr}Mounted: -10<br>`;
+	}
+	return { missi, app, appstr };
+}
+
+
+function charLog(character_id, text, rtime = false, gtime = false) {
+	var logout = myGet("TEXTAREA_LOG", character_id, "");
+	if (rtime) {
+		var d = new Date();
+		var n = d.toLocaleString();
+		logout += n + ":  ";
+	}
+	if (gtime) { logout += getHarnTimeStr(state.MainGameNS.GameTime) + ": "; }
+	mySet("TEXTAREA_LOG", character_id, logout + text + "\n")
+
+}
+
+function handle_pickskill(args, msg) {
+	sendChat("Skill Improvement Roll", msg.content.slice(msg.content.indexOf(args[1]) + 21) + "<br>[Pick Skill](!improveskill " + args[1]
+		+ " %{" + msg.content.slice(msg.content.indexOf(args[1]) + 21) + "|helper-tables.skilllist})")
+}
+
+
+function handle_improveskill(args, msg) {
+	char = getObj("character", args[1]);
+	skill_att_name = findSkill(char, msg.content.slice(34));
+	var d = new Date();
+	var n = d.toLocaleString();
+	var ml = parseInt(myGet(skill_att_name.slice(0, -4) + "ML", char.id, 0));
+
+	roll = randomInteger(100) + parseInt(myGet(skill_att_name.slice(0, -4) + "SB", char.id, 0));
+	if (roll >= ml) {
+		mySet(skill_att_name.slice(0, -4) + "ML", char.id, (ml + 1));
+		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>"
+			+ "<br>" + " roll " + roll + ": SUCCESS<br>" + msg.content.slice(34) + " ML increases to " + (ml + 1));
+		charLog(char.id, ": Skill Improvement Roll: " + msg.content.slice(34) + " "
+			+ roll + ": SUCCESS: ML = " + (ml + 1), config.realtime, config.gametime);
+	} else {
+		sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>" + msg.content.slice(34)
+			+ "<br>" + " roll " + roll + ": FAIL<br> " + msg.content.slice(34) + " ML stays at " + ml);
+		charLog(char.id, ": Skill Improvement Roll: " + msg.content.slice(34) + " "
+			+ roll + ": FAIL: ML = " + ml, config.realtime, config.gametime);
+	}
+}
+
+
+function rollshock(charid, token, unipenalty) {
+	var shockstr = "";
+	var shockroll = 0;
+	for (i = 0; i < unipenalty; i++) {
+		var ir = randomInteger(6);
+		shockroll = shockroll + ir
+		if (i > 0) {
+			shockstr += " + " + ir;
+
+		} else {
+			shockstr += `${unipenalty}d6: ${ir}`;
+
+		}
+	}
+	end = myGet("COMBAT_ENDURANCE", charid, 0);
+	if (shockroll > end) {
+	    sm = token.get("statusmarkers")
+	    log(sm)
+	    if (sm.length > 3) {
+	        if (!sm.includes(config['shock_marker'])) {
+	            sm =  sm + "," + config['shock_marker'];
+	            token.set("statusmarkers", sm)
+	        }
+	    } else {
+	        sm = config['shock_marker'];
+	        token.set("statusmarkers", sm)
+	    }
+		//token.set("status_sleepy");
+		return "<br/>Shock Roll: " + labelMaker(shockroll, shockstr) + "<br/><h4>FAIL</h4>";
+	} else {
+		return "<br/>Shock Roll: " + labelMaker(shockroll, shockstr) + "<br/>Pass";
+	}
+
+}
+
+function handle_rollatts(args, msg) {
+	var char = getObj("character", args[1]);
+	var rolls = ["STR", "STA", "DEX", "AGL", "INT", "AUR", "WIL", "EYE",
+		"HRG", "SML", "VOI", "CML", "FRAME"]
+	_.each(rolls, function(attname) {
+		var r = randomInteger(6) + randomInteger(6) + randomInteger(6);
+		if (msg.content.indexOf("?") !== -1) {
+			myGet(attname, char.id, r);
+		} else {
+			mySet(attname, char.id, r);
+		}
+	});
+
+	_.each(tables.autoskills, function(skillname) {
+		myGet(skillname, char.id, 1);
+
+	});
+}
+function gethiteff(loc, effImp) {
+	var lr = "None";
+	if (effImp > 0) {
+		var col = 4;
+	}
+	if (effImp > 4) {
+		var col = 5;
+	}
+	if (effImp > 8) {
+		var col = 6;
+	}
+	if (effImp > 12) {
+		var col = 7;
+	}
+	if (effImp > 16) {
+		var col = 8;
+	}
+	_.each(tables.hit_location_table, function(row) {
+		if (row[3] == loc) {
+			lr = row[col];
+		}
+
+	});
+
+	return lr;
+}
+
+function gethitloc(roll, aim) {
+	var lr;
+	_.each(tables.hit_location_table, function(row) {
+		if (row[aim] !== "-") {
+			if (parseInt(row[aim].slice(0, 2)) <= roll) {
+				lr = row[3];
+				if (trace) { log(`location table ${row[aim]} hits ${row[3]}`) }
+			}
+		}
+
+	});
+
+	return lr;
+}
+
+
+
+function getCharByNameAtt(charname) {
+	var attr = findObjs({
+		current: charname,
+		name: "NAME",
+		_type: "attribute",
+	})[0];
+	if (attr) {
+		return getObj("character", attr.get('_characterid'));
+	} else {
+		var tk = findObjs({
+			name: charname,
+			_type: "graphic",
+		})[0];
+		return getObj("character", tk.get('represents'));
+	}
+	
+}
+
+
+/**
+ * Show help.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_help(args, msg) {
+	if (trace) { log(`handle_help(${args},${msg.content})`) }
+	if (args.length == 1) {
+		var out = "<br/>";
+		_.each(_.keys(dispatch_table), function(obj) {
+			//out = `${out}${dispatch_table[obj]["hr_syntax"]}<br/>`;
+			out += buttonMaker(`!help ${obj}`,obj,null,null,1) ;
+		});
+		sendChat("API Commands",out,null,{noarchive:true});
+	}
+	if (args.length == 2) {
+		if (args[1] in dispatch_table) {
+			var out = dispatch_table[args[1]]["hr_syntax"].replace(/\)/g, '&#41;').replace(/\]/g, '&#93;')
+			sendChat(``,`  ${out}  `,null,{noarchive:true});
+		} else {
+			sendChat(args[1],"Not Found",null,{noarchive:true});
+		}
+	}
+}
+
+
+/**
+ * Update the skill bonues of the active sheet.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_calcsb(args, msg) {
+	if (trace) { log(`handle_calcsb(${args},${msg.content})`) }
+	var char = getObj("character", args[1]);
+	if (char) {
+		calcSB(char, msg);
+	}
+}
+
+/**
+ * Allow the hand of god to tip the scales.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_cheat(args, msg) {
+	if (trace) { log(`handle_cheat(${args},${msg.content})`) }
+	if (playerIsGM(msg.playerid)) {
+		state.MainGameNS["cheat"] = parseInt(msg.content.slice(6));
+		log("cheat: " + msg.content.slice(6));
+	}
+}
+
+/**
+ * I do not know
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_mapsend(args, msg) {
+	if (trace) { log(`handle_mapsend(${args},${msg.content})`) }
+	args = msg.content.substr(9).split(",");
+	//TODO defensive programming
+	var player = findObjs({
+		type: 'player',
+		_displayname: args[0]
+	})[0];
+
+	//TODO defensive programming
+	var page = findObjs({
+		type: 'page',
+		name: args[1]
+	})[0];
+
+	var playerspecificpages = new Object();
+	var pl = new Object();
+	if (Campaign().get("playerspecificpages")) {
+		playerspecificpages = Campaign().get("playerspecificpages");
+		Campaign().set("playerspecificpages", false);
+	}
+
+	pl[player.id] = page.id;
+	playerspecificpages = Object.assign(playerspecificpages, pl);
+	log(playerspecificpages);
+	Campaign().set("playerspecificpages", playerspecificpages);
+}
+
+/**
+ * This command is obsolete now that we initialize item lists on startup.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_itemlist(args, msg) {
+	if (trace) { log(`handle_itemlist(${args},${msg.content})`) }
+	generate_tables(msg.playerid);
+}
+
+/**
+ * Populates the character skills with occupation appropriate skills (and starting ML?)
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_occupation(args, msg) {
+	if (trace) { log(`handle_occupation(${args},${msg.content})`) }
+	var char = getObj("character", args[1]);
+	if (char) {
+		log(msg.content.slice(33));
+		var occ = myGet('OCCUPATION', char.id, "Farmer");
+		if (occ in tables.occupational_skills) {
+			_.each(tables.occupational_skills[occ], function(skl) {
+				sk = skl.split("/");
+				skn = findSkill(char, sk[0]).slice(0, -4);
+				log(skn);
+				mySet(skn + "ML", char.id, sk[1]);
+
+			});
+		}
+	}
+}
+function handle_gmrand(args, msg) {
+	if (trace) { log(`handle_gmrand(${args},${msg.content})`) }
+	if (!msg.selected) { return; }
+	//log(msg.selected);
+	var objid = msg.selected[randomInteger(msg.selected.length) - 1];
+	//log(objid['_id']);
+	var obj = getObj("graphic", objid['_id']);
+	sendGMPing(obj.get('left'), obj.get('top'), obj.get('pageid'), "", true);
+	sendChat("Random Character", "/w gm " + obj.get('name'));
+}
+
+function handle_rand(args, msg) {
+	if (trace) { log(`handle_rand(${args},${msg.content})`) }
+	if (!msg.selected) { return; }
+	//log(msg.selected);
+	var objid = msg.selected[randomInteger(msg.selected.length) - 1];
+	//log(objid['_id']);
+	var obj = getObj("graphic", objid['_id']);
+	sendPing(obj.get('left'), obj.get('top'), obj.get('pageid'), "", true);
+	sendChat("Random Character", obj.get('name'));
+	return { objid, obj };
+}
+
+function handle_addtime(args, msg) {
+	if (trace) { log(`handle_addtime(${args},${msg.content})`) }
+	state.MainGameNS.GameTime += parseInt(args[1]);
+	sendChat("Timekeeper", getHarnTimeStr(state.MainGameNS.GameTime));
+	//log(getHarnTimeStr(state.MainGameNS.GameTime));
+}
+
+function handle_settime(args, msg) {
+	if (trace) { log(`handle_settime(${args},${msg.content})`) }
+	setHarnTime(args);
+	log(getHarnTimeStr(state.MainGameNS.GameTime));
+}
+
+function handle_time(args, msg) {
+	if (trace) { log(`handle_time(${args},${msg.content})`) }
+	log(getHarnTimeStr(state.MainGameNS.GameTime));
+	initializeTables(0);
+	if (trace) { log(`API table  : ${JSON.stringify(tables,null,4)}`) }
+	sendChat("Timekeeper", getHarnTimeStr(state.MainGameNS.GameTime));
+}
+
+function handle_loc(args, msg) {
+	if (trace) { log(`handle_loc(${args},${msg.content})`) }
+	gethitloc(args[1], args[2]);
+}
+
+function handle_attack_melee_table(args, msg) {
+	if (trace) { log(`handle_attack_melee_table(${args},${msg.content})`) }
+	sendChat(msg.who, "Melee Attack Result<br/>" + tables.attack_melee[args[1]][args[2]][args[3]] + "<br/>");
+}
+
+function handle_out(args, msg) {
+	if (trace) { log(`handle_out(${args},${msg.content})`) }
+	//var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
+	//out(g.get("represents"));
+	out(args[1]);
+}
+
+/**
+ * handle the tokemove command (no clue)
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_tokemove(args, msg) {
+	if (trace) { log(`handle_tokemove(${args},${msg.content})`) }
+	if (args.length == 2) {
+		var obj = getObj("graphic", args[1]);
+		sendChat(msg.who, "Move = " + tokemove(obj));
+	} else {
+		log("Please select character");
+	}
+}
+
+/**
+ * handle the clearmove command (no clue)
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_clearmove(args, msg) {
+	if (trace) { log(`handle_clearmove(${args},${msg.content})`) }
+	if (args.length == 2) {
+		var obj = getObj("graphic", args[1]);
+		obj.set('lastmove', obj.get('left') + ',' + obj.get('top'));
+	} else {
+		log("Please select character");
+	}
+}
+
+/**
+ * Adds item to inventory.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_addItem(args, msg) {
+	if (trace) { log(`handle_addItem(${args},${msg.content})`) }
+	if (args.length > 2) {
+		log(msg.content.slice(30));
+		addItem(args[1], msg.content.slice(30));
+	} else {
+		log("Please select character");
+	}
+}
+
+/**
+ * Calculate armor values (protection at locations).
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_ca(args, msg) {
+	if (trace) { log(`handle_ca(${args},${msg.content})`) }
+	if (args.length > 1) {
+		calcArmor(args[1]);
+	}
+	else if (msg.selected) {
+		var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
+
+		if (g.get("represents")) {
+			calcArmor(g.get("represents"));
+		}
+	} else {
+		log("Please select character");
+	}
+}
+
+/**
+ * Import a character generated with HârnMaster Character Utility from https://www.lythia.com/game_aides/harnchar/
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_xin(args, msg) {
+	if (trace) { log(`handle_xin(${args},${msg.content})`) }
+	if (args.length > 1) {
+		log(args[1]);
+		xin(args[1]);
+	} else if (msg.selected) {
+		var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
+
+		if (g.get("represents")) {
+			xin(g.get("represents"));
+		}
+
+	} else {
+		log("Please select character");
+	}
+}
+
+
+/**
+ * ?
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_invin(args, msg) {
+	if (trace) { log(`handle_invin(${args},${msg.content})`) }
+	if (args.length > 1) {
+		//log(args[1]);
+		invin(args[1]);
+	} else if (msg.selected) {
+		var g = getObj(msg.selected[0]['_type'], msg.selected[0]['_id']);
+		if (g.get("represents")) {
+			invin(g.get("represents"));
+		}
+	} else {
+		log("Please select character");
+	}
+}
+
+/**
+ * The command used for attacking without a selected token
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_sheetattack(args, msg) {
+	if (trace) { log(`handle_sheetattack(${args},${msg.content})`) }
+	handle_attack(args, msg);
+}
+
+/**
+ * Calculate distance between two tokens?.
+ * @param {Message} msg the message representing the command, with arguments separated by spaces
+ */
+function handle_tokendis(args, msg) {
+	if (trace) { log(`handle_tokendis(${args},${msg.content})`) }
+	const startToken = getObj("graphic", args[1]);
+	const endToken = getObj("graphic", args[2]);
+	if (startToken != null && endToken != null) {
+		dis = tokendistance(startToken, endToken);
+		sendChat("Token Distance", dis[0] + " " + dis[1] + "<br/>");
+	} else {
+		sendChat("API", `unable to resolve ${args[1]} or ${args[2]}`);
+	}
+}
+
+function initializeTables(playerid) {
+	if (trace) { log(`>initializeTables(${playerid})`) }
+	var gms = findObjs({ type: 'player' }).filter((p) => playerIsGM(p.id));
+	var gmId;
+	if (gms.length > 0) {
+		gmId = gms[0].id;
+	} else {
+		log("error - no gm found")
+		if (playerid != 0) {
+			gmId = playerid
+		} else {
+			return;
+		}
+	}
+	if (config.generate_item_list) {
+
+
+		var out = "";
+		var outarmor = "";
+		var outweap = "";
+		Object.keys(tables.prices).sort().forEach(function(k) {
+			if (k in tables.weapons_table) {
+				outweap += "|" + k;
+			} else if (k.substr(0, k.lastIndexOf(",")) in tables.armor_coverage) {
+				outarmor += "|" + k;
+			} else {
+				out += "|" + k;
+			}
+		});
+		//log(out+"\n\n");
+		out = out.replace(/,/g, "&#44;");
+		out = "?{Item" + out + "}";
+		var mac = findObjs({
+			type: 'macro',
+			playerid: gmId,
+			name: 'helper-ItemList'
+		})[0];
+		if (mac) {
+			mac.set('action', out);
+		} else {
+			createObj('macro', {
+				name: 'helper-ItemList',
+				visibleto: "all",
+				action: out,
+				playerid: gmId
+			});
+		}
+		outweap = outweap.replace(/,/g, "&#44;");
+		outweap = "?{Item" + outweap + "}";
+		var mac = findObjs({
+			type: 'macro',
+			playerid: gmId,
+			name: 'helper-WeaponList'
+		})[0];
+		if (mac) {
+			log("registering #WeaponList");
+			mac.set('action', outweap);
+		} else {
+			log("creating #WeaponList");
+			createObj('macro', {
+				name: 'helper-WeaponList',
+				visibleto: "all",
+				action: outweap,
+				playerid: gmId
+			});
+		}
+		outarmor = outarmor.replace(/,/g, "&#44;");
+		outarmor = "?{Item" + outarmor + "}";
+		var mac = findObjs({
+			type: 'macro',
+			playerid: gmId,
+			name: 'helper-ArmorList'
+		})[0];
+		if (mac) {
+			mac.set('action', outarmor);
+		} else {
+			createObj('macro', {
+				name: 'helper-ArmorList',
+				visibleto: "all",
+				action: outarmor,
+				playerid: gmId
+			});
+		}
+	} else { if (trace) { log(`no item list`) } }
+	_.each(_.keys(tables.default_macros), function(obj) {
+		//if (trace) { log("macro: " + obj) }
+
+		var out = tables.default_macros[obj];
+		var mac = findObjs({
+			type: 'macro',
+			playerid: gmId,
+			name: obj
+		})[0];
+		if (mac) {
+			mac.set('action', out);
+		} else {
+			createObj('macro', {
+				name: obj,
+				visibleto: "all",
+				action: out,
+				playerid: gmId
+			});
+		}
+	});
+
+	var chars = findObjs({ _type: "character", });
+
+	if (trace) log("Creating default character macros");
+	chars.forEach(function(c) {
+		//if (trace) log(`Character ${c.get("name")}`);
+		setWeaponsList(c.id);
+		setSkilllist(c.id);
+		_.each(_.keys(tables.default_abilities), function(obj) {
+			//if (trace) log(`Macro ${obj}`)
+			var mac = findObjs({
+				type: 'ability',
+				_characterid: c.id,
+				name: obj
+			})[0];
+			if (!mac) {
+				//if (trace) log('registering');
+				var out = tables.default_abilities[obj];
+				createObj('ability', {
+					name: obj,
+					action: out,
+					_characterid: c.id,
+					istokenaction: true
+				});
+			}
+		});
+	});
+	
+	sendChat("Restart", getHarnTimeStr(state.MainGameNS.GameTime));
+
+	if (trace) { log("<initializeTables()") }
+	return;
+}
+
+function getWep(charid) {
+	return filterObjs(function(obj) {
+		obn = obj.get('name');
+		if (obn) {
+			if (obn.includes("WEAPON_NAME")
+				&& (obj.get("_characterid") == charid)) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	});
+}
+function doBloodloss(charid) {
+
+	injury_list = filterObjs(function(obj) {
+		obn = obj.get('name');
+		if (obn) {
+			if (obn.includes("_INJURY_HEALINGROLL")
+				&& (obj.get("_characterid") == charid)) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	});
+	injury_list.forEach(function(w) {
+                		healing_rate = myGet(w.get('name'), charid, "");
+                		if (healing_rate == "") {
+
+                		    injury_points = parseInt(myGet(w.get('name').slice(0,-19)+ "_INJURY_LEVEL", charid, ""));
+                		    injury_severity = myGet(w.get('name').slice(0,-19)+ "_INJURY_SEVERITY", charid, "");
+                		    injury_location = myGet(w.get('name').slice(0,-19)+ "_INJURY_LOCATION", charid, "");
+
+                		    obl = parseInt(myGet('BLOODLOSS', charid, 0));
+                		    bloodloss = 0;
+
+                		    bloodloss = bloodloss + injury_points - 2;
+
+                		    if (injury_location.startsWith('E ')) {
+                		        bloodloss = bloodloss +  2;
+                		    }
+                		    if (injury_location.startsWith('P ')) {
+                		        bloodloss = bloodloss +  1;
+                		    }
+                		    if (injury_severity == "G") {
+                		        bloodloss = bloodloss +  2;
+                		    }
+                		    if (injury_severity == "K") {
+                		        bloodloss = bloodloss +  4;
+                		    }
+                		    if (bloodloss < 0) {
+                		        bloodloss = 0;
+                		    }
+                		    if ((obl + bloodloss) >= config.bleedspeed) {
+                		        addinjury('Bloodloss', 'M1', charid)
+                		        bloodloss = bloodloss - config.bleedspeed;
+                		        sendChat("Bloodloss", myGet('NAME', charid, 0));
+                		    }
+                		    mySet('BLOODLOSS', charid, (obl + bloodloss));
+
+                		}
+                	})
+}
+function setWeaponsList(charid) {
+	//if (trace) log("Macro helper-Weapons");
+	var out2 = "";
+	getWep(charid).forEach(function(w) {
+		out2 += "|" + myGet(w.get('name'), charid, "");
+	})
+	out2 = out2.replace(/,/g, "&#44;");
+	out2 = "?{Weapon" + out2 + "}";
+	var mac = findObjs({
+		type: 'ability',
+		_characterid: charid,
+		name: 'helper-Weapons'
+	})[0];
+
+	if (mac) {
+		mac.set('action', out2);
+	} else {
+		createObj('ability', {
+			name: 'helper-Weapons',
+			action: out2,
+			_characterid: charid
+		});
+	}
+
+
+
+}
+
+function setSkilllist(charid) {
+	//if (trace) log("Macro helper-Skilllist");
+	var out = "";
+	var sl = skillList(charid);
+
+	for (i = 0; i < sl.length; i++) {
+		out += "|" + sl[i];
+	}
+
+	//log(out+"\n\n");
+	out = out.replace(/,/g, "&#44;").replace(/\)/g, '&#41;');
+	out = "?{Skills" + out + "}";
+	var mac = findObjs({
+		type: 'ability',
+		_characterid: charid,
+		name: 'helper-SkillList'
+	})[0];
+	if (mac) {
+		mac.set('action', out);
+	} else {
+		createObj('ability', {
+			name: 'helper-SkillList',
+			action: out,
+			_characterid: charid
+		});
+	}
+}
+
+
+function addinjury(loc, injstr, charid) {
+	if ((injstr.indexOf("Fum") == 0) || (injstr.indexOf("Stu") == 0)) {
+		var sev = injstr.slice(3, 4);
+		var lvl = parseInt(injstr.slice(4, 5));
+	} else {
+		var sev = injstr.slice(0, 1);
+		var lvl = parseInt(injstr.slice(1, 2))
+	}
+	var mid = makeid();
+
+	mySet("repeating_injury_" + mid + "_INJURY_LOCATION", charid, loc);
+	mySet("repeating_injury_" + mid + "_INJURY_SEVERITY", charid, sev);
+	mySet("repeating_injury_" + mid + "_INJURY_LEVEL", charid, lvl);
+	mySet("repeating_injury_" + mid + "_INJURY_HEALINGROLL", charid, "");
+	mySet("repeating_injury_" + mid + "_INJURY_INFECTED", charid, 0);
+	mySet("repeating_injury_" + mid + "_INJURY_INFECTED_FEEDBACK", charid, 0);
+
+	return;
+}
+
+
+
+function getrange(weapname, dist) {
+	if (!(weapname in tables.missile_range)) { weapname = "Melee"; }
+	for (var i = 4; i >= 0; i--) {
+		if ((tables.missile_range[weapname][i][0] * 5) > dist) {
+			if (i == 0) {
+				var penalty = config.missle_close_range_mod;
+			} else {
+				var penalty = (i - 1) * 20;
+			}
+			var impact = tables.missile_range[weapname][i][1];
+		}
+	}
+	return [penalty, impact]
+}
+
+
+
+function handle_newturn(args, msg) {
+	turnorder = [];
+
+	var currentPageGraphics = findObjs({
+		_pageid: getSelectedPage(msg),
+		_type: "graphic",
+	});
+
+	_.each(currentPageGraphics, function(obj) {
+		if (obj.get('represents').startsWith('-M') && (obj.get('layer') == 'objects') && !obj.get('status_skull')) {
+
+			if (config.bleedspeed > 0 && obj.get('bar3_link')){
+			    doBloodloss(obj.get('represents'));
+			 }
+			if (msg.selected) {
+				for (i = 0; i < msg.selected.length; i++) {
+					if (obj.id == msg.selected[i]["_id"]) {
+						turnPush(obj, msg);
+					}
+				}
+			} else {
+				turnPush(obj, msg);
+			}
+		}
+	});
+	Campaign().set("turnorder", JSON.stringify(turnorder.sort((a, b) => (a.pr < b.pr) ? 1 : -1)));
+
+	state.MainGameNS.GameTime += 10;
+	sendChat("New Round", getHarnTimeStr(state.MainGameNS.GameTime));
+}
+
+function turnPush(obj, msg) {
+	if (obj.get('bar3_value')) {
+		var pp = (parseInt(obj.get('bar3_value')) + parseInt(myGet('ENCUMBRANCE', obj.get("represents"), 0))) * 5;
+	} else {
+		var pp = (parseInt(myGet('UNIVERSAL_PENALTY', obj.get("represents"), 0)) + parseInt(myGet('ENCUMBRANCE', obj.get("represents"), 0))) * 5;
+	}
+	obj.set('lastmove', obj.get('left') + ',' + obj.get('top'))
+    sm = obj.get("statusmarkers");
+	if (sm.includes(config['shock_marker'])) {
+		var initml = 0;
+	} else {
+		if (myGet("IS_MOUNTED", obj.get("represents"), 0) == "on") {
+			var initml = Math.round(((parseInt(myGet("RIDING_ML", obj.get("represents"), 0)) + parseInt(myGet("STEED_INIT", obj.get("represents"), 0))) / 2) - pp + initRoll());
+		} else {
+			var initml = parseInt(myGet("INITIATIVE_ML", obj.get("represents"), 0)) - pp + initRoll();
+		}
+    initml = Math.max(initml, config.emlmin)
+	}
+
+	turnorder.push({
+		id: obj.id,
+		pr: initml,
+		custom: "",
+		_pageid: getSelectedPage(msg)
+	});
+}
+
+function addWeapon(charid, weapon_name) {
+	if (trace) { log("addWeapon(" + charid + ", " + weapon_name + ")") }
+	if (weapon_name in tables.weapons_table) {
+
+		var mid = makeid();
+		mySet("repeating_weapon_" + mid + "_WEAPON_NAME", charid, weapon_name);
+		if (weapon_name in tables.prices) { mySet("repeating_weapon_" + mid + "_WEAPON_WGT", charid, tables.prices[weapon_name]["weight"]); } else {
+			mySet("repeating_weapon_" + mid + "_WEAPON_WGT", charid, 0);
+		}
+		mySet("repeating_weapon_" + mid + "_WEAPON_WQ", charid, tables.weapons_table[weapon_name][0]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_ATK", charid, tables.weapons_table[weapon_name][1]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_DEF", charid, tables.weapons_table[weapon_name][2]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_HM", charid, tables.weapons_table[weapon_name][3]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_B", charid, tables.weapons_table[weapon_name][4]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_E", charid, tables.weapons_table[weapon_name][5]);
+		mySet("repeating_weapon_" + mid + "_WEAPON_P", charid, tables.weapons_table[weapon_name][6]);
+
+		if (weapon_name.indexOf("Unarmed") == 0) {
+			mySet("repeating_weapon_" + mid + "_WEAPON_ML", charid, myGet("UNARMED_ML", charid, 0));
+		} else {
+			var wepskill = filterObjs(function(obj) {
+				obn = obj.get('name');
+				if (obn) {
+					if ((obn.indexOf("COMBATSKILL_NAME")) !== -1 && (obj.get("_characterid") == charid) && (weapon_name.indexOf(obj.get("current")) !== -1)) {
+						return true;
+					} else { return false; }
+				} else { return false; }
+			});
+
+			if (wepskill[0]) {
+				mySet("repeating_weapon_" + mid + "_WEAPON_ML", charid, myGet(wepskill[0].get('name').slice(0, -4) + "ML", charid, 0));
+			}
+		}
+		mySet("repeating_weapon_" + mid + "_WEAPON_AML", charid, 0);
+		mySet("repeating_weapon_" + mid + "_WEAPON_DML", charid, 0);
+		mySet("repeating_weapon_" + mid + "_WEAPON_NOTE", charid, " ");
+	}
+	var mid = makeid();
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_NAME", charid, weapon_name);
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_TYPE", charid, "Weapon");
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_LOCATION", charid, "");
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_Q", charid, "0");
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_QUANTITY", charid, "1");
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WORN", charid, "on");
+
+
+	if (weapon_name in tables.prices) {
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, tables.prices[weapon_name]["weight"]);
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, tables.prices[weapon_name]["price"]);
+	} else {
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, 0);
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, 0)
+	}
+
+}
+
+function addItem(charid, item) {
+	if (trace) { log("addItem(" + charid + ", " + item + ")") }
+	if (item in tables.weapons_table) {
+		addWeapon(charid, item);
+	} else {
+		var mid = makeid();
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_NAME", charid, item);
+		if (item.substr(0, item.lastIndexOf(",")) in tables.armor_coverage) {
+			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_TYPE", charid, "Armor");
+		} else {
+			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_TYPE", charid, "Item");
+		}
+
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_NOTES", charid, "");
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_Q", charid, "0");
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_QUANTITY", charid, "1");
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WORN", charid, "on");
+		log(item)
+
+
+		if (item in tables.prices) {
+			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, tables.prices[item]["weight"]);
+			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, tables.prices[item]["price"]);
+		} else {
+			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, 0);
+			mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, 0)
+		}
+	}
+}
+
+function addArmor(charid, item) {
+	if (trace) { log("addIArmor(" + charid + ", " + item + ")") }
+	var mid = makeid();
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_NAME", charid, item);
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_TYPE", charid, "Armor");
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_NOTES", charid, "");
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_Q", charid, "0");
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_QUANTITY", charid, "1");
+	mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WORN", charid, "on");
+
+
+	if (item in tables.prices) {
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, tables.prices[item]["weight"]);
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, tables.prices[item]["price"]);
+	} else {
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, 0);
+		mySet("repeating_inventoryitems_" + mid + "_INVENTORY_PRICE", charid, 0)
+	}
+}
+
+function calcArmor(charid) {
+
+	var atts = filterObjs(function(obj) {
+		obn = obj.get('name');
+		if (obn) {
+			if ((obn.indexOf("INVENTORY_NAME")) !== -1 && (obj.get("_characterid") == charid)) {
+				return true;
+			} else { return false; }
+		} else { return false; }
+	});
+
+
+
+	var newa = tables.coverage2loc
+	_.each(newa, function(ob1) {
+		ob1["COV"] = "";
+		ob1["AQ"] = 0;
+		ob1["B"] = 0;
+		ob1["E"] = 0;
+		ob1["P"] = 0;
+		ob1["F"] = 0;
+
+
+
+	});
+	_.each(atts, function(ob1) {
+
+
+		var ojn = ob1.get('name');
+		if (myGet(ojn.slice(0, -4) + "TYPE", charid, 0) == "Armor") {
+			if (myGet(ojn.slice(0, -4) + "WORN", charid, 0) == "on") {
+				ojv = ob1.get('current');
+				if (ojv.slice(ojv.lastIndexOf(",") + 2) in tables.armor_prot) {
+
+					var art = tables.armor_prot[ojv.slice(ojv.lastIndexOf(",") + 2)];
+
+					if (ojv.slice(0, ojv.lastIndexOf(",")) in tables.armor_coverage) {
+						var arl = tables.armor_coverage[ojv.slice(0, ojv.lastIndexOf(","))]["coverage"];
+						for (var i = 0; i < arl.length; i++) {
+							newa[arl[i]]["COV"] += " " + art[0];
+							aq = parseInt(myGet(ojn.slice(0, -4) + "Q", charid, 0))
+							newa[arl[i]]["AQ"] += aq;
+							newa[arl[i]]["B"] += parseInt(art[1]) + aq;
+							newa[arl[i]]["E"] += parseInt(art[2]) + aq;
+							newa[arl[i]]["P"] += parseInt(art[3]) + aq;
+							newa[arl[i]]["F"] += parseInt(art[4]) + aq;
+						}
+					}
+				}
+			}
+		}
+	});
+
+	_.each(newa, function(ob1) {
+		mySet(ob1["LOC"] + "_LAYERS", charid, ob1["COV"]);
+		mySet(ob1["LOC"] + "_AQ", charid, ob1["AQ"]);
+		mySet(ob1["LOC"] + "_B", charid, ob1["B"]);
+		mySet(ob1["LOC"] + "_E", charid, ob1["E"]);
+		mySet(ob1["LOC"] + "_P", charid, ob1["P"]);
+		mySet(ob1["LOC"] + "_F", charid, ob1["F"]);
+
+	});
+
+
+
+}
+function opad(num) {
+	return ("0" + num).slice(-2);
+}
+function getHarnTimeStr(timef) {
+	var year = Math.floor(timef / 31104000);
+	var month = Math.floor((timef - (year * 31104000)) / 2592000) + 1;
+	var mday = Math.floor((timef - (year * 31104000) - ((month - 1) * 2592000)) / 86400) + 1;
+	var day = Math.floor((timef - (year * 31104000)) / 86400);
+	var hour = Math.floor((timef - (year * 31104000) - (day * 86400)) / 3600);
+	var minute = Math.floor((timef - (year * 31104000) - (day * 86400) - (hour * 3600)) / 60);
+	var sec = Math.floor(timef - (year * 31104000) - (day * 86400) - (hour * 3600) - (minute * 60));
+	return (year + 720).toString() + '-' + month.toString() + '(' + tables.months[(month - 1)] + ')-' + mday.toString() + ' ' + opad(hour.toString()) + ':' + opad(minute.toString()) + ':' + opad(sec.toString());
+
+}
+function setHarnTime(args) {
+	var seconds = (parseFloat(args[1]) - 720) * 31104000;
+	if (args[2]) {
+		seconds = seconds + (parseFloat(args[2]) - 1) * 2592000;
+	}
+	if (args[3]) {
+		seconds = seconds + (parseFloat(args[3]) - 1) * 86400;
+
+	}
+	if (args[4]) {
+		seconds = seconds + parseFloat(args[4]) * 3600;
+
+	}
+	if (args[5]) {
+		seconds = seconds + parseFloat(args[5]) * 60;
+
+	}
+	if (args[6]) {
+		seconds = seconds + parseFloat(args[6]);
+
+	}
+	state.MainGameNS.GameTime = seconds;
+	log(seconds);
+}
+
+function makeid() {
+	var text = "-";
+	var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+	for (var i = 0; i < 19; i++)
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+	return text;
+}
+
+
+function myGet(attname, tid, deft) {
+	var attribute = findObjs({
+		type: 'attribute',
+		characterid: tid,
+		name: attname
+	})[0]
+	if (!attribute) {
+		attribute = createObj('attribute', {
+			characterid: tid,
+			name: attname,
+			current: deft,
+			max: ''
+		});
+	}
+
+	return attribute.get('current');
+
+}
+
+function mySet(attname, tid, deft) {
+	var attribute = findObjs({
+		type: 'attribute',
+		characterid: tid,
+		name: attname
+	})[0]
+	if (!attribute) {
+		attribute = createObj('attribute', {
+			characterid: tid,
+			name: attname,
+			current: deft,
+			max: ''
+		});
+	}
+	attribute.set('current', deft);
+}
+
+function myGetmax(attname, tid, deft) {
+	var attribute = findObjs({
+		type: 'attribute',
+		characterid: tid,
+		name: attname
+	})[0]
+	if (!attribute) {
+		attribute = createObj('attribute', {
+			characterid: tid,
+			name: attname,
+			current: '',
+			max: deft
+		});
+	}
+	return attribute.get('max');
+}
+
+function mySetmax(attname, tid, deft) {
+	var attribute = findObjs({
+		type: 'attribute',
+		characterid: tid,
+		name: attname
+	})[0]
+	if (!attribute) {
+		attribute = createObj('attribute', {
+			characterid: tid,
+			name: attname,
+			current: '',
+			max: deft
+		});
+	}
+	attribute.set('max', deft);
+}
+
+function getIndex() {
+	state.MainGameNS.index++
+	return state.MainGameNS.index;
+}
+function tokemove(toke) {
+	var curPage = getObj("page", toke.get("_pageid"));
+	var curScale = curPage.get("scale_number"); // scale for 1 unit, eg. 1 unit = 5ft
+	var lastmove = toke.get("lastmove");
+	var moves = lastmove.split(",");
+
+	var dis = 0;
+	for (i = 2; i < moves.length - 1; i = i + 2) {
+		dis = dis + pixel2dis(parseFloat(moves[i - 2]), parseFloat(moves[i - 1]), parseFloat(moves[i]), parseFloat(moves[i + 1]));
+	}
+
+	dis = dis + pixel2dis(parseFloat(moves[moves.length - 2]), parseFloat(moves[moves.length - 1]), parseFloat(toke.get("left")), parseFloat(toke.get("top")));
+	dis = dis * curScale;
+	dis = Math.round(dis * 10) / 10;
+	return dis;
+}
+function pixel2dis(left1, top1, left2, top2) {
+	var lDist = Math.abs(left1 - left2) / 70;
+	var tDist = Math.abs(top1 - top2) / 70;
+	var dist = 0;
+	dist = Math.sqrt(lDist * lDist + tDist * tDist);
+	return dist;
+}
+function tokendistance(token1, token2) {
+
+	var curPage = getObj("page", token1.get("_pageid"));
+	var curScale = curPage.get("scale_number"); // scale for 1 unit, eg. 1 unit = 5ft
+	var curUnit = curPage.get("scale_units"); // ft, m, km, mi etc.
+	var gridSize = 70;
+	var lDist = Math.abs(token1.get("left") - token2.get("left")) / gridSize;
+	var tDist = Math.abs(token1.get("top") - token2.get("top")) / gridSize;
+	var dist = Math.sqrt(lDist * lDist + tDist * tDist);
+	var distSQ = dist;
+
+	dist = dist * curScale;
+	dist = Math.round(dist * 10) / 10;
+	return [dist, curUnit];
+}
+
+
+function skillList(charid) {
+
+	var slist = [];
+
+	slist.push.apply(slist, tables.autoskillsnames);
+
+	var atts = findObjs({
+		_characterid: charid,
+		_type: "attribute",
+	});
+
+	_.each(atts, function(ob1) {
+
+		ojn = ob1.get('name')
+		ojv = ob1.get('current')
+
+		if ((ojv) && (ojn.indexOf("SKILL_NAME") !== -1)) {
+//			_.each(_.keys(tables.skilllist), function(obj) {
+//				if (ojv.indexOf(obj) !== -1) {
+//
+//				}
+//			});
+			slist.push(ojv);
+		}
+	});
+	return slist;
+}
+
+
+
+
+function findSkill(char, skillname) {
+
+	var nameout = "False"
+	if (skillname.trim().toUpperCase() in tables.autoskills) {
+		nameout = skillname.trim().toUpperCase() + "_NAME"
+	} else {
+		var atts = findObjs({
+			_characterid: char.id,
+			_type: "attribute",
+		});
+
+		_.each(atts, function(ob1) {
+
+
+			ojn = ob1.get('name')
+			ojv = ob1.get('current')
+
+			if (ojn.indexOf("SKILL_NAME") !== -1) {
+//				_.each(_.keys(tables.skilllist), function(obj) {
+//					if ((ojv.indexOf(obj) !== -1) && (skillname.indexOf(obj) !== -1)) {
+//						nameout = ojn;
+//					}
+//				});
+//log(ojv+", "+skillname)
+                if (ojv == skillname.trim()) {
+                    nameout = ojn;
+                }
+			}
+		});
+	}
+	if (nameout == "False") {
+
+		_.each(_.keys(tables.skilllist), function(obj) {
+			if (skillname.indexOf(obj) !== -1) {
+				var mid = makeid();
+
+				if (tables.skilllist[obj]["type"] == "PHYSICAL") {
+					mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_NAME", char.id, obj);
+					mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_SB", char.id, 0);
+					mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_ML", char.id, 0);
+					nameout = "repeating_physicalskill_" + mid + "_PHYSICALSKILL_NAME";
+				} else if (tables.skilllist[obj]["type"] == "LORE") {
+					mySet("repeating_loreskill_" + mid + "_LORESKILL_NAME", char.id, obj);
+					mySet("repeating_loreskill_" + mid + "_LORESKILL_SB", char.id, 0);
+					mySet("repeating_loreskill_" + mid + "_LORESKILL_ML", char.id, 0);
+					nameout = "repeating_loreskill_" + mid + "_LORESKILL_NAME";
+				} else if (tables.skilllist[obj]["type"] == "MAGIC") {
+					mySet("repeating_magicskill_" + mid + "_MAGICSKILL_NAME", char.id, obj);
+					mySet("repeating_magicskill_" + mid + "_MAGICSKILL_SB", char.id, 0);
+					mySet("repeating_magicskill_" + mid + "_MAGICSKILL_ML", char.id, 0);
+					nameout = "repeating_magicskill_" + mid + "_MAGICSKILL_NAME";
+				} else if (tables.skilllist[obj]["type"] == "COMBAT") {
+					mySet("repeating_combatskill_" + mid + "_COMBATSKILL_NAME", char.id, obj);
+					mySet("repeating_combatskill_" + mid + "_COMBATSKILL_SB", char.id, 0);
+					mySet("repeating_combatskill_" + mid + "_COMBATSKILL_ML", char.id, 0);
+					nameout = "repeating_combatskill_" + mid + "_COMBATSKILL_NAME";
+				} else if (tables.skilllist[obj]["type"] == "COMMUNICATION") {
+					mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_NAME", char.id, obj);
+					mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_SB", char.id, 0);
+					mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_ML", char.id, 0);
+					nameout = "repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_NAME";
+				} else if (tables.skilllist[obj]["type"] == "RITUAL") {
+					mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_NAME", char.id, obj);
+					mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_SB", char.id, 0);
+					mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_ML", char.id, 0);
+					nameout = "repeating_ritualskill_" + mid + "_RITUALSKILL_NAME";
+				}
+			}
+		});
+
+	}
+
+	return nameout;
+}
+
+
+function calcSB(char, msg) {
+
+
+	var rolls = ["STR", "STA", "DEX", "AGL", "INT", "AUR", "WIL", "EYE", "HRG", "SML", "VOI", "CML", "FRAME"]
+	_.each(rolls, function(attname) {
+		var r = randomInteger(6) + randomInteger(6) + randomInteger(6);
+		myGet(attname, char.id, r);
+	});
+
+	_.each(_.keys(tables.autoskills), function(skillname) {
+
+		myGet(skillname + "_SB", char.id, 1);
+	});
+
+
+
+	var atts = findObjs({
+		_characterid: char.id,
+		_type: "attribute",
+	});
+	var sss = myGet('SUNSIGN', char.id, "Ulandus").split('-');
+
+	_.each(atts, function(ob1) {
+
+
+		ojn = ob1.get('name')
+		ojv = ob1.get('current')
+
+		if (ojn.indexOf("SKILL_NAME") !== -1) {
+
+			_.each(_.keys(tables["skilllist"]), function(obj) {
+				if (ojv.indexOf(obj) !== -1) {
+					var sb = Math.round(((Number(myGet(tables.skilllist[obj]["sba"][0], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][1], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][2], char.id))) / 3));
+					var sb1 = 0;
+					var sb2 = 0;
+					if (sss.length == 2) {
+
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb1 = Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						}
+						if (sss[1].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb2 = Number(tables.skilllist[obj]["ssm"][sss[1].slice(0, 3)])
+						}
+						if (sb1 > sb2) {
+							sb += sb1;
+						} else {
+							sb += sb2;
+						}
+
+					} else {
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb = sb + Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						}
+					}
+
+					log(obj + " - " + Math.round(sb))
+					if (msg.content.indexOf("?") !== -1) {
+						myGet(ojn.slice(0, -4) + "SB", char.id, sb);
+					}
+					else {
+						mySet(ojn.slice(0, -4) + "SB", char.id, sb);
+					}
+					var ml = parseInt(myGet(ojn.slice(0, -4) + "ML", char.id, 0));
+
+					if ((!ml) || (ml == 0)) {
+						if (tables.skilllist[obj]["oml"]) {
+							mySet(ojn.slice(0, -4) + "ML", char.id, (sb * parseInt(tables.skilllist[obj]["oml"])))
+						}
+					} else if ((parseInt(ml) > 0) && (parseInt(ml) < sb)) {
+						if (tables.skilllist[obj]["oml"]) {
+							mySet(ojn.slice(0, -4) + "ML", char.id, (sb * parseInt(ml)))
+						}
+					}
+				}
+			});
+		}
+		if (ojn.indexOf("_SB") !== -1) {
+
+			_.each(_.keys(tables.skilllist), function(obj) {
+				if (ojn.indexOf(obj) !== -1) {
+					var sb = Math.round(((Number(myGet(tables.skilllist[obj]["sba"][0], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][1], char.id)) + Number(myGet(tables.skilllist[obj]["sba"][2], char.id))) / 3));
+					var sb1 = 0;
+					var sb2 = 0;
+
+					if (sss.length == 2) {
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb1 = Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						}
+						if (sss[1].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb2 = Number(tables.skilllist[obj]["ssm"][sss[1].slice(0, 3)])
+						}
+						if (sb1 > sb2) {
+							sb += sb1
+						} else {
+							sb += sb2
+						}
+					} else {
+						if (sss[0].slice(0, 3) in tables.skilllist[obj]["ssm"]) {
+							sb = sb + Number(tables.skilllist[obj]["ssm"][sss[0].slice(0, 3)])
+						}
+					}
+					if (msg.content.indexOf("?") !== -1) {
+						myGet(ojn, char.id, sb);
+					}
+					else {
+						mySet(ojn, char.id, sb);
+					}
+					var ml = parseInt(myGet(ojn.slice(0, -2) + "ML", char.id, 0));
+
+					if ((!ml) || (ml == 0)) {
+						if (tables.skilllist[obj]["oml"]) {
+							mySet(ojn.slice(0, -2) + "ML", char.id, (sb * parseInt(tables.skilllist[obj]["oml"])))
+						}
+					} else if ((parseInt(ml) > 0) && (parseInt(ml) < sb)) {
+						if (tables.skilllist[obj]["oml"]) {
+							mySet(ojn.slice(0, -2) + "ML", char.id, (sb * parseInt(ml)))
+						}
+					}
+
+				}
+
+			});
+
+		}
+
+	});
+	sendChat("API", "/w gm done calc SB");
+}
+
+
+function out(charid) {
+
+
+
+	var atts = findObjs({
+		_characterid: charid,
+		_type: "attribute",
+
+	});
+	var has_spells=false;
+	var has_rituals=false;
+	var has_psi=false;
+	log("=================================")
+	var logout = myGet("NAME", charid, 0);
+	logout += "\n    Strength    " + myGet("STR", charid, 0);
+	logout += "    Agility   " + myGet("AGL", charid, 0);
+	logout += "    Smell    " + myGet("SML", charid, 0);
+	logout += "    Will    " + myGet("WIL", charid, 0);
+	logout += "    Comeliness    " + myGet("CML", charid, 0);
+
+	logout += "\n    Stamina    " + myGet("STA", charid, 0);
+	logout += "    Eyesight    " + myGet("EYE", charid, 0);
+	logout += "    Voice    " + myGet("VOI", charid, 0);
+	logout += "    Aura    " + myGet("AUR", charid, 0);
+	logout += "    Endurance    " + myGet("END", charid, 0);
+
+	logout += "\n    Dexterity    " + myGet("DEX", charid, 0);
+	logout += "    Hearing    " + myGet("HRG", charid, 0);
+	logout += "    Intelligence    " + myGet("INT", charid, 0);
+	logout += "    Morality    " + myGet("MORAL", charid, 0);
+	logout += "    Move    10" ;
+	logout += "\nSpecies:     	" + myGet("SPECIES", charid, 0);
+
+	logout += "\nSex:         	" + myGet("GENDER", charid, 0);
+	logout += "\nAge:         	" + myGet("AGE", charid, 0);
+	logout += "\nBirth Month: 	" + myGet("BIRTHDATE", charid, 0).trim().split(" ")[0];
+	logout += "\nBirth Day:   	" + myGet("BIRTHDATE", charid, 0).trim().split(" ")[1];
+	logout += "\nBirth Year:  	" + myGet("BIRTHDATE", charid, 0).trim().split(" ")[2];
+	logout += "\nSunSign:     	" + myGet("SUNSIGN", charid, 0);
+
+	logout += "\nCulture:     	" + myGet("CULTURE", charid, 0);
+	logout += "\nSocial Class:	" + myGet("SOCIAL_CLASS", charid, 0);
+	logout += "\nSibling Rank:	" + myGet("SIBLING_RANK", charid, 0);
+	logout += "\nSiblings:    	";
+	logout += "\nParentage:   	" + myGet("PARENT", charid, 0);
+	logout += "\nOffspring:   	";
+	logout += "\nEstrangement:	" + myGet("ESTRANGEMENT", charid, 0);
+	logout += "\nClanhead:    	" + myGet("CLANHEAD", charid, 0);
+
+
+	logout += "\nHeight:      	" + myGet("HEIGHT", charid, 0);
+	logout += "\nFrame:       	" + myGet("FRAME", charid, 0);
+	logout += "\nWeight:      	" + myGet("WEIGHT", charid, 0);
+	logout += "\nSize:        	";
+	logout += "\nComeliness:  	" + myGet("CML", charid, 0);
+	logout += "\nComplexion:  	" + myGet("COMPLEXION", charid, 0);
+	logout += "\nHair Color:  	" + myGet("HAIR_COLORS", charid, 0);
+	logout += "\nEye Color:   	" + myGet("EYE_COLOR", charid, 0);
+	logout += "\nVoice:       	" + myGet("VOI", charid, 0);
+	logout += "\n\nMedical:     	" + myGet("PHYSICAL", charid, 0);
+	logout += "\n\nPsyche:      	" + myGet("MENTAL", charid, 0);
+	logout += "\nDiety:       	" + myGet("DIETY", charid, 0);
+	logout += "\nPiety:       	" + myGet("PIETY", charid, 0);
+
+	logout += "\n\nOccupation:  	" + myGet("OCCUPATION", charid, 0);
+	logout += "\n	Physical Skills:";
+	logout += "\n		                      CLIMBING / " + myGet("CLIMBING_ML", charid, 0) + " (SB:" + myGet("CLIMBING_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      CONDITION / " + myGet("CONDITION_ML", charid, 0) + " (SB:" + myGet("CONDITION_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      JUMPING / " + myGet("JUMPING_ML", charid, 0) + " (SB:" + myGet("JUMPING_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      STEALTH / " + myGet("STEALTH_ML", charid, 0) + " (SB:" + myGet("STEALTH_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      THROWING / " + myGet("THROWING_ML", charid, 0) + " (SB:" + myGet("THROWING_SB", charid, 0) + ")	 OML :0";
+
+	_.each(atts, function (ob1) {
+		ojn = ob1.get('name')
+		ojv = ob1.get('current')
+		if (ojn.indexOf("PHYSICALSKILL_NAME") !== -1) {
+
+			logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+		}
+	});
+
+	logout += "\n	Communications Skills:";
+	logout += "\n		                      AWARENESS / " + myGet("AWARENESS_ML", charid, 0) + " (SB:" + myGet("AWARENESS_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      INTRIGUE / " + myGet("INTRIGUE_ML", charid, 0) + " (SB:" + myGet("INTRIGUE_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      ORATORY / " + myGet("ORATORY_ML", charid, 0) + " (SB:" + myGet("ORATORY_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      RHETORIC / " + myGet("RHETORIC_ML", charid, 0) + " (SB:" + myGet("RHETORIC_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      SINGING / " + myGet("SINGING_ML", charid, 0) + " (SB:" + myGet("SINGING_SB", charid, 0) + ")	 OML :0";
+	_.each(atts, function (ob1) {
+		ojn = ob1.get('name')
+		ojv = ob1.get('current')
+		if (ojn.indexOf("COMMUNICATIONSKILL_NAME") !== -1) {
+
+			logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+		}
+	});
+	
+	logout += "\n	Combat Skills:";
+	logout += "\n		                      INITIATIVE / " + myGet("INITIATIVE_ML", charid, 0) + " (SB:" + myGet("INITIATIVE_SB", charid, 0) + ")	 OML :0";
+	logout += "\n		                      UNARMED / " + myGet("UNARMED_ML", charid, 0) + " (SB:" + myGet("UNARMED_SB", charid, 0) + ")	 OML :0";
+	
+	_.each(atts, function (ob1) {
+		ojn = ob1.get('name')
+		ojv = ob1.get('current')
+		if (ojn.indexOf("COMBATSKILL_NAME") !== -1) {
+
+			logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+		}
+	});
+
+	logout += "\n	Crafts & Lore Skills:";
+	_.each(atts, function (ob1) {
+		ojn = ob1.get('name')
+		ojv = ob1.get('current')
+		if (ojn.indexOf("LORESKILL_NAME") !== -1) {
+
+			logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+		}
+		if (ojn.indexOf("MAGICSKILL_NAME") !== -1) {has_spells=true};
+		if (ojn.indexOf("RITUALSKILL_NAME") !== -1) {has_rituals=true};
+		if (ojn.indexOf("TALENT_NAME") !== -1) {has_psi=true};
+	});
+
+
+	logout += "\n	Convocaton Skills:";
+	if (has_spells) {
+		_.each(atts, function (ob1) {
+			ojn = ob1.get('name')
+			ojv = ob1.get('current')
+			if (ojn.indexOf("MAGICSKILL_NAME") !== -1) {
+
+				logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+			}
+		});
+	} else {
+		logout += "\n		                          --none--";
+	}
+
+	logout += "\n	Psionics Skills:";
+	if (has_psi) {
+		_.each(atts, function (ob1) {
+			ojn = ob1.get('name')
+			ojv = ob1.get('current')
+			if (ojn.indexOf("TALENT_NAME") !== -1) {
+
+				logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"EML", charid, 0) + " (SB:0)	 OML :0";
+			}
+		});
+	} else {
+		logout += "\n		                          --none--";
+	}
+
+	logout += "\n	Ritual Skills:";
+	if (has_rituals) {
+		_.each(atts, function (ob1) {
+			ojn = ob1.get('name')
+			ojv = ob1.get('current')
+			if (ojn.indexOf("RITUALSKILL_NAME") !== -1) {
+
+				logout += "\n		                      "+ ojv +" / " + myGet(ojn.slice(0,-4)+"ML", charid, 0) + " (SB:" + myGet(ojn.slice(0,-4)+"SB", charid, 0) + ")	 OML :0";
+			}
+		});
+	} else {
+		logout += "\n		                          --none--";
+	}
+	if (has_spells) {
+	logout += "\n    Spells:";
+	
+		_.each(atts, function (ob1) {
+			ojn = ob1.get('name')
+			ojv = ob1.get('current')
+			if (ojn.indexOf("SPELL_NAME") !== -1) {
+
+				logout += "\n		                      "+ ojv +"/" + myGet(ojn.slice(0,-4)+"LEVEL", charid, 0);
+			}
+		});
+	} 
+
+	if (has_rituals) {
+	logout += "\n	Invocations:";
+	
+		_.each(atts, function (ob1) {
+			ojn = ob1.get('name')
+			ojv = ob1.get('current')
+			if (ojn.indexOf("RITUAL_NAME") !== -1) {
+
+				logout += "\n		                      "+ ojv +"/" + myGet(ojn.slice(0,-4)+"LEVEL", charid, 0);
+			}
+		});
+	} 
+	logout += "\n\nMoney:	      			0d\nEquipment:"
+
+
+	_.each(atts, function (ob1) {
+		ojn = ob1.get('name')
+		ojv = ob1.get('current')
+		if (ojn.indexOf("INVENTORY_NAME") !== -1) {
+			logout += "\n   	             	" + ojv
+		}
+
+	});
+	mySet("TEXTAREA_SHEET", charid, logout)
+}
+function invin(charid) {
+	
+	var atts = findObjs({
+		_characterid: charid,
+		_type: "attribute",
+		name: "TEXTAREA_SHEET"
+	});
+
+	if (atts[0]) {
+		log("=================================")
+		ojv = atts[0].get('current');
+		if (ojv.length > 3) {
+			ojv = ojv.replace(/\t/g, "")
+			for (i = 0; i < 5; i++) {
+				ojv = ojv.replace(/  /g, " ")
+			}
+
+			ojv = ojv.replace(/\n /g, "\n");
+			lns = ojv.split("\n");
+
+			for(xi=0;xi<lns.length;xi++) {
+				if (lns[xi].length > 2) { addItem(charid, lns[xi]); }
+			}
+		}
+	}
+}
+function xin(charid) {
+	var char = getObj("character", charid);
+	var atts = findObjs({
+		_characterid: charid,
+		_type: "attribute",
+		name: "TEXTAREA_SHEET"
+	});
+
+	if (atts[0]) {
+		log("=================================")
+		ojv = atts[0].get('current');
+		//log(atts[0]);
+		if (ojv.length > 100) {
+			ojv = ojv.replace(/\t/g, "")
+			for (i = 0; i < 10; i++) {
+				ojv = ojv.replace(/  /g, " ")
+			}
+
+			ojv = ojv.replace(/\n /g, "\n");
+			ojv = ojv.replace(/\nOffspring:/g, "");
+			ojv = ojv.replace(/\nOrphan:/g, "");
+			lns = ojv.split("\n");
+
+
+
+			var tv = lns[1].split(" ");
+			if (tv[0] !== "Strength") {
+				log("no");
+			} else {
+				mySet("NAME", charid, lns[0]);
+				mySet("STR", charid, parseInt(tv[1]));
+				mySet("AGL", charid, parseInt(tv[3]));
+				mySet("SML", charid, parseInt(tv[5]));
+				mySet("WIL", charid, parseInt(tv[7]));
+				mySet("CML", charid, parseInt(tv[9]));
+				var tv = lns[2].split(" ");
+				mySet("STA", charid, parseInt(tv[1]));
+				mySet("EYE", charid, parseInt(tv[3]));
+				mySet("VOI", charid, parseInt(tv[5]));
+				mySet("AUR", charid, parseInt(tv[7]));
+				mySet("END", charid, parseInt(tv[9]));
+				var tv = lns[3].split(" ");
+				mySet("DEX", charid, parseInt(tv[1]));
+				mySet("HRG", charid, parseInt(tv[3]));
+				mySet("INT", charid, parseInt(tv[5]));
+				mySet("MORAL", charid, parseInt(tv[7]));
+				mySet("SPECIES", charid, lns[4].slice(9));
+
+				mySet("GENDER", charid, lns[5].slice(5));
+				mySet("BIRTHDATE", charid, (lns[7].slice(12) + " " + lns[8].slice(11) + ", " + lns[9].slice(12)));
+				mySet("SUNSIGN", charid, lns[10].slice(10, -1));
+				mySet("AGE", charid, lns[6].slice(5));
+				mySet("PIETY", charid, lns[28].slice(7));
+				mySet("HEIGHT", charid, lns[18].slice(8));
+				mySet("FRAME", charid, lns[19].slice(7));
+				mySet("WEIGHT", charid, lns[20].slice(8));
+				mySet("COMPLEXION", charid, lns[23].slice(12));
+				mySet("HAIR_COLORS", charid, lns[24].slice(12));
+				mySet("EYE_COLOR", charid, lns[25].slice(11));
+				mySet("CULTURE", charid, lns[11].slice(9));
+				mySet("SOCIAL_CLASS", charid, lns[12].slice(13));
+				mySet("SIBLING_RANK", charid, lns[13].slice(13));
+				mySet("PARENT", charid, lns[15].slice(11));
+				mySet("ESTRANGEMENT", charid, lns[16].slice(13));
+				mySet("CLANHEAD", charid, lns[17].slice(10));
+
+
+
+
+
+				var xi = 26;
+				while (lns[xi].indexOf("Physical Skills:") == -1) {
+					if (lns[xi].indexOf("Occupation:") !== -1) {
+						char.set("name", lns[xi].slice(12) + getIndex())
+						mySet("OCCUPATION", charid, lns[xi].slice(12));
+					}
+					if (lns[xi].indexOf("Medical:") !== -1) {
+						mySet("PHYSICAL", charid, lns[xi].slice(9));
+					}
+					if (lns[xi].indexOf("Psyche:") !== -1) {
+						mySet("MENTAL", charid, lns[xi].slice(8));
+					}
+					if (lns[xi].indexOf("Diety:") !== -1) {
+						mySet("DIETY", charid, lns[xi].slice(7));
+						var diety = lns[xi].slice(7);
+					}
+					if (lns[xi].indexOf("Piety:") !== -1) {
+						mySet("PIETY", charid, lns[xi].slice(7));
+					}
+
+					xi++;
+				}
+				xi++;
+
+				while (lns[xi] !== "Communications Skills:") {
+					tv = lns[xi].replace(/ /g, "").split("/");
+					if (tv.length > 1) {
+						if (tv[0] in tables.autoskills) {
+							tv2 = tv[1].split("(SB:");
+							tv3 = tv2[1].split(")OML:");
+							mySet(tv[0] + "_SB", charid, tv3[0])
+							mySet(tv[0] + "_ML", charid, tv2[0])
+
+
+						} else {
+							var tv2 = tv[1].split("(SB:");
+							var tv3 = tv2[1].split(")OML:");
+							var mid = makeid();
+							mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_NAME", charid, tv[0]);
+							mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_SB", charid, tv3[0]);
+							mySet("repeating_physicalskill_" + mid + "_PHYSICALSKILL_ML", charid, tv2[0]);
+						}
+					}
+					xi++
+				}
+
+
+				xi++;
+				while (lns[xi] !== "Combat Skills:") {
+					var stv = lns[xi].replace(/ /g, "")
+					var tv = stv.split("/");
+					if (tv.length > 1) {
+						if (tv[0] in tables.autoskills) {
+							var tv2 = tv[1].split("(SB:");
+							var tv3 = tv2[1].split(")OML:");
+							mySet(tv[0] + "_SB", charid, tv3[0])
+							mySet(tv[0] + "_ML", charid, tv2[0])
+
+						} else {
+							var tv2 = tv[1].split("(SB:");
+							var tv3 = tv2[1].split(")OML:");
+							var mid = makeid();
+							mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_NAME", charid, tv[0]);
+							mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_SB", charid, tv3[0]);
+							mySet("repeating_communicationskill_" + mid + "_COMMUNICATIONSKILL_ML", charid, tv2[0]);
+						}
+					}
+					xi++
+				}
+
+				xi++;
+				while (lns[xi] !== "Crafts & Lore Skills:") {
+					tv = lns[xi].replace(/ /g, "").split("/");
+					if (tv.length > 1) {
+						if (tv[0] in tables.autoskills) {
+							tv2 = tv[1].split("(SB:");
+							tv3 = tv2[1].split(")OML:");
+							mySet(tv[0] + "_SB", charid, tv3[0])
+							mySet(tv[0] + "_ML", charid, tv2[0])
+
+
+						} else {
+							var tv2 = tv[1].split("(SB:");
+							var tv3 = tv2[1].split(")OML:");
+							var mid = makeid();
+							mySet("repeating_combatskill_" + mid + "_COMBATSKILL_NAME", charid, tv[0]);
+							mySet("repeating_combatskill_" + mid + "_COMBATSKILL_SB", charid, tv3[0]);
+							mySet("repeating_combatskill_" + mid + "_COMBATSKILL_ML", charid, tv2[0]);
+						}
+					}
+					xi++
+				}
+
+
+				xi++;
+
+
+				while (lns[xi] !== "Convocaton Skills:") {
+					tv = lns[xi].replace(/ /g, "").split("/");
+
+					if (tv.length > 1) {
+						var tv2 = tv[1].split("(SB:");
+						var tv3 = tv2[1].split(")OML:");
+						var mid = makeid();
+						mySet("repeating_loreskill_" + mid + "_LORESKILL_NAME", charid, tv[0]);
+						mySet("repeating_loreskill_" + mid + "_LORESKILL_SB", charid, tv3[0]);
+						mySet("repeating_loreskill_" + mid + "_LORESKILL_ML", charid, tv2[0]);
+					}
+					xi++
+				}
+
+				xi++;
+
+				while (lns[xi] !== "Psionics Skills:") {
+					tv = lns[xi].replace(/ /g, "").split("/");
+
+					if (tv.length > 1) {
+						var tv2 = tv[1].split("(SB:");
+						var tv3 = tv2[1].split(")OML:");
+						var mid = makeid();
+						mySet("repeating_magicskill_" + mid + "_MAGICSKILL_NAME", charid, tv[0]);
+						mySet("repeating_magicskill_" + mid + "_MAGICSKILL_SB", charid, tv3[0]);
+						mySet("repeating_magicskill_" + mid + "_MAGICSKILL_ML", charid, tv2[0]);
+					}
+					xi++
+				}
+
+				xi++;
+
+
+				while (lns[xi] !== "Ritual Skills:") {
+					tv = lns[xi].replace(/ /g, "").split("/");
+					if (tv.length > 1) {
+						var tv2 = tv[1].split("(SB:");
+						var tv3 = tv2[1].split(")OML:");
+						var mid = makeid();
+						mySet("repeating_psionics_" + mid + "_TALENT_NAME", charid, tv[0]);
+						mySet("repeating_psionics_" + mid + "_TALENT_FATIGUE", charid, "0");
+						mySet("repeating_psionics_" + mid + "_TALENT_TIME", charid, "0");
+						mySet("repeating_psionics_" + mid + "_TALENT_EML", charid, tv2[0]);
+						mySet("repeating_psionics_" + mid + "_TALENT_NOTE", charid, lns[xi]);
+
+					}
+
+
+					xi++
+				}
+
+				xi++;
+
+				while ((lns[xi].slice(0, 6) !== "Money:") && (lns[xi].slice(0, 7) !== "Spells:") && (lns[xi].slice(0, 12) !== "Invocations:")) {
+					tv = lns[xi].replace(/ /g, "").split("/");
+
+					if (tv.length > 1) {
+						var tv2 = tv[1].split("(SB:");
+						var tv3 = tv2[1].split(")OML:");
+						var mid = makeid();
+						mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_NAME", charid, tv[0]);
+						mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_SB", charid, tv3[0]);
+						mySet("repeating_ritualskill_" + mid + "_RITUALSKILL_ML", charid, tv2[0]);
+					}
+
+
+					xi++
+				}
+				if (lns[xi].slice(0, 12) == "Invocations:") {
+					lns[xi] = lns[xi].slice(12);
+					while (lns[xi].slice(0, 6) !== "Money:") {
+						tv = lns[xi].split("/");
+						if (tv.length > 1) {
+
+							var mid = makeid();
+							mySet("repeating_rituals_" + mid + "_RITUAL_NAME", charid, tv[0]);
+							mySet("repeating_rituals_" + mid + "_RITUAL_RELIGION", charid, diety);
+							mySet("repeating_rituals_" + mid + "_RITUAL_LEVEL", charid, tv[1]);
+							mySet("repeating_rituals_" + mid + "_RITUAL_ML", charid, 0);
+							mySet("repeating_rituals_" + mid + "_RITUAL_EML", charid, 0);
+							mySet("repeating_rituals_" + mid + "_RITUAL_NOTE", charid, lns[xi]);
+
+						}
+
+
+						xi++
+					}
+
+				}
+				if (lns[xi].slice(0, 7) == "Spells:") {
+					lns[xi] = lns[xi].slice(7);
+					while (lns[xi].slice(0, 6) !== "Money:") {
+						tv = lns[xi].split("/");
+						if (tv.length > 1) {
+
+							var mid = makeid();
+							mySet("repeating_spells_" + mid + "_SPELL_NAME", charid, tv[0]);
+							mySet("repeating_spells_" + mid + "_SPELL_CONVOCATION", charid, "");
+							mySet("repeating_spells_" + mid + "_SPELL_LEVEL", charid, tv[1]);
+							mySet("repeating_spells_" + mid + "_SPELL_ML", charid, 0);
+							mySet("repeating_spells_" + mid + "_SPELL_EML", charid, 0);
+							mySet("repeating_spells_" + mid + "_SPELL_NOTE", charid, "");
+
+
+						}
+
+
+						xi++
+					}
+
+				}
+				if (lns[xi].slice(0, 6) == "Money:") {
+					var mid = makeid();
+					mySet("repeating_inventoryitems_" + mid + "_INVENTORY_NAME", charid, lns[xi]);
+					mySet("repeating_inventoryitems_" + mid + "_INVENTORY_WGT", charid, parseFloat(lns[xi].split(":")[1].slice(0, -1)) / 240);
+				}
+				xi++;
+				if (lns[xi].slice(0, 15) == "Clothing/Armor:") {
+					lns[xi] = lns[xi].slice(16);
+					while ((lns[xi].slice(0, 8) !== "Weapons:") && (lns[xi].slice(0, 6) !== "Notes:")) {
+						addItem(charid, lns[xi]);
+						xi++;
+
+
+					}
+
+				}
+
+				if (lns[xi].slice(0, 8) == "Weapons:") {
+					lns[xi] = lns[xi].slice(9);
+					while ((lns[xi].slice(0, 10) !== "Equipment:") && (lns[xi].slice(0, 6) !== "Notes:")) {
+						addWeapon(charid, lns[xi]);
+						xi++;
+					}
+
+
+				}
+
+				if (lns[xi].slice(0, 10) == "Equipment:") {
+					lns[xi] = lns[xi].slice(11);
+					while (lns[xi].slice(0, 6) !== "Notes:") {
+						addItem(charid, lns[xi]);
+
+						xi++;
+
+
+					}
+				}
+			}
+		}
+	}
+}
+
+
+
+
+function replaceArg(acom, msg) {
+	var args = msg.content.split(" ");
+	for (var i = 0; i < acom.length; i++) {
+		if (acom[i].indexOf('args') == 0) {
+			acom[i] = args[parseInt(acom[i].substr(4))];
+
+		}
+		if (acom[i].indexOf('inline') == 0) {
+			acom[i] = msg.inlinerolls[parseInt(acom[i].substr(6))].results.total;
+		}
+
+	}
+	return acom;
+
+}
+
+
+function handle_table(args, msg) {
+	var scdata = findObjs({
+		name: args[1],
+		_type: "handout",
+	})[0];
+	scdata.get("notes", function(scda) {
+
+		var tt1 = scda.substring(22, scda.indexOf('</td></tr></tbody></table>'));
+		var tt2 = tt1.split('</td></tr><tr><td>');
+		var tt3 = [];
+		for (var i = 0; i < tt2.length; i++) {
+			tt3[i] = tt2[i].split('</td><td>')
+		}
+		log("p")
+		var r1 = msg.inlinerolls[0].results.total;
+		var r2 = msg.inlinerolls[1].results.total;
+		var i1 = tt3.length - 1;
+		var i2 = tt3[0].length - 1;
+		for (var i = 2; i < tt3.length; i++) {
+			if (r1 <= parseInt(tt3[i][0])) {
+				i1 = i;
+				break;
+			}
+		}
+		for (var i = 1; i < tt3[0].length; i++) {
+			if (r2 <= parseInt(tt3[0][i])) {
+				i2 = i;
+				break;
+			}
+		}
+		var description = tt3[i1][i2].split(';');
+		var out = '&{template:default} {{name=' + args[1] + '}} {{Rolls=' + r1.toString() + ' ' + r2.toString() + '}} {{' + tt3[1][i2] + '= ' + description[0] + '}}';
+		sendChat(msg.who, out);
+		if (args[4] && description[1]) {
+			log(args[4]);
+			for (var i = 1; i < description.length; i++) {
+				commandLine = replaceArg(description[i].split(' '), msg);
+				if (commandLine[0] == 'add') {
+					if (Number(commandLine[2])) {
+						var newVal = Number(myGet(commandLine[1], args[4], 0)) + Number(commandLine[2]);
+					} else {
+						var newVal = myGet(commandLine[1], args[4], 0) + " " + commandLine[2];
+					}
+					mySet(commandLine[1], args[4], newVal);
+				}
+				if (commandLine[0] == 'addmax') {
+					var newVal = Number(myGetmax(commandLine[1], args[4], 0)) + Number(commandLine[2]);
+					mySetmax(commandLine[1], args[4], newVal);
+				}
+				if (commandLine[0] == 'set') {
+					mySet(commandLine[1], args[4], commandLine[2]);
+					log(commandLine[1]);
+				}
+				if (commandLine[0] == 'setmax') {
+					mySet(commandLine[1], args[4], commandLine[2]);
+				}
+				if (commandLine[0] == 'say') {
+					var out = commandLine[1];
+					for (var j = 2; j < commandLine.length; j++) {
+						out = out + ' ' + commandLine[j];
+					}
+
+					sendChat(args[1], out);
+				}
+			}
+		}
+	});
+}
+
+
+function chatParser(msg) {
+
+	// check for and log crits
+	if (msg.content.startsWith(" {{character_name=")) {
+		var char = getCharByNameAtt(msg.content.slice((msg.content.indexOf("character_name") + 15), msg.content.indexOf("}} ")));
+		if (char) {
+			var d = new Date();
+			var n = d.toLocaleString();
+			if (msg.content.includes("rolldesc=rolls ") && !msg.content.includes("Weapon Break:")) {
+				if (msg.inlinerolls[3].results.total % 5 == 0) {
+	
+					if (msg.inlinerolls[1].results.total >= msg.inlinerolls[3].results.total) {
+						charLog(char.id, ": CS "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
+					} else {
+						charLog(char.id, ": CF "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=rolls ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=rolls "))), config.realtime, config.gametime)
+					}
+				}
+			} else if (msg.content.includes("rolldesc=performs ")) {
+				if (msg.inlinerolls[7].results.total % 5 == 0) {
+	
+					if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+						charLog(char.id, ": CS "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
+					} else {
+						charLog(char.id, ": CF "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=performs ") + 18,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=performs "))), config.realtime, config.gametime)
+					}
+				}
+			} else if (msg.content.includes("rolldesc=casts ")) {
+				if (msg.inlinerolls[7].results.total % 5 == 0) {
+	
+					if (msg.inlinerolls[4].results.total >= msg.inlinerolls[7].results.total) {
+						charLog(char.id, ": CS "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
+					} else {
+						charLog(char.id, ": CF "
+							+ msg.content.slice(msg.content.indexOf("rolldesc=casts ") + 15,
+								msg.content.indexOf("}} ", msg.content.indexOf("rolldesc=casts "))), config.realtime, config.gametime)
+					}
+				}
+			}
+		}
+	}
+}
+
+function doHit(base, atkrepwep, acharid, dcharid, aspect, missi, loc, atktoke, deftoke) {
+
+
+	var atk_impact = getImpact(base, atkrepwep, acharid, aspect, missi);
+
+
+	var hitloc = gethitloc(randomInteger(100), tables.hit_loc_penalty[loc]["index"]);
+
+	var avatloc = myGet(hitloc + "_" + atk_impact.aspect, dcharid, 0);
+
+	var out = "<br/>" + atktoke.get('name') + " damages " + deftoke.get('name') + "<br>Impact: "
+		+ labelMaker(atk_impact.total, atk_impact.impactstr) + "<br/>Location: "
+		+ hitloc + "<br/>AV at Loc: " + avatloc
+		+ "<br/>Effective Impact: " + Math.max(atk_impact.total - avatloc,0);
+	if (atk_impact.total - avatloc > 0) {
+		var eff = gethiteff(hitloc, atk_impact.total - avatloc);
+		out += "<br/>" + deftoke.get('name') + " Injury: " + eff + " " + atk_impact.aspect
+		var unipenalty = parseInt(eff.match(/\d/));
+
+		if (deftoke.get('bar3_link')) {
+			var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', dcharid, 0));
+			deftoke.set('bar3_value', unipenalty);
+			addinjury(atk_impact.aspect + " " + hitloc, eff, dcharid)
+		} else if (deftoke.get('bar3_value')) {
+			var unipenalty = unipenalty + parseInt(deftoke.get('bar3_value'));
+			deftoke.set('bar3_value', unipenalty);
+		} else {
+			var unipenalty = unipenalty + parseInt(myGet('UNIVERSAL_PENALTY', dcharid, 0));
+			deftoke.set('bar3_value', unipenalty);
+		}
+
+		out += rollshock(dcharid, deftoke, unipenalty)
+
+	}
+	return out;
+
+}
+
+
+function defendTemplate(template, rolldesc, rollresult, rolltarget, rollsuccess, drollresult, drolltarget, drollsuccess, aresult, dresult, result) {
+
+	var out = `&{template:${template}} \
+{{rolldesc=${rolldesc}}} \
+{{rollresult=${rollresult}}} \
+{{rolltarget=${rolltarget}}} \
+{{rollsuccess=[[${rollsuccess}]]}} \
+{{aresult=${aresult}}} \
+{{dresult=${dresult}}} \
+{{result=${result}}}`;
+	if (drollsuccess < 4) {
+		out += `{{drollresult=${drollresult}}} \
+{{drolltarget=${drolltarget}}} \
+{{drollsuccess=[[${drollsuccess}]]}} `;
+	}
+	return out;
+}
+
+
+
+
+
