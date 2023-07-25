@@ -829,7 +829,7 @@ function handle_improveskill(args, msg) {
 	    skill_att_name = findSkill(char, msg.content.slice(34));
 	    loop = 1;
 	}
-	log(skill_att_name);
+	if (loop > 100) {loop = 100;}
 	var d = new Date();
 	var n = d.toLocaleString();
 	var ml = parseInt(myGet(skill_att_name.slice(0, -4) + "ML", char.id, 0));
