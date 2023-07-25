@@ -821,7 +821,6 @@ function handle_pickskill(args, msg) {
 
 function handle_improveskill(args, msg) {
 	char = getObj("character", args[1]);
-	inc = 1;
 	if (parseInt(args[2])) {
 	    skill_att_name = findSkill(char, msg.content.slice(35+args[2].length));
 	    
@@ -829,7 +828,9 @@ function handle_improveskill(args, msg) {
 	    loop = parseInt(args[2]);
 	    if (loop < 0) {
 	        loop = loop * -1;
-	        inc = 2;
+	        var inc = 2;
+	    } else {
+	        var inc = 1
 	    }
 	} else {
 	    skill_att_name = findSkill(char, msg.content.slice(34));
@@ -841,26 +842,27 @@ function handle_improveskill(args, msg) {
 	var ml = parseInt(myGet(skill_att_name.slice(0, -4) + "ML", char.id, 0));
 	for (i = 0; i < loop; i++) {
 
-    	roll = randomInteger(100) + parseInt(myGet(skill_att_name.slice(0, -4) + "SB", char.id, 0));
-    	if (roll >= ml) {
-    		mySet(skill_att_name.slice(0, -4) + "ML", char.id, (ml + inc));
-    		if ((loop-1) == i) {
-    		    sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>"
-    			+ "<br>" + " roll " + roll + ": SUCCESS<br>" + msg.content.slice(34) + " ML increases to " + (ml + inc));    		    
-    		}
-
-    		charLog(char.id, ": Skill Improvement Roll: " + msg.content.slice(34) + " "
-    			+ roll + ": SUCCESS: ML = " + (ml + 1), config.realtime, config.gametime);
-    		ml=ml+inc;
-    	} else {
-    	    if ((loop-1) == i) {
-    	        sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>" + msg.content.slice(34)
-    			+ "<br>" + " roll " + roll + ": FAIL<br> " + msg.content.slice(34) + " ML stays at " + ml);
-    	    }
-    		
-    		charLog(char.id, ": Skill Improvement Roll: " + msg.content.slice(34) + " "
-    			+ roll + ": FAIL: ML = " + ml, config.realtime, config.gametime);
-    	}
+    		roll = randomInteger(100) + parseInt(myGet(skill_att_name.slice(0, -4) + "SB", char.id, 0));
+	    	if (roll >= ml) {
+	    	    ml=ml+inc;
+	    		mySet(skill_att_name.slice(0, -4) + "ML", char.id, (ml ));
+	    		if ((loop-1) == i) {
+	    		    sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>"
+	    			+ "<br>" + " roll " + roll + ": SUCCESS<br>" + msg.content.slice(34) + " ML increases to " + (ml ));    		    
+	    		}
+	
+	    		charLog(char.id, ": Skill Improvement Roll: " + msg.content.slice(34) + " "
+	    			+ roll + ": SUCCESS: ML = " + ml, config.realtime, config.gametime);
+	    		
+	    	} else {
+	    	    if ((loop-1) == i) {
+	    	        sendChat("Skill Improvement " + myGet("NAME", char.id, ""), "<br>" + msg.content.slice(34)
+	    			+ "<br>" + " roll " + roll + ": FAIL<br> " + msg.content.slice(34) + " ML stays at " + ml);
+	    	    }
+	    		
+	    		charLog(char.id, ": Skill Improvement Roll: " + msg.content.slice(34) + " "
+	    			+ roll + ": FAIL: ML = " + ml, config.realtime, config.gametime);
+	    	}
 	}
 }
 
