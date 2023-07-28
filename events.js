@@ -58,11 +58,7 @@ on("chat:message", function(msg) {
 				log(err.stack);
 				sendChat("API Error", err.message);
 			}
-		} else {
-			log(`No such command ${msg.content}`);
-			sendChat("API Error", `&{template:default} {{name=Unknown command}} {{Received=${msg.content}}}`)
-
-		}
+		} 
 
 	} else {
 		chatParser(msg);
