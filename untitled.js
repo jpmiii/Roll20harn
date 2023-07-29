@@ -1938,7 +1938,12 @@ function mySetmax(attname, tid, deft) {
 }
 
 function getIndex() {
-	state.MainGameNS.index++
+    if (state.MainGameNS.index) {
+        state.MainGameNS.index++
+    } else {
+        state.MainGameNS.index = 1
+    }
+	
 	return state.MainGameNS.index;
 }
 function tokemove(toke) {
