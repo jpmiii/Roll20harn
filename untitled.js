@@ -405,6 +405,129 @@ function handle_defend(def, msg) {
 			defcharid, charid, 'H', null, 'mid', toke, atoke);
 	}
 
+    if (r.indexOf("Block") == 0) {
+		var dwq = parseInt(myGet(`${ojn.slice(0, -4)}WQ`, defcharid, 0)); // get defender weapon quality
+		var awq = parseInt(myGet(`${aojn.slice(0, -4)}WQ`, charid, 0)); // get attacker weapon quality
+		log("Attacker WQ: "+ awq );
+		log("Defender WQ: "+ dwq );
+		if (dwq < awq) {
+		    var roll1 = randomInteger(6) + randomInteger(6) + randomInteger(6);
+		    dres = "Roll: " + roll1 + " - WQ: " + dwq;
+		    if (roll1 >= (dwq + 3)) {
+		        dres = dres + "<br>Defender’s Weapon Breaks!<br>";
+		        if (parseInt(myGet("DOWQ", defcharid, 0)) == 0) {
+		            mySet(`${ojn.slice(0, -4)}WQ`, defcharid, 0);
+		        }
+		        
+		    } else if (roll1 >= (dwq + 2)) {
+		        dres = dres + "<br>Defender’s WQ Fails by 2!<br>";
+		        if (parseInt(myGet("DOWQ", defcharid, 0)) == 0) {
+    		        mySet(`${ojn.slice(0, -4)}WQ`, defcharid, (dwq - 2));
+    		        var dblunt = parseInt(myGet(`${ojn.slice(0, -4)}B`, defcharid, 0));
+    		        var dedge = parseInt(myGet(`${ojn.slice(0, -4)}E`, defcharid, 0));
+    		        var dpoint = parseInt(myGet(`${ojn.slice(0, -4)}P`, defcharid, 0));
+    		        mySet(`${ojn.slice(0, -4)}B`, defcharid, (dblunt - 1));
+    		        mySet(`${ojn.slice(0, -4)}E`, defcharid, (dedge - 1));
+    		        mySet(`${ojn.slice(0, -4)}P`, defcharid, (dpoint - 1));		            
+		        }
+
+		    } else if (roll1 > dwq) {
+		        dres = dres + "<br>Defender’s WQ Fails by 1!<br>";
+		        if (parseInt(myGet("DOWQ", defcharid, 0)) == 0) {
+		            mySet(`${ojn.slice(0, -4)}WQ`, defcharid, (dwq - 1));
+		        }
+		        
+		    } else {
+		        var roll2 = randomInteger(6) + randomInteger(6) + randomInteger(6);
+		        ares = "Roll: "+ roll2 + " - WQ: " + awq;
+    		    if (roll2 >= (awq + 3)) {
+    		        ares = ares + "<br>Attacker’s Weapon Breaks!<br>";
+    		        if (parseInt(myGet("DOWQ", charid, 0)) == 0) {
+    		            if (isnt_bow_attack(wepname, atk)) {mySet(`${aojn.slice(0, -4)}WQ`, charid, 0);}
+    		        }
+    		        
+    		    } else if (roll2 >= (awq + 2)) {
+    		        ares = ares + "<br>Attacker’s WQ Fails by 2!<br>";
+    		        if (parseInt(myGet("DOWQ", charid, 0)) == 0) {
+        		        if (isnt_bow_attack(wepname, atk)) {
+            		        mySet(`${aojn.slice(0, -4)}WQ`, charid, (awq - 2));
+            		        var ablunt = parseInt(myGet(`${aojn.slice(0, -4)}B`, charid, 0));
+            		        var aedge = parseInt(myGet(`${aojn.slice(0, -4)}E`, charid, 0));
+            		        var apoint = parseInt(myGet(`${aojn.slice(0, -4)}P`, charid, 0));
+            		        mySet(`${aojn.slice(0, -4)}B`, charid, (ablunt - 1));
+            		        mySet(`${aojn.slice(0, -4)}E`, charid, (aedge - 1));
+            		        mySet(`${aojn.slice(0, -4)}P`, charid, (apoint - 1));
+        		        }    		            
+    		        }
+
+    		    } else if (roll2 > awq) {
+    		        ares = ares + "<br>Attacker’s WQ Fails by 1!<br>";
+    		        if (parseInt(myGet("DOWQ", charid, 0)) == 0) {
+    		            if (isnt_bow_attack(wepname, atk)) {mySet(`${aojn.slice(0, -4)}WQ`, charid, (awq - 1));}
+    		        }
+    		        
+    		    }
+		    }
+		} else {
+		    var roll1 = randomInteger(6) + randomInteger(6) + randomInteger(6);
+		    ares = "Roll: "+ roll1 + " - WQ: " + awq;
+		    if (roll1 >= (awq + 3)) {
+		        ares = ares + "<br>Attacker’s Weapon Breaks!<br>";
+		        if (parseInt(myGet("DOWQ", charid, 0)) == 0) {
+		            if (isnt_bow_attack(wepname, atk)) {mySet(`${aojn.slice(0, -4)}WQ`, charid, 0);}
+		        }
+		        
+		    } else if (roll1 >= (awq + 2)) {
+		        ares = ares + "<br>Attacker’s WQ Fails by 2!<br>";
+		        if (parseInt(myGet("DOWQ", charid, 0)) == 0) {
+    		        if (isnt_bow_attack(wepname, atk)) {
+        		        mySet(`${aojn.slice(0, -4)}WQ`, charid, (awq - 2));
+        		        var ablunt = parseInt(myGet(`${aojn.slice(0, -4)}B`, charid, 0));
+        		        var aedge = parseInt(myGet(`${aojn.slice(0, -4)}E`, charid, 0));
+        		        var apoint = parseInt(myGet(`${aojn.slice(0, -4)}P`, charid, 0));
+        		        mySet(`${aojn.slice(0, -4)}B`, charid, (ablunt - 1));
+        		        mySet(`${aojn.slice(0, -4)}E`, charid, (aedge - 1));
+        		        mySet(`${aojn.slice(0, -4)}P`, charid, (apoint - 1));
+    		        }		            
+		        }
+
+		    } else if (roll1 > awq) {
+		        ares = ares + "<br>Attacker’s WQ Fails by 1!<br>";
+		        if (parseInt(myGet("DOWQ", charid, 0)) == 0) {
+		            if (isnt_bow_attack(wepname, atk)) {mySet(`${aojn.slice(0, -4)}WQ`, charid, (awq - 1));}
+		        }
+		        
+		    } else {
+		        var roll2 = randomInteger(6) + randomInteger(6) + randomInteger(6);
+		        dres = "Roll: "+ roll2 + " - WQ: " + dwq;
+    		    if (roll2 >= (dwq + 3)) {
+    		        dres = dres + "<br>Defender’s Weapon Breaks!<br>";
+    		        if (parseInt(myGet("DOWQ", defcharid, 0)) == 0) {
+    		            mySet(`${ojn.slice(0, -4)}WQ`, defcharid, 0);
+    		        }
+    		        
+    		    } else if (roll2 >= (dwq + 2)) {
+    		        dres = dres + "<br>Defender’s WQ Fails by 2!<br>";
+    		        if (parseInt(myGet("DOWQ", defcharid, 0)) == 0) {
+        		        mySet(`${ojn.slice(0, -4)}WQ`, defcharid, (dwq - 2));
+        		        var dblunt = parseInt(myGet(`${ojn.slice(0, -4)}B`, defcharid, 0));
+        		        var dedge = parseInt(myGet(`${ojn.slice(0, -4)}E`, defcharid, 0));
+        		        var dpoint = parseInt(myGet(`${ojn.slice(0, -4)}P`, defcharid, 0));
+        		        mySet(`${ojn.slice(0, -4)}B`, defcharid, (dblunt - 1));
+        		        mySet(`${ojn.slice(0, -4)}E`, defcharid, (dedge - 1));
+        		        mySet(`${ojn.slice(0, -4)}P`, defcharid, (dpoint - 1));    		            
+    		        }
+
+    		    } else if (roll2 > dwq) {
+    		        dres = dres + "<br>Defender’s WQ Fails by 1!<br>";
+    		        if (parseInt(myGet("DOWQ", defcharid, 0)) == 0) {
+    		            mySet(`${ojn.slice(0, -4)}WQ`, defcharid, (dwq - 1));
+    		        }
+    		        
+    		    }
+		    }
+		}
+	}
 	if (def[1] == "dodge") {
 		var rolldesc = `${toke.get('name')} attempts dodge`
 	} else if (def[1] == "ignore") {
@@ -2824,11 +2947,11 @@ function handle_table(args, msg) {
 		var description = tt3[i1][i2].split(';');
 		var out = '&{template:default} {{name=' + args[1] + '}} {{Rolls=' + r1.toString() + ' ' + r2.toString() + '}} {{' + tt3[1][i2] + '= ' + description[0] + '}}';
 		sendChat(msg.who, out);
-		if (args[4] && description[1]) {
+		if (description[1]) {
 			log(args[4]);
 			for (var i = 1; i < description.length; i++) {
 				commandLine = replaceArg(description[i].split(' '), msg);
-				if (commandLine[0] == 'add') {
+				if (args[4] && commandLine[0] == 'add') {
 					if (Number(commandLine[2])) {
 						var newVal = Number(myGet(commandLine[1], args[4], 0)) + Number(commandLine[2]);
 					} else {
@@ -2836,15 +2959,15 @@ function handle_table(args, msg) {
 					}
 					mySet(commandLine[1], args[4], newVal);
 				}
-				if (commandLine[0] == 'addmax') {
+				if (args[4] && commandLine[0] == 'addmax') {
 					var newVal = Number(myGetmax(commandLine[1], args[4], 0)) + Number(commandLine[2]);
 					mySetmax(commandLine[1], args[4], newVal);
 				}
-				if (commandLine[0] == 'set') {
+				if (args[4] && commandLine[0] == 'set') {
 					mySet(commandLine[1], args[4], commandLine[2]);
 					log(commandLine[1]);
 				}
-				if (commandLine[0] == 'setmax') {
+				if (args[4] && commandLine[0] == 'setmax') {
 					mySet(commandLine[1], args[4], commandLine[2]);
 				}
 				if (commandLine[0] == 'say') {
@@ -2853,7 +2976,7 @@ function handle_table(args, msg) {
 						out = out + ' ' + commandLine[j];
 					}
 
-					sendChat(args[1], out);
+					sendChat("", out);
 				}
 			}
 		}
