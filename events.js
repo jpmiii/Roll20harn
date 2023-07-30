@@ -6,7 +6,7 @@ on("ready", function() {
 	if (!state.MainGameNS) {
 		state.MainGameNS = { GameTime: 0 };
 	}
-	expectedSerial = 1;
+	expectedSerial = 3;
 	if (config.serial != expectedSerial) {
 		sendChat("API", `Unexpected config serial number. Expected ${expectedSerial} but got ${config.serial}`);
 	}

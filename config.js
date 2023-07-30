@@ -5,7 +5,7 @@
 //
 var trace = true; // trace entry and exit for debugging
 var config = {
-    serial: 2, // Increase this by one every time you add/rename/delete an attribute.
+    serial: 3, // Increase this by one every time you add/rename/delete an attribute.
     generate_item_list: true, //generate the item, weapon, and armor lists for the inventory tab on startup
     skill_list_on: true, //regenerate skill list ability on change to skill tab and skill name change
     weapon_list_on: true, //regenerate weapon list ability on change to weapontab and weapon name change
@@ -23,5 +23,6 @@ var config = {
     emlmin: 5, // canon 5, house rule 4
     additional_target_locations: false, //add additional target locations e.g. neck for faster combat resolution
     bleedspeed: 20, // bleed points per injury point, 0 to disable
+    weaponquality: false, // Mr Maths weapon quality check house rule
 
 };
