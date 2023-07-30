@@ -1596,7 +1596,7 @@ function handle_newturn(args, msg) {
 	});
 
 	_.each(currentPageGraphics, function(obj) {
-		if (obj.get('represents').startsWith('-M') && (obj.get('layer') == 'objects') && !obj.get('status_skull')) {
+		if ((obj.get('layer') == 'objects') && !obj.get('status_skull')) {
 
 			if (config.bleedspeed > 0 && obj.get('bar3_link')){
 			    doBloodloss(obj.get('represents'));
