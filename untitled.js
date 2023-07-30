@@ -291,7 +291,7 @@ function handle_defend(def, msg) {
 
 	var toke = getObj("graphic", atk[6]);
 	if (!toke.get("represents")) { sendChat(msg.who, "No defender"); return; }
-	if (!toke.get("represents").startsWith("-M")) { sendChat(msg.who, "No defender -M"); return; }
+	//if (!toke.get("represents").startsWith("-M")) { sendChat(msg.who, "No defender -M"); return; }
 	var charid = atoke.get("represents")
 	var defcharid = toke.get("represents")
 	var defchar = getObj("character", defcharid);
