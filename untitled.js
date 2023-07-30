@@ -265,6 +265,18 @@ function handle_attack(atk, msg) {
 
 }
 
+function isnt_bow_attack(wepname, atk) {
+    if (atk[4] == "missile") {
+        if (wepname.indexOf("bow") != -1) {
+            return false;
+        }
+        if (wepname.indexOf("Bow") != -1) {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 /**
  * Process an defend message
