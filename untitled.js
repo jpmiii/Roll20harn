@@ -2949,11 +2949,11 @@ function handle_table(args, msg) {
 		var description = tt3[i1][i2].split(';');
 		var out = '&{template:default} {{name=' + args[1] + '}} {{Rolls=' + r1.toString() + ' ' + r2.toString() + '}} {{' + tt3[1][i2] + '= ' + description[0] + '}}';
 		sendChat(msg.who, out);
-		if (args[4] && description[1]) {
+		if (description[1]) {
 			log(args[4]);
 			for (var i = 1; i < description.length; i++) {
 				commandLine = replaceArg(description[i].split(' '), msg);
-				if (commandLine[0] == 'add') {
+				if (args[4] && commandLine[0] == 'add') {
 					if (Number(commandLine[2])) {
 						var newVal = Number(myGet(commandLine[1], args[4], 0)) + Number(commandLine[2]);
 					} else {
@@ -2961,15 +2961,15 @@ function handle_table(args, msg) {
 					}
 					mySet(commandLine[1], args[4], newVal);
 				}
-				if (commandLine[0] == 'addmax') {
+				if (args[4] && commandLine[0] == 'addmax') {
 					var newVal = Number(myGetmax(commandLine[1], args[4], 0)) + Number(commandLine[2]);
 					mySetmax(commandLine[1], args[4], newVal);
 				}
-				if (commandLine[0] == 'set') {
+				if (args[4] && commandLine[0] == 'set') {
 					mySet(commandLine[1], args[4], commandLine[2]);
 					log(commandLine[1]);
 				}
-				if (commandLine[0] == 'setmax') {
+				if (args[4] && commandLine[0] == 'setmax') {
 					mySet(commandLine[1], args[4], commandLine[2]);
 				}
 				if (commandLine[0] == 'say') {
@@ -2978,7 +2978,7 @@ function handle_table(args, msg) {
 						out = out + ' ' + commandLine[j];
 					}
 
-					sendChat(args[1], out);
+					sendChat("", out);
 				}
 			}
 		}
