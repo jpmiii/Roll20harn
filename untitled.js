@@ -3047,10 +3047,10 @@ function handle_table(args, msg) {
 	scdata.get("notes", function(scda) {
 
 		var tt1 = scda.substring(22, scda.indexOf('</td></tr></tbody></table>'));
-		var tt2 = tt1.split('</td></tr><tr><td>');
+		var tt2 = tt1.split('</td></tr><tr><td style=\"line-height: 1.42857\">');
 		var tt3 = [];
 		for (var i = 0; i < tt2.length; i++) {
-			tt3[i] = tt2[i].split('</td><td>')
+			tt3[i] = tt2[i].split('</td><td style=\"line-height: 1.42857\">')
 		}
 		log("p")
 		var r1 = msg.inlinerolls[0].results.total;
