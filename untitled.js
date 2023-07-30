@@ -2927,7 +2927,7 @@ function handle_table(args, msg) {
 		for (var i = 0; i < tt2.length; i++) {
 			tt3[i] = tt2[i].split('</td><td style=\"line-height: 1.42857\">')
 		}
-		log("p")
+		
 		var r1 = msg.inlinerolls[0].results.total;
 		var r2 = msg.inlinerolls[1].results.total;
 		var i1 = tt3.length - 1;
