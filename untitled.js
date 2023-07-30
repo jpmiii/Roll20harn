@@ -405,7 +405,7 @@ function handle_defend(def, msg) {
 			defcharid, charid, 'H', null, 'mid', toke, atoke);
 	}
 
-    if (r.indexOf("Block") == 0) {
+    if (r.indexOf("Block") == 0 && config.weaponquality) {
 		var dwq = parseInt(myGet(`${ojn.slice(0, -4)}WQ`, defcharid, 0)); // get defender weapon quality
 		var awq = parseInt(myGet(`${aojn.slice(0, -4)}WQ`, charid, 0)); // get attacker weapon quality
 		log("Attacker WQ: "+ awq );
