@@ -417,7 +417,13 @@ function handle_defend(def, msg) {
 			defcharid, charid, 'H', null, 'mid', toke, atoke);
 	}
 
-
+	if (r.indexOf("DTA") != -1 ) {
+		if (myGet("DTA", defcharid, 0) == "1") {
+			r = "2nd DTA"
+		} else {
+			mySet("DTA", defcharid, "1");
+		}
+	}
 
     if (r.indexOf("Block") == 0 && config.weaponquality) {
 		var dwq = parseInt(myGet(`${ojn.slice(0, -4)}WQ`, defcharid, 0)); // get defender weapon quality
@@ -1734,6 +1740,12 @@ function handle_newturn(args, msg) {
 
 	_.each(currentPageGraphics, function(obj) {
 		if ((obj.get('layer') == 'objects') && !obj.get('status_skull')) {
+
+			if (obj.get('represents')){
+				mySet("DTA", obj.get('represents'), "0");
+			}
+
+			
 
 			if (config.bleedspeed > 0 && obj.get('bar3_link')){
 			    doBloodloss(obj.get('represents'));
