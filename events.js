@@ -50,9 +50,7 @@ on("chat:message", function(msg) {
 				// syntax check passed or doesn't exist. Execute the action if it exists.
 				if (commandMap.hasOwnProperty("action")) {
 					commandMap.action(args, msg)
-				} else {
-					sendChat("API Error", `No action defined for ${args[0]}`)
-				}
+				} 
 			} catch (err) {
 				// Something went wrong. Log it, alert in chat and prevent the sandbox from bailing.
 				log(err.stack);
