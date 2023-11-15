@@ -1,10 +1,11 @@
 //
-//  08/05/2023 16:48:03
+//  11/14/2023 19:14:33
 //
 //
 // CONFIGURATION
 //
 //
+
 var trace = true; // trace entry and exit for debugging
 var config = {
     serial: 3, // Increase this by one every time you add/rename/delete an attribute.
@@ -80,9 +81,7 @@ on("chat:message", function(msg) {
 				// syntax check passed or doesn't exist. Execute the action if it exists.
 				if (commandMap.hasOwnProperty("action")) {
 					commandMap.action(args, msg)
-				} else {
-					sendChat("API Error", `No action defined for ${args[0]}`)
-				}
+				} 
 			} catch (err) {
 				// Something went wrong. Log it, alert in chat and prevent the sandbox from bailing.
 				log(err.stack);

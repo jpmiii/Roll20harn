@@ -6,7 +6,6 @@
 //                  "action" a function taking two args, args and msg, which implements the command.
 //                  "re_syntax" regular expression the command has to match
 //                  "hr_syntax" a more human understandable version of the command syntax
-
 // Regular expression tester: https://regex101.com/
 // Regular expression cheatsheet:
 // Character id: [-_a-zA-Z0-9]{20}
