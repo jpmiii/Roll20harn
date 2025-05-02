@@ -453,8 +453,8 @@
             <input type="text" name="attr_COMBAT_AGL" disabled="true" value="@{AGL}" class="sheet-stat-value">
         </div>
         <div>
-            <div class="sheet-combat-label">Move<br>(ft/sec sprint)</div>
-            <input type="text" name="attr_COMBAT_MOVE" disabled="true" class="sheet-stat-value" value="[[(3.28*(8 * ((@{STR} + @{AGL})/20)) - @{PHYSICAL_PENALTY})]]">
+            <div class="sheet-combat-label">Move<br>(Hexes/10 seconds)</div>
+            <input type="text" name="attr_COMBAT_MOVE" disabled="true" class="sheet-stat-value" value="@{AGL} - @{PHYSICAL_PENALTY}">
         </div>
         <div>
             <div class="sheet-combat-label">Dodge</div>
