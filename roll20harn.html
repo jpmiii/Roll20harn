@@ -454,7 +454,7 @@
         </div>
         <div>
             <div class="sheet-combat-label">Move<br>(ft/sec sprint)</div>
-            <input type="text" name="attr_COMBAT_MOVE" disabled="true" class="sheet-stat-value" value="[[(3.28*(8 * ((@{STR} + @{AGL})/20)) - @{PHYSICAL_PENALTY})]]">
+            <input type="text" name="attr_COMBAT_MOVE" disabled="true" class="sheet-stat-value" value="[[round((1.312 * @{STR}) + (1.312 * @{AGL}) + (0.2624 * @{CONDITION_ML}) - 13.12 - @{ENCUMBRANCE} - @{UNIVERSAL_PENALTY})]]">
         </div>
         <div>
             <div class="sheet-combat-label">Dodge</div>
